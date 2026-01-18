@@ -15,6 +15,7 @@ const { sortPullRequests } = require('./lib/sort-pull-requests')
 const { log } = require('./lib/log')
 const core = require('@actions/core')
 const { runnerIsActions } = require('./lib/utils')
+const { manageReleaseAssets, resolveFiles } = require('./lib/assets')
 
 module.exports = (app, { getRouter }) => {
   if (!runnerIsActions() && typeof getRouter === 'function') {
@@ -132,7 +133,7 @@ module.exports = (app, { getRouter }) => {
       message: `Processing ${sortedMergedPullRequests.length} merged pull requests`,
     })
 
-    const { shouldDraft, version, tag, name, dryRun } = input
+    const { shouldDraft, version, tag, name, dryRun, attachFiles } = input
 
     const releaseInfo = generateReleaseInfo({
       context,
@@ -155,6 +156,35 @@ module.exports = (app, { getRouter }) => {
         context,
         message: 'Dry-run mode: skipping release creation/update',
       })
+
+      if (attachFiles) {
+        const workspacePath = process.env.GITHUB_WORKSPACE || process.cwd()
+        log({
+          context,
+          message: `Dry-run mode: resolving attach-files patterns...`,
+        })
+        const filesToAttach = await resolveFiles(attachFiles, workspacePath)
+        if (filesToAttach.length === 0) {
+          core.setFailed(
+            'attach-files was specified but no files matched the pattern(s). ' +
+              'Please check your glob patterns and ensure the files exist. ' +
+              `Patterns: ${attachFiles
+                .split('\n')
+                .filter((p) => p.trim())
+                .join(', ')}`
+          )
+          return
+        } else {
+          log({
+            context,
+            message: `Dry-run mode: Would upload ${filesToAttach.length} file(s):`,
+          })
+          for (const file of filesToAttach) {
+            log({ context, message: `  - ${file}` })
+          }
+        }
+      }
+
       if (runnerIsActions()) {
         setDryRunOutput(releaseInfo)
       }
@@ -176,6 +206,17 @@ module.exports = (app, { getRouter }) => {
         draftRelease,
         releaseInfo,
         config,
+      })
+    }
+
+    const releaseId = createOrUpdateReleaseResponse.data.id
+
+    if (attachFiles) {
+      log({ context, message: 'Managing release assets...' })
+      await manageReleaseAssets({
+        context,
+        releaseId,
+        attachFilesInput: attachFiles,
       })
     }
 
@@ -211,6 +252,7 @@ function getInput() {
         : undefined,
     preReleaseIdentifier: core.getInput('prerelease-identifier') || undefined,
     latest: core.getInput('latest')?.toLowerCase() || undefined,
+    attachFiles: core.getInput('attach-files') || undefined,
   }
 }
 

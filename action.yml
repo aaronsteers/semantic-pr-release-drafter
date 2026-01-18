@@ -139,6 +139,21 @@ inputs:
       but will not create or update any releases.
     required: false
     default: 'false'
+  attach-files:
+    description: |
+      Files to attach to the draft release as assets. Accepts a single file path,
+      a single glob pattern, or multiple file paths/globs as a newline-separated list.
+      Supports standard glob patterns and brace expansion (e.g., dist/*.{whl,tar.gz}).
+      Paths are resolved relative to GITHUB_WORKSPACE.
+
+      When set, the action will:
+      1. Delete ALL existing assets on the draft release (for full idempotency)
+      2. Upload all matched files as release assets
+
+      If the pattern matches zero files, the action will fail with an error.
+      Requires GITHUB_TOKEN with contents: write permission.
+    required: false
+    default: ''
 outputs:
   id:
     description: The ID of the release that was created or updated.

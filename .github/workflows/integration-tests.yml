@@ -83,13 +83,13 @@ jobs:
               * update deps (#92)
             custom-categories: |
               categories:
-                - title: 'New Features'
+                - title: New Features
                   commit-types:
                     - feat
-                - title: 'Bug Fixes'
+                - title: Bug Fixes
                   commit-types:
                     - fix
-                - title: 'Under the Hood'
+                - title: Under the Hood
                   commit-types:
                     - chore
 

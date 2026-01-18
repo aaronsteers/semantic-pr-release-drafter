@@ -189,7 +189,7 @@ Note: Version resolution and categorization are handled automatically based on s
 
 ## Configuration Options
 
-The following options can be set in your `.github/release-drafter.yml` file or passed as inline action inputs (see [Inline Configuration](#inline-configuration-recommended)). Options marked with `*` can be passed as inline inputs:
+The following options can be set in your `.github/release-drafter.yml` file or passed as inline action inputs (see [Inline Configuration](#inline-configuration-recommended)):
 
 | Key                        | Required | Description                                                                                                                                                                        |
 | -------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

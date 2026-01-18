@@ -18,6 +18,7 @@ This fork automatically categorizes changes and determines version bumps based o
 - **Features** (`feat:`) trigger a minor version bump
 - **Fixes** (`fix:`) trigger a patch version bump
 - **Other types** (`docs:`, `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`, `style:`) are categorized but don't affect version
+- **Inline config inputs** - Configure the action directly in your workflow file without needing a separate config file (see [Inline Configuration](#inline-configuration-recommended))
 
 ### Removed Features
 

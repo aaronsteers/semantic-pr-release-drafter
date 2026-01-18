@@ -133,6 +133,7 @@ jobs:
             # This tests the zero-config path
 
           # Test collapse-after feature: items beyond threshold are collapsed
+          # Note: commits are processed in reverse chronological order (newest first)
           - test-name: 'collapse-after-feature'
             test-start-version-string: 'v1.0.0'
             test-commit-list: |
@@ -144,14 +145,14 @@ jobs:
             expected-body: |
               ## Under the Hood
 
-              * update deps (#200)
-              * cleanup code (#201)
+              * bump version (#203)
+              * fix typo (#202)
 
               <details>
               <summary>2 more changes</summary>
 
-              * fix typo (#202)
-              * bump version (#203)
+              * cleanup code (#201)
+              * update deps (#200)
               </details>
             template: |
               $CHANGES

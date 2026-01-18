@@ -29,6 +29,7 @@ module.exports = (app, { getRouter }) => {
     const config = await getConfig({
       context,
       configName: input.configName,
+      localGitRoot: input.localGitRoot,
     })
 
     if (!config || input.disableReleaser) return

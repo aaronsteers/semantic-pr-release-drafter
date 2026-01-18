@@ -57,9 +57,9 @@ In your repository settings (Settings > General > Pull Requests):
 
 - Enable **"Allow squash merging"** and set it as the default merge method
 - Set **"Default commit message"** to **"Pull request title"** so the squashed commit inherits the semantic PR title
-- Optionally disable other merge methods to enforce squash merging
+- **Disable other merge methods** (merge commits and rebase merging) to enforce squash merging
 
-This ensures that when PRs are merged, the resulting commit on main has a properly formatted semantic commit message that this action can parse.
+This ensures that when PRs are merged, the resulting commit on main has a properly formatted semantic commit message that this action can parse. Without squash merging, the action cannot reliably determine version bumps from commit history.
 
 ---
 

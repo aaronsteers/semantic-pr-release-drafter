@@ -132,6 +132,37 @@ jobs:
             # No template, change-template, category-template, or categories provided
             # This tests the zero-config path
 
+          # Test collapse-after feature: items beyond threshold are collapsed
+          - test-name: 'collapse-after-feature'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              chore: update deps (#200)
+              chore: cleanup code (#201)
+              chore: fix typo (#202)
+              chore: bump version (#203)
+            expected-version-string: '1.0.1'
+            expected-body: |
+              ## Under the Hood
+
+              * update deps (#200)
+              * cleanup code (#201)
+
+              <details>
+              <summary>2 more changes</summary>
+
+              * fix typo (#202)
+              * bump version (#203)
+              </details>
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Under the Hood
+                commit-types:
+                  - chore
+                collapse-after: 2
+
           # Test that custom emoji category titles are used instead of defaults
           - test-name: 'custom-emoji-categories'
             test-start-version-string: 'v1.0.0'

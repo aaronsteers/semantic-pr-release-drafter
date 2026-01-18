@@ -2060,13 +2060,23 @@ describe('release-drafter', () => {
 
                   * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/28) 
                   * fix typo (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+
+                  <details>
+                  <summary>1 more change</summary>
+
                   * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                  </details>
 
                   ## ⚙️ Under the Hood
 
                   * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/27) 
                   * update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
-                  * update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+
+                  <details>
+                  <summary>1 more change</summary>
+
+                  * update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                  </details>
                   ",
                     "draft": true,
                     "make_latest": "true",

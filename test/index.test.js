@@ -98,7 +98,9 @@ describe('release-drafter', () => {
 
   describe('push', () => {
     describe('without a config', () => {
-      it('does nothing', async () => {
+      it('uses default configuration', async () => {
+        // When no config file exists and no inline config is provided,
+        // the action should use the built-in defaults (zero-config mode)
         nock('https://api.github.com')
           .get(
             '/repos/toolmantim/release-drafter-test-project/contents/.github%2Frelease-drafter.yml'
@@ -108,6 +110,34 @@ describe('release-drafter', () => {
             '/repos/toolmantim/.github/contents/.github%2Frelease-drafter.yml'
           )
           .reply(404)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsNoPRsPayload)
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [])
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              // Verify it creates a release with default configuration
+              expect(body.draft).toBe(true)
+              expect(body.name).toMatch(/^v\d+\.\d+\.\d+$/)
+              expect(body.tag_name).toMatch(/^v\d+\.\d+\.\d+$/)
+              return true
+            }
+          )
+          .reply(200, {
+            id: 1,
+            html_url:
+              'https://github.com/toolmantim/release-drafter-test-project/releases/tag/v0.0.1',
+            upload_url:
+              'https://uploads.github.com/repos/toolmantim/release-drafter-test-project/releases/1/assets{?name,label}',
+          })
 
         await probot.receive({
           name: 'push',

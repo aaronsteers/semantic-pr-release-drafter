@@ -109,6 +109,29 @@ jobs:
                 commit-types:
                   - docs
 
+          # Test zero-config mode (no inputs, pure defaults)
+          # This verifies the action works with built-in defaults when no config is provided
+          - test-name: 'zero-config-defaults'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat: add new feature (#100)
+              fix: fix a bug (#101)
+            expected-version-string: '1.1.0'
+            expected-body: |
+              ## ✨ New Features
+
+              * add new feature (https://github.com/aaronsteers/semantic-pr-release-drafter/pull/100) 
+
+              ## 🐛 Bug Fixes
+
+              * fix a bug (https://github.com/aaronsteers/semantic-pr-release-drafter/pull/101)
+
+              ---
+
+              **Full Changelog**: https://github.com/aaronsteers/semantic-pr-release-drafter/compare/v1.0.0...v1.1.0
+            # No template, change-template, category-template, or categories provided
+            # This tests the zero-config path
+
           # Test that custom emoji category titles are used instead of defaults
           - test-name: 'custom-emoji-categories'
             test-start-version-string: 'v1.0.0'

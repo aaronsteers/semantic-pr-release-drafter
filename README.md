@@ -14,6 +14,7 @@ This is a fork of the much loved [release-drafter/release-drafter](https://githu
 
 This fork automatically categorizes changes and determines version bumps based on [Conventional Commits](https://www.conventionalcommits.org/) format (`type(scope): description`):
 
+- **Zero-config support** - Works out-of-the-box with lovable defaults. No config file or inline inputs required.
 - **Breaking changes** (`feat!:`, `fix!:`, or commits with `BREAKING CHANGE:` in the body) trigger a major version bump (or minor if pre-1.0)
 - **Features** (`feat:`) trigger a minor version bump
 - **Fixes** (`fix:`) trigger a patch version bump

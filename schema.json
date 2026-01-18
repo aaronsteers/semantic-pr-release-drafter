@@ -1,11 +1,11 @@
 {
-  "title": "JSON schema for Semantic PR Release Drafter yaml files",
-  "id": "https://github.com/aaronsteers/semantic-pr-release-drafter/blob/main/schema.json",
+  "title": "JSON schema for Release Drafter yaml files",
+  "id": "https://github.com/release-drafter/release-drafter/blob/master/schema.json",
   "type": "object",
   "properties": {
     "references": {
       "type": "array",
-      "default": ["main"],
+      "default": ["master"],
       "items": {
         "type": "string"
       }
@@ -90,6 +90,11 @@
       "type": "string",
       "default": ""
     },
+    "pull-request-limit": {
+      "type": "number",
+      "default": 5,
+      "exclusiveMinimum": 0
+    },
     "replacers": {
       "type": "array",
       "default": [],
@@ -109,7 +114,63 @@
     },
     "categories": {
       "type": "array",
-      "default": [],
+      "default": [
+        {
+          "title": "Features",
+          "collapse-after": 0,
+          "commit-types": ["feat"]
+        },
+        {
+          "title": "Bug Fixes",
+          "collapse-after": 0,
+          "commit-types": ["fix"]
+        },
+        {
+          "title": "Documentation",
+          "collapse-after": 0,
+          "commit-types": ["docs"]
+        },
+        {
+          "title": "Styles",
+          "collapse-after": 0,
+          "commit-types": ["style"]
+        },
+        {
+          "title": "Code Refactoring",
+          "collapse-after": 0,
+          "commit-types": ["refactor"]
+        },
+        {
+          "title": "Performance Improvements",
+          "collapse-after": 0,
+          "commit-types": ["perf"]
+        },
+        {
+          "title": "Tests",
+          "collapse-after": 0,
+          "commit-types": ["test"]
+        },
+        {
+          "title": "Build System",
+          "collapse-after": 0,
+          "commit-types": ["build"]
+        },
+        {
+          "title": "Continuous Integration",
+          "collapse-after": 0,
+          "commit-types": ["ci"]
+        },
+        {
+          "title": "Chores",
+          "collapse-after": 0,
+          "commit-types": ["chore"]
+        },
+        {
+          "title": "Reverts",
+          "collapse-after": 0,
+          "commit-types": ["revert"]
+        }
+      ],
       "items": {
         "type": "object",
         "properties": {
@@ -143,13 +204,11 @@
       "properties": {
         "pre-one-zero-minor-for-breaking": {
           "type": "boolean",
-          "default": true,
-          "description": "When true, breaking changes before v1.0 bump minor instead of major"
+          "default": true
         },
         "no-auto-major": {
           "type": "boolean",
-          "default": true,
-          "description": "When true, breaking changes bump minor by default; users manually bump major when warranted"
+          "default": true
         },
         "default": {
           "type": "string",

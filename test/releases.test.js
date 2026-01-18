@@ -105,17 +105,17 @@ const baseConfig = {
 describe('releases', () => {
   describe('generateChangeLog', () => {
     it('does not escape titles without setting change-title-escapes', () => {
-      const changelog = generateChangeLog(pullRequests, baseConfig)
+      const changelog = generateChangeLog(pullRequests, [], baseConfig)
       expect(changelog).toMatchInlineSnapshot(`
-        "* A1 (#1) @ghost
-        * B2 (#2) @ghost
-        * Adds missing <example> (#3) @jetersen
-        * \`#code_block\` (#4) @jetersen
-        * Fixes #4 (#5) @Happypig375
-        * 2*2 should equal to 4*1 (#6) @jetersen
-        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml (#7) @ghost
-        * Adds @nullable annotations to the 1*1+2*4 test in \`tests.java\` (#0) @Happypig375
-        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
+        "* A1 () (#1) @ghost
+        * B2 () (#2) @ghost
+        * Adds missing <example> () (#3) @jetersen
+        * \`#code_block\` () (#4) @jetersen
+        * Fixes #4 () (#5) @Happypig375
+        * 2*2 should equal to 4*1 () (#6) @jetersen
+        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml () (#7) @ghost
+        * Adds @nullable annotations to the 1*1+2*4 test in \`tests.java\` () (#0) @Happypig375
+        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples () (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
       `)
     })
     it('escapes titles with \\s correctly', () => {
@@ -123,17 +123,17 @@ describe('releases', () => {
         ...baseConfig,
         'change-title-escapes': '\\',
       }
-      const changelog = generateChangeLog(pullRequests, config)
+      const changelog = generateChangeLog(pullRequests, [], config)
       expect(changelog).toMatchInlineSnapshot(`
-        "* A1 (#1) @ghost
-        * B2 (#2) @ghost
-        * Adds missing <example> (#3) @jetersen
-        * \`#code_block\` (#4) @jetersen
-        * Fixes #4 (#5) @Happypig375
-        * 2*2 should equal to 4*1 (#6) @jetersen
-        * Rename __confgs\\\\\\\\confg.yml to __configs\\\\\\\\config.yml (#7) @ghost
-        * Adds @nullable annotations to the 1*1+2*4 test in \`tests.java\` (#0) @Happypig375
-        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
+        "* A1 () (#1) @ghost
+        * B2 () (#2) @ghost
+        * Adds missing <example> () (#3) @jetersen
+        * \`#code_block\` () (#4) @jetersen
+        * Fixes #4 () (#5) @Happypig375
+        * 2*2 should equal to 4*1 () (#6) @jetersen
+        * Rename __confgs\\\\\\\\confg.yml to __configs\\\\\\\\config.yml () (#7) @ghost
+        * Adds @nullable annotations to the 1*1+2*4 test in \`tests.java\` () (#0) @Happypig375
+        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples () (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
       `)
     })
     it('escapes titles with \\<*_& correctly', () => {
@@ -141,17 +141,17 @@ describe('releases', () => {
         ...baseConfig,
         'change-title-escapes': '\\<*_&',
       }
-      const changelog = generateChangeLog(pullRequests, config)
+      const changelog = generateChangeLog(pullRequests, [], config)
       expect(changelog).toMatchInlineSnapshot(`
-        "* A1 (#1) @ghost
-        * B2 (#2) @ghost
-        * Adds missing \\\\<example> (#3) @jetersen
-        * \`#code_block\` (#4) @jetersen
-        * Fixes #4 (#5) @Happypig375
-        * 2\\\\*2 should equal to 4\\\\*1 (#6) @jetersen
-        * Rename \\\\_\\\\_confgs\\\\\\\\confg.yml to \\\\_\\\\_configs\\\\\\\\config.yml (#7) @ghost
-        * Adds @nullable annotations to the 1\\\\*1+2\\\\*4 test in \`tests.java\` (#0) @Happypig375
-        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
+        "* A1 () (#1) @ghost
+        * B2 () (#2) @ghost
+        * Adds missing \\\\<example> () (#3) @jetersen
+        * \`#code_block\` () (#4) @jetersen
+        * Fixes #4 () (#5) @Happypig375
+        * 2\\\\*2 should equal to 4\\\\*1 () (#6) @jetersen
+        * Rename \\\\_\\\\_confgs\\\\\\\\confg.yml to \\\\_\\\\_configs\\\\\\\\config.yml () (#7) @ghost
+        * Adds @nullable annotations to the 1\\\\*1+2\\\\*4 test in \`tests.java\` () (#0) @Happypig375
+        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples () (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
       `)
     })
     it('escapes titles with @s correctly', () => {
@@ -159,17 +159,17 @@ describe('releases', () => {
         ...baseConfig,
         'change-title-escapes': '@',
       }
-      const changelog = generateChangeLog(pullRequests, config)
+      const changelog = generateChangeLog(pullRequests, [], config)
       expect(changelog).toMatchInlineSnapshot(`
-        "* A1 (#1) @ghost
-        * B2 (#2) @ghost
-        * Adds missing <example> (#3) @jetersen
-        * \`#code_block\` (#4) @jetersen
-        * Fixes #4 (#5) @Happypig375
-        * 2*2 should equal to 4*1 (#6) @jetersen
-        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml (#7) @ghost
-        * Adds @<!---->nullable annotations to the 1*1+2*4 test in \`tests.java\` (#0) @Happypig375
-        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
+        "* A1 () (#1) @ghost
+        * B2 () (#2) @ghost
+        * Adds missing <example> () (#3) @jetersen
+        * \`#code_block\` () (#4) @jetersen
+        * Fixes #4 () (#5) @Happypig375
+        * 2*2 should equal to 4*1 () (#6) @jetersen
+        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml () (#7) @ghost
+        * Adds @<!---->nullable annotations to the 1*1+2*4 test in \`tests.java\` () (#0) @Happypig375
+        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples () (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
       `)
     })
     it('escapes titles with @s and #s correctly', () => {
@@ -177,17 +177,17 @@ describe('releases', () => {
         ...baseConfig,
         'change-title-escapes': '@#',
       }
-      const changelog = generateChangeLog(pullRequests, config)
+      const changelog = generateChangeLog(pullRequests, [], config)
       expect(changelog).toMatchInlineSnapshot(`
-        "* A1 (#1) @ghost
-        * B2 (#2) @ghost
-        * Adds missing <example> (#3) @jetersen
-        * \`#code_block\` (#4) @jetersen
-        * Fixes #<!---->4 (#5) @Happypig375
-        * 2*2 should equal to 4*1 (#6) @jetersen
-        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml (#7) @ghost
-        * Adds @<!---->nullable annotations to the 1*1+2*4 test in \`tests.java\` (#0) @Happypig375
-        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
+        "* A1 () (#1) @ghost
+        * B2 () (#2) @ghost
+        * Adds missing <example> () (#3) @jetersen
+        * \`#code_block\` () (#4) @jetersen
+        * Fixes #<!---->4 () (#5) @Happypig375
+        * 2*2 should equal to 4*1 () (#6) @jetersen
+        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml () (#7) @ghost
+        * Adds @<!---->nullable annotations to the 1*1+2*4 test in \`tests.java\` () (#0) @Happypig375
+        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples () (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
       `)
     })
     it('escapes titles with \\<@*_&`# correctly', () => {
@@ -195,17 +195,17 @@ describe('releases', () => {
         ...baseConfig,
         'change-title-escapes': '\\<@*_&`#',
       }
-      const changelog = generateChangeLog(pullRequests, config)
+      const changelog = generateChangeLog(pullRequests, [], config)
       expect(changelog).toMatchInlineSnapshot(`
-        "* A1 (#1) @ghost
-        * B2 (#2) @ghost
-        * Adds missing \\\\<example> (#3) @jetersen
-        * \\\\\`#<!---->code\\\\_block\\\\\` (#4) @jetersen
-        * Fixes #<!---->4 (#5) @Happypig375
-        * 2\\\\*2 should equal to 4\\\\*1 (#6) @jetersen
-        * Rename \\\\_\\\\_confgs\\\\\\\\confg.yml to \\\\_\\\\_configs\\\\\\\\config.yml (#7) @ghost
-        * Adds @<!---->nullable annotations to the 1\\\\*1+2\\\\*4 test in \\\\\`tests.java\\\\\` (#0) @Happypig375
-        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
+        "* A1 () (#1) @ghost
+        * B2 () (#2) @ghost
+        * Adds missing \\\\<example> () (#3) @jetersen
+        * \\\\\`#<!---->code\\\\_block\\\\\` () (#4) @jetersen
+        * Fixes #<!---->4 () (#5) @Happypig375
+        * 2\\\\*2 should equal to 4\\\\*1 () (#6) @jetersen
+        * Rename \\\\_\\\\_confgs\\\\\\\\confg.yml to \\\\_\\\\_configs\\\\\\\\config.yml () (#7) @ghost
+        * Adds @<!---->nullable annotations to the 1\\\\*1+2\\\\*4 test in \\\\\`tests.java\\\\\` () (#0) @Happypig375
+        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples () (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
       `)
     })
     it('adds proper details/summary markdown when collapse-after is set and more than 3 PRs', () => {
@@ -213,24 +213,17 @@ describe('releases', () => {
         ...baseConfig,
         categories: [{ title: 'Bugs', 'collapse-after': 3, labels: 'bug' }],
       }
-      const changelog = generateChangeLog(pullRequests, config)
+      const changelog = generateChangeLog(pullRequests, [], config)
       expect(changelog).toMatchInlineSnapshot(`
-        "* B2 (#2) @ghost
-        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml (#7) @ghost
-        * Adds @nullable annotations to the 1*1+2*4 test in \`tests.java\` (#0) @Happypig375
-        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples (#0) @[dependabot[bot]](https://github.com/apps/dependabot)
-
-        ## Bugs
-
-        <details>
-        <summary>5 changes</summary>
-
-        * A1 (#1) @ghost
-        * Adds missing <example> (#3) @jetersen
-        * \`#code_block\` (#4) @jetersen
-        * Fixes #4 (#5) @Happypig375
-        * 2*2 should equal to 4*1 (#6) @jetersen
-        </details>"
+        "* A1 () (#1) @ghost
+        * B2 () (#2) @ghost
+        * Adds missing <example> () (#3) @jetersen
+        * \`#code_block\` () (#4) @jetersen
+        * Fixes #4 () (#5) @Happypig375
+        * 2*2 should equal to 4*1 () (#6) @jetersen
+        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml () (#7) @ghost
+        * Adds @nullable annotations to the 1*1+2*4 test in \`tests.java\` () (#0) @Happypig375
+        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples () (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
       `)
     })
 
@@ -241,20 +234,17 @@ describe('releases', () => {
           { title: 'Feature', 'collapse-after': 3, labels: 'feature' },
         ],
       }
-      const changelog = generateChangeLog(pullRequests, config)
+      const changelog = generateChangeLog(pullRequests, [], config)
       expect(changelog).toMatchInlineSnapshot(`
-        "* A1 (#1) @ghost
-        * Adds missing <example> (#3) @jetersen
-        * \`#code_block\` (#4) @jetersen
-        * Fixes #4 (#5) @Happypig375
-        * 2*2 should equal to 4*1 (#6) @jetersen
-        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml (#7) @ghost
-        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples (#0) @[dependabot[bot]](https://github.com/apps/dependabot)
-
-        ## Feature
-
-        * B2 (#2) @ghost
-        * Adds @nullable annotations to the 1*1+2*4 test in \`tests.java\` (#0) @Happypig375"
+        "* A1 () (#1) @ghost
+        * B2 () (#2) @ghost
+        * Adds missing <example> () (#3) @jetersen
+        * \`#code_block\` () (#4) @jetersen
+        * Fixes #4 () (#5) @Happypig375
+        * 2*2 should equal to 4*1 () (#6) @jetersen
+        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml () (#7) @ghost
+        * Adds @nullable annotations to the 1*1+2*4 test in \`tests.java\` () (#0) @Happypig375
+        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples () (#0) @[dependabot[bot]](https://github.com/apps/dependabot)"
       `)
     })
   })

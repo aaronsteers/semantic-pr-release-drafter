@@ -1,24 +1,25 @@
 name: Rebuild dist/index.js
 
 on:
-  issue_comment:
-    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'PR Number'
+        type: string
+        required: true
+      comment-id:
+        description: 'Comment ID (Optional)'
+        type: string
+        required: false
 
 env:
   # Disable Husky git hooks (for local dev only)
   # https://typicode.github.io/husky/how-to.html#ci-server-and-docker
   HUSKY: '0'
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   rebuild-dist:
-    # Only run on PR comments with the /rebuild-dist command
-    if: |
-      github.event.issue.pull_request &&
-      contains(github.event.comment.body, '/rebuild-dist')
+    name: Rebuild dist/index.js
     runs-on: ubuntu-latest
     steps:
       - name: Get PR branch
@@ -29,21 +30,24 @@ jobs:
             const pr = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.issue.number
+              pull_number: ${{ github.event.inputs.pr }}
             });
             core.setOutput('ref', pr.data.head.ref);
             core.setOutput('sha', pr.data.head.sha);
 
-      - name: React to comment
-        uses: actions/github-script@v7
+      - name: Append comment with job run link
+        if: ${{ github.event.inputs.comment-id }}
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
         with:
-          script: |
-            await github.rest.reactions.createForIssueComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: context.payload.comment.id,
-              content: 'rocket'
-            });
+          comment-id: ${{ github.event.inputs.comment-id }}
+          issue-number: ${{ github.event.inputs.pr }}
+          body: |
+            > **Rebuild dist/index.js Job Info**
+            >
+            > This job rebuilds the `dist/index.js` file from source and commits the changes.
+            > (This job requires that the PR author has "Allow edits from maintainers" enabled.)
+
+            > Job started... [Check job output.](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
       - name: Checkout PR branch
         uses: actions/checkout@v4
@@ -63,30 +67,47 @@ jobs:
       - name: Build dist/index.js
         run: npx ncc build action.js --target es2021 -o dist
 
-      - name: Commit and push if needed
+      - name: Check for changes
+        id: git-diff
         run: |
-          if [ -z "$(git status --porcelain dist/)" ]; then
-            echo "No changes to dist/index.js - already up to date!"
-            exit 0
+          if git diff --quiet dist/; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
           fi
+
+      - name: Commit and push if needed
+        if: steps.git-diff.outputs.changes == 'true'
+        run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add dist/
           git commit -m "chore: rebuild dist/index.js"
           git push
-          echo "Pushed updated dist/index.js"
 
-      - name: Comment on PR
-        uses: actions/github-script@v7
+      - name: Append success comment
+        if: ${{ github.event.inputs.comment-id && steps.git-diff.outputs.changes == 'true' }}
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
         with:
-          script: |
-            const status = '${{ job.status }}';
-            const body = status === 'success' 
-              ? 'Rebuilt and committed `dist/index.js` successfully.'
-              : 'Failed to rebuild `dist/index.js`. Check the workflow logs for details.';
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: body
-            });
+          comment-id: ${{ github.event.inputs.comment-id }}
+          reactions: hooray
+          body: |
+            > Rebuilt and committed `dist/index.js` successfully.
+
+      - name: Append success comment (no-op)
+        if: ${{ github.event.inputs.comment-id && steps.git-diff.outputs.changes != 'true' }}
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
+        with:
+          comment-id: ${{ github.event.inputs.comment-id }}
+          reactions: '+1'
+          body: |
+            > Job completed successfully (no changes needed - `dist/index.js` is already up to date).
+
+      - name: Append failure comment
+        if: ${{ failure() && github.event.inputs.comment-id }}
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
+        with:
+          comment-id: ${{ github.event.inputs.comment-id }}
+          reactions: confused
+          body: |
+            > Job failed. Check the workflow logs for details.

@@ -90,35 +90,46 @@ describe('schema', () => {
   })
 
   describe('validateSchema', () => {
-    it('Multiple other categories', () => {
-      expect(() => {
-        validateSchema(context, {
-          template,
-          categories: [
-            {
-              title: '📝 Other Changes',
-            },
-            {
-              title: '📝 Yet Other Changes',
-            },
-          ],
-        })
-      }).toThrowErrorMatchingInlineSnapshot(`
-        "Multiple categories detected with no labels.
-        Only one category with no labels is supported for uncategorized pull requests."
-      `)
+    it('Categories are merged with defaults and include user-provided categories', () => {
+      // With semantic commit-based categorization, user categories are merged with defaults
+      const result = validateSchema(context, {
+        template,
+        categories: [
+          {
+            title: '📝 Other Changes',
+          },
+          {
+            title: '📝 Yet Other Changes',
+          },
+        ],
+      })
+      // Should include both default categories and user-provided categories
+      expect(result.categories.length).toBeGreaterThan(2)
+      // User-provided categories should be in the result
+      const categoryTitles = result.categories.map((c) => c.title)
+      expect(categoryTitles).toContain('📝 Other Changes')
+      expect(categoryTitles).toContain('📝 Yet Other Changes')
+      // Default categories should also be present
+      expect(categoryTitles).toContain('Features')
+      expect(categoryTitles).toContain('Bug Fixes')
     })
 
-    it('Single other categories', () => {
-      const expected = {
+    it('User-provided categories have defaults applied', () => {
+      const result = validateSchema(context, {
         template,
         categories: [
           {
             title: '📝 Other Changes',
           },
         ],
-      }
-      expect(validateSchema(context, expected)).toMatchObject(expected)
+      })
+      // Find the user-provided category
+      const otherChanges = result.categories.find(
+        (c) => c.title === '📝 Other Changes'
+      )
+      expect(otherChanges).toBeDefined()
+      expect(otherChanges['collapse-after']).toBe(0)
+      expect(otherChanges['commit-types']).toEqual([])
     })
   })
 })

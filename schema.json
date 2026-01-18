@@ -12,7 +12,7 @@
     },
     "change-template": {
       "type": "string",
-      "default": "'* $TITLE ($COMMIT) (#$NUMBER) @$AUTHOR'"
+      "default": "'* $TITLE ($SHA) (#$NUMBER) @$AUTHOR'"
     },
     "change-title-escapes": {
       "type": "string",

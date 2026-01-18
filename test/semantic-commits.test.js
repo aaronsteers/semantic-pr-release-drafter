@@ -367,7 +367,7 @@ describe('ReleaseChangeLineItems', () => {
       [
         'uses custom change-template',
         ['feat: add feature'],
-        { ...defaultConfig, 'change-template': '- $TITLE ($COMMIT)' },
+        { ...defaultConfig, 'change-template': '- $TITLE ($SHA)' },
         '## Features\n\n- add feature (sha0)',
       ],
       [
@@ -424,7 +424,7 @@ describe('ReleaseChangeLineItems', () => {
       const collection = ReleaseChangeLineItems.fromCommits(commits)
       const config = {
         ...defaultConfig,
-        'change-template': '* $TITLE ($COMMIT)',
+        'change-template': '* $TITLE ($SHA)',
       }
 
       const result = collection.renderWithConfig(config)

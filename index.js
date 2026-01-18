@@ -15,7 +15,7 @@ const { sortPullRequests } = require('./lib/sort-pull-requests')
 const { log } = require('./lib/log')
 const core = require('@actions/core')
 const { runnerIsActions } = require('./lib/utils')
-const { manageReleaseAssets } = require('./lib/assets')
+const { manageReleaseAssets, resolveFiles } = require('./lib/assets')
 
 module.exports = (app, { getRouter }) => {
   if (!runnerIsActions() && typeof getRouter === 'function') {
@@ -156,6 +156,31 @@ module.exports = (app, { getRouter }) => {
         context,
         message: 'Dry-run mode: skipping release creation/update',
       })
+
+      if (attachFiles) {
+        const workspacePath = process.env.GITHUB_WORKSPACE || process.cwd()
+        log({
+          context,
+          message: `Dry-run mode: resolving attach-files patterns...`,
+        })
+        const filesToAttach = await resolveFiles(attachFiles, workspacePath)
+        if (filesToAttach.length === 0) {
+          log({
+            context,
+            message:
+              'Dry-run mode: WARNING - No files matched the attach-files pattern(s)',
+          })
+        } else {
+          log({
+            context,
+            message: `Dry-run mode: Would upload ${filesToAttach.length} file(s):`,
+          })
+          for (const file of filesToAttach) {
+            log({ context, message: `  - ${file}` })
+          }
+        }
+      }
+
       if (runnerIsActions()) {
         setDryRunOutput(releaseInfo)
       }

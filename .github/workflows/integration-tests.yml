@@ -117,14 +117,18 @@ jobs:
               feat: add new feature (#100)
               fix: fix a bug (#101)
             expected-version-string: '1.1.0'
-            # Expected body uses default emoji categories and change-template
-            # Note: We use partial-body-check since default template includes dynamic SHA values
-            partial-body-check: 'true'
-            expected-body-contains: |
+            expected-body: |
               ## ✨ New Features
-              * add new feature (#100)
+
+              * add new feature (https://github.com/aaronsteers/semantic-pr-release-drafter/pull/100) 
+
               ## 🐛 Bug Fixes
-              * fix a bug (#101)
+
+              * fix a bug (https://github.com/aaronsteers/semantic-pr-release-drafter/pull/101)
+
+              ---
+
+              **Full Changelog**: https://github.com/aaronsteers/semantic-pr-release-drafter/compare/v1.0.0...v1.1.0
             # No template, change-template, category-template, or categories provided
             # This tests the zero-config path
 
@@ -240,7 +244,7 @@ jobs:
           echo "Version check passed!"
 
       - name: Verify changelog body matches expected output
-        if: ${{ matrix.partial-body-check != 'true' && matrix.expected-body != '' }}
+        if: ${{ matrix.expected-body != '' }}
         run: |
           BODY="${{ steps.release-drafter.outputs.body }}"
           EXPECTED_BODY=$(cat << 'EXPECTED_EOF'
@@ -268,39 +272,3 @@ jobs:
           fi
 
           echo "Changelog body check passed!"
-
-      - name: Verify changelog body contains expected content
-        if: ${{ matrix.partial-body-check == 'true' }}
-        run: |
-          BODY="${{ steps.release-drafter.outputs.body }}"
-          EXPECTED_CONTAINS=$(cat << 'EXPECTED_EOF'
-          ${{ matrix.expected-body-contains }}
-          EXPECTED_EOF
-          )
-
-          echo "=== Actual changelog body ==="
-          echo "$BODY"
-          echo ""
-          echo "=== Expected content (partial match) ==="
-          echo "$EXPECTED_CONTAINS"
-          echo ""
-
-          # Check each non-empty line from expected-body-contains exists in the body
-          FAILED=0
-          while IFS= read -r line; do
-            # Skip empty lines
-            if [ -z "$line" ] || [ -z "$(echo "$line" | tr -d '[:space:]')" ]; then
-              continue
-            fi
-            # Check if line exists in body (allowing for extra content like URLs and SHAs)
-            if ! echo "$BODY" | grep -qF "$line"; then
-              echo "::error::Missing expected content: $line"
-              FAILED=1
-            fi
-          done <<< "$EXPECTED_CONTAINS"
-
-          if [ "$FAILED" -eq 1 ]; then
-            exit 1
-          fi
-
-          echo "Partial body check passed!"

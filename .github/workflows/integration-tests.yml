@@ -6,6 +6,9 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
+
 env:
   # Disable Husky git hooks (for local dev only)
   # https://typicode.github.io/husky/how-to.html#ci-server-and-docker

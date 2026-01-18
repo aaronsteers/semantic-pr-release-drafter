@@ -131,21 +131,18 @@
           "collapse-after": 0
         },
         {
+          "title": "▲ Other Changes",
+          "commit-types": ["refactor", "perf", "style"],
+          "collapse-after": 2
+        },
+        {
           "title": "📖 Documentation",
           "commit-types": ["docs"],
           "collapse-after": 2
         },
         {
           "title": "⚙️ Under the Hood",
-          "commit-types": [
-            "chore",
-            "ci",
-            "build",
-            "refactor",
-            "style",
-            "test",
-            "perf"
-          ],
+          "commit-types": ["chore", "ci", "build", "test"],
           "collapse-after": 2
         }
       ],

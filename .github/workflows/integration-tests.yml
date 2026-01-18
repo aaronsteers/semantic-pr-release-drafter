@@ -26,14 +26,20 @@ jobs:
             test-commit-list: |
               feat: add new feature
             expected-version-string: '1.1.0'
-            expected-text: 'add new feature'
+            expected-body: |
+              ## Features
+
+              * add new feature
 
           - test-name: 'breaking-change-pre-1.0'
             test-start-version-string: 'v0.9.0'
             test-commit-list: |
               feat!: breaking change in pre-1.0
             expected-version-string: '0.10.0'
-            expected-text: 'breaking change in pre-1.0'
+            expected-body: |
+              ## Features
+
+              * breaking change in pre-1.0
 
           - test-name: 'multiple-commits-minor-bump'
             test-start-version-string: 'v2.0.0'
@@ -42,7 +48,18 @@ jobs:
               feat: add another feature
               docs: update documentation
             expected-version-string: '2.1.0'
-            expected-text: 'add another feature'
+            expected-body: |
+              ## Features
+
+              * add another feature
+
+              ## Bug Fixes
+
+              * fix a bug
+
+              ## Documentation
+
+              * update documentation
 
     name: ${{ matrix.test-name }}
     steps:
@@ -87,11 +104,12 @@ jobs:
           done <<< "${{ matrix.test-commit-list }}"
 
           # Create release-drafter config
+          # Use simplified change-template without $NUMBER/$COMMIT since these are local commits
           mkdir -p .github
           cat > .github/release-drafter.yml << 'EOF'
           template: |
-            ## Changes
             $CHANGES
+          change-template: '* $TITLE'
           EOF
 
       - name: Run release-drafter in dry-run mode
@@ -122,18 +140,30 @@ jobs:
 
           echo "Version check passed!"
 
-      - name: Verify changelog body contains expected text
+      - name: Verify changelog body matches expected output
         run: |
           BODY="${{ steps.release-drafter.outputs.body }}"
-          EXPECTED_TEXT="${{ matrix.expected-text }}"
+          EXPECTED_BODY=$(cat << 'EXPECTED_EOF'
+          ${{ matrix.expected-body }}
+          EXPECTED_EOF
+          )
 
-          echo "Changelog body:"
+          # Normalize whitespace for comparison (trim leading/trailing, normalize newlines)
+          BODY_NORMALIZED=$(echo "$BODY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -s '\n')
+          EXPECTED_NORMALIZED=$(echo "$EXPECTED_BODY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -s '\n')
+
+          echo "=== Actual changelog body ==="
           echo "$BODY"
           echo ""
-          echo "Expected text: $EXPECTED_TEXT"
+          echo "=== Expected changelog body ==="
+          echo "$EXPECTED_BODY"
+          echo ""
 
-          if [[ "$BODY" != *"$EXPECTED_TEXT"* ]]; then
-            echo "::error::Changelog body does not contain expected text: $EXPECTED_TEXT"
+          if [ "$BODY_NORMALIZED" != "$EXPECTED_NORMALIZED" ]; then
+            echo "::error::Changelog body does not match expected output"
+            echo ""
+            echo "=== Diff (expected vs actual) ==="
+            diff <(echo "$EXPECTED_NORMALIZED") <(echo "$BODY_NORMALIZED") || true
             exit 1
           fi
 

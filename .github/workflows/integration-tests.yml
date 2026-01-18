@@ -163,6 +163,15 @@ jobs:
             git commit -m "$commit_msg"
           done <<< "${{ matrix.test-commit-list }}"
 
+          # Skip config file creation if using inline config
+          USE_INLINE_CONFIG='${{ matrix.use-inline-config }}'
+          if [ "$USE_INLINE_CONFIG" = "true" ]; then
+            echo "Using inline config inputs, skipping config file creation"
+            # Create empty .github directory (required for local-git-root)
+            mkdir -p .github
+            exit 0
+          fi
+
           # Create release-drafter config
           # Include $NUMBER in change-template to show PR numbers parsed from commit messages
           # Include categories to generate section headers (## Features, ## Bug Fixes, etc.)
@@ -192,7 +201,9 @@ jobs:
             echo '      - chore' >> .github/release-drafter.yml
           fi
 
+      # Run release-drafter with file-based config (default)
       - name: Run release-drafter in dry-run mode
+        if: ${{ matrix.use-inline-config != true }}
         id: release-drafter
         uses: ./
         with:
@@ -205,9 +216,32 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REF: refs/heads/main
 
+      # Run release-drafter with inline config inputs
+      - name: Run release-drafter with inline config
+        if: ${{ matrix.use-inline-config == true }}
+        id: release-drafter-inline
+        uses: ./
+        with:
+          dry-run: 'true'
+          local-git-root: ${{ env.TEST_REPO }}
+          base-ref-override: ${{ matrix.test-start-version-string }}
+          template: ${{ matrix.inline-template }}
+          change-template: ${{ matrix.inline-change-template }}
+          category-template: ${{ matrix.inline-category-template }}
+          categories: ${{ matrix.inline-categories }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: refs/heads/main
+
       - name: Verify resolved version
         run: |
-          RESOLVED_VERSION="${{ steps.release-drafter.outputs.resolved_version }}"
+          # Use the appropriate step output based on config type
+          if [ "${{ matrix.use-inline-config }}" = "true" ]; then
+            RESOLVED_VERSION="${{ steps.release-drafter-inline.outputs.resolved_version }}"
+          else
+            RESOLVED_VERSION="${{ steps.release-drafter.outputs.resolved_version }}"
+          fi
           EXPECTED_VERSION="${{ matrix.expected-version-string }}"
 
           echo "Resolved version: $RESOLVED_VERSION"
@@ -222,7 +256,12 @@ jobs:
 
       - name: Verify changelog body matches expected output
         run: |
-          BODY="${{ steps.release-drafter.outputs.body }}"
+          # Use the appropriate step output based on config type
+          if [ "${{ matrix.use-inline-config }}" = "true" ]; then
+            BODY="${{ steps.release-drafter-inline.outputs.body }}"
+          else
+            BODY="${{ steps.release-drafter.outputs.body }}"
+          fi
           EXPECTED_BODY=$(cat << 'EXPECTED_EOF'
           ${{ matrix.expected-body }}
           EXPECTED_EOF

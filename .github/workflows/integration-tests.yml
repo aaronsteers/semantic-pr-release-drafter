@@ -349,7 +349,8 @@ jobs:
       - name: Verify attach-files failure
         if: matrix.attach-files-expect-failure == true
         run: |
-          if [ "${{ steps.release-drafter-failure.outcome }}" != "failure" ]; then
+          # With continue-on-error: true, outcome is always "success" but conclusion reflects the actual result
+          if [ "${{ steps.release-drafter-failure.conclusion }}" != "failure" ]; then
             echo "::error::Expected release-drafter to fail when no files match attach-files pattern, but it succeeded"
             exit 1
           fi

@@ -18,6 +18,7 @@ This fork automatically categorizes changes and determines version bumps based o
 - **Features** (`feat:`) trigger a minor version bump
 - **Fixes** (`fix:`) trigger a patch version bump
 - **Other types** (`docs:`, `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`, `style:`) are categorized but don't affect version
+- **Inline config inputs** - Configure the action directly in your workflow file without needing a separate config file (see [Inline Configuration](#inline-configuration-recommended))
 
 ### Removed Features
 
@@ -91,9 +92,73 @@ jobs:
 
 ## Configuration
 
-Once you’ve added Release Drafter to your repository, it must be enabled by adding a `.github/release-drafter.yml` configuration file to each repository. The configuration file **must** reside in your default branch, no other configurations will be accepted.
+Release Drafter can be configured in two ways:
 
-### Example
+1. **Inline config inputs** - Pass configuration directly as action inputs in your workflow file
+2. **Config file** - Create a `.github/release-drafter.yml` file in your repository's default branch
+
+You can use either method, or combine both (inline inputs override file config).
+
+### Inline Configuration (Recommended)
+
+The simplest way to configure Release Drafter is to pass configuration directly in your workflow file:
+
+```yaml
+name: Release Drafter
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  update_release_draft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aaronsteers/semantic-pr-release-drafter@main
+        with:
+          name-template: 'v$RESOLVED_VERSION'
+          tag-template: 'v$RESOLVED_VERSION'
+          change-template: '* $TITLE ($URL) $SHA'
+          template: |
+            $CHANGES
+
+            ---
+
+            **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+          categories: |
+            - title: 'Breaking Changes'
+              commit-types:
+                - 'breaking'
+            - title: 'Features'
+              commit-types:
+                - 'feat'
+            - title: 'Bug Fixes'
+              commit-types:
+                - 'fix'
+            - title: 'Documentation'
+              collapse-after: 2
+              commit-types:
+                - 'docs'
+            - title: 'Under the Hood'
+              collapse-after: 2
+              commit-types:
+                - 'chore'
+                - 'ci'
+                - 'build'
+                - 'refactor'
+                - 'test'
+                - 'perf'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### File-Based Configuration
+
+Alternatively, you can create a `.github/release-drafter.yml` configuration file. The configuration file **must** reside in your default branch.
 
 For example, take the following `.github/release-drafter.yml` file in a repository:
 
@@ -125,7 +190,7 @@ Note: Version resolution and categorization are handled automatically based on s
 
 ## Configuration Options
 
-You can configure Release Drafter using the following key in your `.github/release-drafter.yml` file:
+The following options can be set in your `.github/release-drafter.yml` file or passed as inline action inputs (see [Inline Configuration](#inline-configuration-recommended)):
 
 | Key                        | Required | Description                                                                                                                                                                        |
 | -------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

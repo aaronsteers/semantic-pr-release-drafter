@@ -15,6 +15,8 @@ jobs:
       # Use local action (dogfooding)
       - uses: aaronsteers/semantic-pr-release-drafter@main
         with:
+          name-template: 'v$RESOLVED_VERSION'
+          tag-template: 'v$RESOLVED_VERSION'
           template: |
             $CHANGES
 
@@ -22,37 +24,29 @@ jobs:
 
             **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
           change-template: '* $TITLE ($URL) $SHA'
-          category-template: '## $TITLE'
           categories: |
-            - title: Breaking Changes
+            - title: '⚠️ Breaking Changes'
               commit-types:
-                - feat!
-                - fix!
-                - refactor!
-              collapse-after: 20
-            - title: Features
+                - 'breaking'
+            - title: '✨ New Features'
               commit-types:
-                - feat
-              collapse-after: 20
-            - title: Bug Fixes
+                - 'feat'
+            - title: '🐛 Bug Fixes'
               commit-types:
-                - fix
-              collapse-after: 20
-            - title: Refactoring
-              commit-types:
-                - refactor
-              collapse-after: 20
-            - title: Documentation
-              commit-types:
-                - docs
+                - 'fix'
+            - title: '📖 Documentation'
               collapse-after: 2
-            - title: Under the Hood
               commit-types:
-                - chore
-                - ci
-                - build
-                - test
-                - perf
+                - 'docs'
+            - title: '⚙️ Under the Hood'
               collapse-after: 2
+              commit-types:
+                - 'chore'
+                - 'ci'
+                - 'build'
+                - 'refactor'
+                - 'style'
+                - 'test'
+                - 'perf'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -9,6 +9,9 @@ package-lock.json
 dist/static/
 dist/views/
 
+# Yarn 4.x cache files
+.yarn/install-state.gz
+
 # OS
 .DS_Store
 

@@ -7,11 +7,14 @@ const {
   updateRelease,
 } = require('./lib/releases')
 const { findCommitsWithAssociatedPullRequests } = require('./lib/commits')
+const {
+  findCommitsFromLocalGit,
+  createMockLastRelease,
+} = require('./lib/local-git')
 const { sortPullRequests } = require('./lib/sort-pull-requests')
 const { log } = require('./lib/log')
 const core = require('@actions/core')
 const { runnerIsActions } = require('./lib/utils')
-const ignore = require('ignore')
 
 module.exports = (app, { getRouter }) => {
   if (!runnerIsActions() && typeof getRouter === 'function') {
@@ -20,125 +23,16 @@ module.exports = (app, { getRouter }) => {
     })
   }
 
-  app.on(
-    [
-      'pull_request.opened',
-      'pull_request.reopened',
-      'pull_request.synchronize',
-      'pull_request.edited',
-      'pull_request_target.opened',
-      'pull_request_target.reopened',
-      'pull_request_target.synchronize',
-      'pull_request_target.edited',
-    ],
-    async (context) => {
-      const { configName, disableAutolabeler } = getInput()
-
-      const config = await getConfig({
-        context,
-        configName,
-      })
-
-      if (config === null || disableAutolabeler) return
-
-      let issue = {
-        ...context.issue({ pull_number: context.payload.pull_request.number }),
-      }
-      const changedFiles = await context.octokit.paginate(
-        context.octokit.pulls.listFiles.endpoint.merge(issue),
-        (response) => response.data.map((file) => file.filename)
-      )
-      const labels = new Set()
-
-      for (const autolabel of config['autolabeler']) {
-        let found = false
-        // check modified files
-        if (!found && autolabel.files.length > 0) {
-          const matcher = ignore().add(autolabel.files)
-          if (changedFiles.some((file) => matcher.ignores(file))) {
-            labels.add(autolabel.label)
-            found = true
-            log({
-              context,
-              message: `Found label for files: '${autolabel.label}'`,
-            })
-          }
-        }
-        // check branch names
-        if (!found && autolabel.branch.length > 0) {
-          for (const matcher of autolabel.branch) {
-            if (matcher.test(context.payload.pull_request.head.ref)) {
-              labels.add(autolabel.label)
-              found = true
-              log({
-                context,
-                message: `Found label for branch: '${autolabel.label}'`,
-              })
-              break
-            }
-          }
-        }
-        // check pr title
-        if (!found && autolabel.title.length > 0) {
-          for (const matcher of autolabel.title) {
-            if (matcher.test(context.payload.pull_request.title)) {
-              labels.add(autolabel.label)
-              found = true
-              log({
-                context,
-                message: `Found label for title: '${autolabel.label}'`,
-              })
-              break
-            }
-          }
-        }
-        // check pr body
-        if (
-          !found &&
-          context.payload.pull_request.body != null &&
-          autolabel.body.length > 0
-        ) {
-          for (const matcher of autolabel.body) {
-            if (matcher.test(context.payload.pull_request.body)) {
-              labels.add(autolabel.label)
-              found = true
-              log({
-                context,
-                message: `Found label for body: '${autolabel.label}'`,
-              })
-              break
-            }
-          }
-        }
-      }
-
-      const labelsToAdd = [...labels]
-      if (labelsToAdd.length > 0) {
-        let labelIssue = {
-          ...context.issue({
-            issue_number: context.payload.pull_request.number,
-            labels: labelsToAdd,
-          }),
-        }
-        await context.octokit.issues.addLabels(labelIssue)
-        if (runnerIsActions()) {
-          core.setOutput('number', context.payload.pull_request.number)
-          core.setOutput('labels', labelsToAdd.join(','))
-        }
-        return
-      }
-    }
-  )
-
   const drafter = async (context) => {
     const input = getInput()
 
     const config = await getConfig({
       context,
       configName: input.configName,
+      localGitRoot: input.localGitRoot,
     })
 
-    if (!config || input.disableReleaser) return
+    if (!config) return
 
     updateConfigFromInput(config, input)
 
@@ -165,21 +59,55 @@ module.exports = (app, { getRouter }) => {
       includePreReleases || preReleaseIdentifier
     )
 
-    const { draftRelease, lastRelease } = await findReleases({
-      context,
-      targetCommitish,
-      filterByCommitish,
-      includePreReleases: shouldIncludePreReleases,
-      tagPrefix,
-    })
+    const { localGitRoot, baseRefOverride, baseVersionOverride } = input
 
-    const { commits, pullRequests: mergedPullRequests } =
-      await findCommitsWithAssociatedPullRequests({
+    // Local git mode: use git log instead of GitHub API
+    let draftRelease, lastRelease, commits, mergedPullRequests
+
+    if (localGitRoot) {
+      log({
+        context,
+        message: `Using local git mode with root: ${localGitRoot}`,
+      })
+
+      // In local git mode, we don't have a draft release
+      draftRelease = null
+
+      // Create mock lastRelease from baseVersionOverride or baseRefOverride
+      const baseVersion = baseVersionOverride || baseRefOverride
+      lastRelease = baseVersion
+        ? createMockLastRelease(baseVersion, tagPrefix)
+        : null
+
+      // Get commits from local git
+      const localGitResult = findCommitsFromLocalGit({
+        localGitRoot,
+        baseRef: baseRefOverride,
+        context,
+      })
+      commits = localGitResult.commits
+      mergedPullRequests = localGitResult.pullRequests
+    } else {
+      // Standard GitHub API mode
+      const releasesResult = await findReleases({
+        context,
+        targetCommitish,
+        filterByCommitish,
+        includePreReleases: shouldIncludePreReleases,
+        tagPrefix,
+      })
+      draftRelease = releasesResult.draftRelease
+      lastRelease = releasesResult.lastRelease
+
+      const commitsResult = await findCommitsWithAssociatedPullRequests({
         context,
         targetCommitish,
         lastRelease,
         config,
       })
+      commits = commitsResult.commits
+      mergedPullRequests = commitsResult.pullRequests
+    }
 
     const sortedMergedPullRequests = sortPullRequests(
       mergedPullRequests,
@@ -187,7 +115,24 @@ module.exports = (app, { getRouter }) => {
       config['sort-direction']
     )
 
-    const { shouldDraft, version, tag, name } = input
+    // Debug: Log input commits
+    log({ context, message: `Processing ${commits.length} commits` })
+    for (const commit of commits) {
+      log({
+        context,
+        message: `  Commit ${commit.id?.slice(0, 7) || 'unknown'}: ${
+          commit.message?.split('\n')[0] || 'no message'
+        }`,
+      })
+    }
+
+    // Debug: Log merged pull requests
+    log({
+      context,
+      message: `Processing ${sortedMergedPullRequests.length} merged pull requests`,
+    })
+
+    const { shouldDraft, version, tag, name, dryRun } = input
 
     const releaseInfo = generateReleaseInfo({
       context,
@@ -203,6 +148,18 @@ module.exports = (app, { getRouter }) => {
       shouldDraft,
       targetCommitish,
     })
+
+    // In dry-run mode, skip creating/updating releases but still set outputs
+    if (dryRun) {
+      log({
+        context,
+        message: 'Dry-run mode: skipping release creation/update',
+      })
+      if (runnerIsActions()) {
+        setDryRunOutput(releaseInfo)
+      }
+      return
+    }
 
     let createOrUpdateReleaseResponse
     if (!draftRelease) {
@@ -241,9 +198,10 @@ function getInput() {
     version: core.getInput('version') || undefined,
     tag: core.getInput('tag') || undefined,
     name: core.getInput('name') || undefined,
-    disableReleaser: core.getInput('disable-releaser').toLowerCase() === 'true',
-    disableAutolabeler:
-      core.getInput('disable-autolabeler').toLowerCase() === 'true',
+    dryRun: core.getInput('dry-run').toLowerCase() === 'true',
+    localGitRoot: core.getInput('local-git-root') || undefined,
+    baseRefOverride: core.getInput('base-ref-override') || undefined,
+    baseVersionOverride: core.getInput('base-version-override') || undefined,
     commitish: core.getInput('commitish') || undefined,
     header: core.getInput('header') || undefined,
     footer: core.getInput('footer') || undefined,
@@ -309,5 +267,26 @@ function setActionOutput(
   if (majorVersion) core.setOutput('major_version', majorVersion)
   if (minorVersion) core.setOutput('minor_version', minorVersion)
   if (patchVersion) core.setOutput('patch_version', patchVersion)
+  core.setOutput('body', body)
+}
+
+/**
+ * Set outputs for dry-run mode (no release created/updated)
+ */
+function setDryRunOutput({
+  body,
+  resolvedVersion,
+  majorVersion,
+  minorVersion,
+  patchVersion,
+  tag,
+  name,
+}) {
+  if (resolvedVersion) core.setOutput('resolved_version', resolvedVersion)
+  if (majorVersion) core.setOutput('major_version', majorVersion)
+  if (minorVersion) core.setOutput('minor_version', minorVersion)
+  if (patchVersion) core.setOutput('patch_version', patchVersion)
+  if (tag) core.setOutput('tag_name', tag)
+  if (name) core.setOutput('name', name)
   core.setOutput('body', body)
 }

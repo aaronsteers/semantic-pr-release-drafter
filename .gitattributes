@@ -1,3 +1,5 @@
 * text=auto eol=lf
 *.png binary
 *.sketch binary
+dist/** linguist-generated=true
+yarn.lock linguist-generated=true

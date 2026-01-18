@@ -12,7 +12,7 @@
     },
     "change-template": {
       "type": "string",
-      "default": "'* $TITLE (#$NUMBER) @$AUTHOR'"
+      "default": "'* $TITLE ($SHA) (#$NUMBER) @$AUTHOR'"
     },
     "change-title-escapes": {
       "type": "string",
@@ -37,20 +37,6 @@
     "tag-template": {
       "type": "string",
       "default": ""
-    },
-    "exclude-labels": {
-      "type": "array",
-      "default": [],
-      "items": {
-        "type": "string"
-      }
-    },
-    "include-labels": {
-      "type": "array",
-      "default": [],
-      "items": {
-        "type": "string"
-      }
     },
     "include-paths": {
       "type": "array",
@@ -104,6 +90,11 @@
       "type": "string",
       "default": ""
     },
+    "pull-request-limit": {
+      "type": "number",
+      "default": 5,
+      "exclusiveMinimum": 0
+    },
     "replacers": {
       "type": "array",
       "default": [],
@@ -121,51 +112,65 @@
         "additionalProperties": false
       }
     },
-    "autolabeler": {
-      "type": "array",
-      "default": [],
-      "items": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string"
-          },
-          "files": {
-            "type": "array",
-            "default": [],
-            "items": {
-              "type": "string"
-            }
-          },
-          "branch": {
-            "type": "array",
-            "default": [],
-            "items": {
-              "type": "string"
-            }
-          },
-          "title": {
-            "type": "array",
-            "default": [],
-            "items": {
-              "type": "string"
-            }
-          },
-          "body": {
-            "type": "array",
-            "default": [],
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": ["label"],
-        "additionalProperties": false
-      }
-    },
     "categories": {
       "type": "array",
-      "default": [],
+      "default": [
+        {
+          "title": "Features",
+          "collapse-after": 0,
+          "commit-types": ["feat"]
+        },
+        {
+          "title": "Bug Fixes",
+          "collapse-after": 0,
+          "commit-types": ["fix"]
+        },
+        {
+          "title": "Documentation",
+          "collapse-after": 0,
+          "commit-types": ["docs"]
+        },
+        {
+          "title": "Styles",
+          "collapse-after": 0,
+          "commit-types": ["style"]
+        },
+        {
+          "title": "Code Refactoring",
+          "collapse-after": 0,
+          "commit-types": ["refactor"]
+        },
+        {
+          "title": "Performance Improvements",
+          "collapse-after": 0,
+          "commit-types": ["perf"]
+        },
+        {
+          "title": "Tests",
+          "collapse-after": 0,
+          "commit-types": ["test"]
+        },
+        {
+          "title": "Build System",
+          "collapse-after": 0,
+          "commit-types": ["build"]
+        },
+        {
+          "title": "Continuous Integration",
+          "collapse-after": 0,
+          "commit-types": ["ci"]
+        },
+        {
+          "title": "Chores",
+          "collapse-after": 0,
+          "commit-types": ["chore"]
+        },
+        {
+          "title": "Reverts",
+          "collapse-after": 0,
+          "commit-types": ["revert"]
+        }
+      ],
       "items": {
         "type": "object",
         "properties": {
@@ -177,10 +182,7 @@
             "default": 0,
             "minimum": 0
           },
-          "label": {
-            "type": "string"
-          },
-          "labels": {
+          "commit-types": {
             "type": "array",
             "default": [],
             "items": {
@@ -195,56 +197,18 @@
     "version-resolver": {
       "type": "object",
       "default": {
-        "major": {
-          "labels": []
-        },
-        "minor": {
-          "labels": []
-        },
-        "patch": {
-          "labels": []
-        },
+        "pre-one-zero-minor-for-breaking": true,
+        "no-auto-major": true,
         "default": "patch"
       },
       "properties": {
-        "major": {
-          "type": "object",
-          "properties": {
-            "labels": {
-              "type": "array",
-              "default": [],
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "additionalProperties": false
+        "pre-one-zero-minor-for-breaking": {
+          "type": "boolean",
+          "default": true
         },
-        "minor": {
-          "type": "object",
-          "properties": {
-            "labels": {
-              "type": "array",
-              "default": [],
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "additionalProperties": false
-        },
-        "patch": {
-          "type": "object",
-          "properties": {
-            "labels": {
-              "type": "array",
-              "default": [],
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "additionalProperties": false
+        "no-auto-major": {
+          "type": "boolean",
+          "default": true
         },
         "default": {
           "type": "string",

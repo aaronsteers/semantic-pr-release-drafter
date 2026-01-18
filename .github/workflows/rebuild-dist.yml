@@ -1,0 +1,119 @@
+name: Rebuild dist/index.js
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'PR Number'
+        type: string
+        required: true
+      comment-id:
+        description: 'Comment ID (Optional)'
+        type: string
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  # Disable Husky git hooks (for local dev only)
+  # https://typicode.github.io/husky/how-to.html#ci-server-and-docker
+  HUSKY: '0'
+
+jobs:
+  rebuild-dist:
+    name: Rebuild dist/index.js
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get PR branch
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ github.event.inputs.pr }}
+            });
+            core.setOutput('ref', pr.data.head.ref);
+            core.setOutput('sha', pr.data.head.sha);
+
+      - name: Append comment with job run link
+        if: ${{ github.event.inputs.comment-id }}
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
+        with:
+          comment-id: ${{ github.event.inputs.comment-id }}
+          issue-number: ${{ github.event.inputs.pr }}
+          body: |
+            > **Rebuild dist/index.js Job Info**
+            >
+            > This job rebuilds the `dist/index.js` file from source and commits the changes.
+            > (This job requires that the PR author has "Allow edits from maintainers" enabled.)
+
+            > Job started... [Check job output.](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build dist/index.js
+        run: npx esbuild action.js --bundle --platform=node --target=node20 --outfile=dist/index.js
+
+      - name: Check for changes
+        id: git-diff
+        run: |
+          if git diff --quiet dist/; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push if needed
+        if: steps.git-diff.outputs.changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add dist/
+          git commit -m "chore: rebuild dist/index.js"
+          git push
+
+      - name: Append success comment
+        if: ${{ github.event.inputs.comment-id && steps.git-diff.outputs.changes == 'true' }}
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
+        with:
+          comment-id: ${{ github.event.inputs.comment-id }}
+          reactions: hooray
+          body: |
+            > Rebuilt and committed `dist/index.js` successfully.
+
+      - name: Append success comment (no-op)
+        if: ${{ github.event.inputs.comment-id && steps.git-diff.outputs.changes != 'true' }}
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
+        with:
+          comment-id: ${{ github.event.inputs.comment-id }}
+          reactions: '+1'
+          body: |
+            > Job completed successfully (no changes needed - `dist/index.js` is already up to date).
+
+      - name: Append failure comment
+        if: ${{ failure() && github.event.inputs.comment-id }}
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
+        with:
+          comment-id: ${{ github.event.inputs.comment-id }}
+          reactions: confused
+          body: |
+            > Job failed. Check the workflow logs for details.

@@ -1,0 +1,183 @@
+name: Integration Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  # Disable Husky git hooks (for local dev only)
+  # https://typicode.github.io/husky/how-to.html#ci-server-and-docker
+  HUSKY: '0'
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test-name: 'simple-feature-bump'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat: add new feature (#80)
+            expected-version-string: '1.1.0'
+            expected-body: |
+              ## Features
+
+              * add new feature (#80)
+
+          - test-name: 'breaking-change-pre-1.0'
+            test-start-version-string: 'v0.9.0'
+            test-commit-list: |
+              feat!: breaking change in pre-1.0 (#81)
+            expected-version-string: '0.10.0'
+            expected-body: |
+              ## Features
+
+              * breaking change in pre-1.0 (#81)
+
+          - test-name: 'multiple-commits-minor-bump'
+            test-start-version-string: 'v2.0.0'
+            test-commit-list: |
+              fix: fix a bug (#82)
+              feat: add another feature (#83)
+              docs: update documentation (#84)
+            expected-version-string: '2.1.0'
+            expected-body: |
+              ## Features
+
+              * add another feature (#83)
+
+              ## Bug Fixes
+
+              * fix a bug (#82)
+
+              ## Documentation
+
+              * update documentation (#84)
+
+    name: ${{ matrix.test-name }}
+    steps:
+      - name: Checkout action code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Create test repository
+        run: |
+          # Create a temporary directory for the test repo
+          TEST_REPO=$(mktemp -d)
+          echo "TEST_REPO=$TEST_REPO" >> $GITHUB_ENV
+
+          cd "$TEST_REPO"
+          git init
+          git config user.email "test@example.com"
+          git config user.name "TestUser"
+
+          # Create initial commit
+          echo "# Test Repo" > README.md
+          git add README.md
+          git commit -m "chore: initial commit"
+
+          # Create initial tag
+          git tag "${{ matrix.test-start-version-string }}"
+
+          # Apply each commit from the list
+          COMMIT_NUM=0
+          while IFS= read -r commit_msg; do
+            # Skip empty lines
+            if [ -z "$commit_msg" ]; then
+              continue
+            fi
+            COMMIT_NUM=$((COMMIT_NUM + 1))
+            echo "Change $COMMIT_NUM" >> README.md
+            git add README.md
+            git commit -m "$commit_msg"
+          done <<< "${{ matrix.test-commit-list }}"
+
+          # Create release-drafter config
+          # Use simplified change-template without $NUMBER/$COMMIT since these are local commits
+          # Include categories to generate section headers (## Features, ## Bug Fixes, etc.)
+          mkdir -p .github
+          echo 'template: |' > .github/release-drafter.yml
+          echo '  $CHANGES' >> .github/release-drafter.yml
+          echo "change-template: '* \$TITLE'" >> .github/release-drafter.yml
+          echo "category-template: '## \$TITLE'" >> .github/release-drafter.yml
+          echo 'categories:' >> .github/release-drafter.yml
+          echo '  - title: Features' >> .github/release-drafter.yml
+          echo '    commit-types:' >> .github/release-drafter.yml
+          echo '      - feat' >> .github/release-drafter.yml
+          echo '  - title: Bug Fixes' >> .github/release-drafter.yml
+          echo '    commit-types:' >> .github/release-drafter.yml
+          echo '      - fix' >> .github/release-drafter.yml
+          echo '  - title: Documentation' >> .github/release-drafter.yml
+          echo '    commit-types:' >> .github/release-drafter.yml
+          echo '      - docs' >> .github/release-drafter.yml
+          echo '  - title: Chores' >> .github/release-drafter.yml
+          echo '    commit-types:' >> .github/release-drafter.yml
+          echo '      - chore' >> .github/release-drafter.yml
+
+      - name: Run release-drafter in dry-run mode
+        id: release-drafter
+        uses: ./
+        with:
+          dry-run: 'true'
+          config-name: 'release-drafter.yml'
+          local-git-root: ${{ env.TEST_REPO }}
+          base-ref-override: ${{ matrix.test-start-version-string }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: refs/heads/main
+
+      - name: Verify resolved version
+        run: |
+          RESOLVED_VERSION="${{ steps.release-drafter.outputs.resolved_version }}"
+          EXPECTED_VERSION="${{ matrix.expected-version-string }}"
+
+          echo "Resolved version: $RESOLVED_VERSION"
+          echo "Expected version: $EXPECTED_VERSION"
+
+          if [ "$RESOLVED_VERSION" != "$EXPECTED_VERSION" ]; then
+            echo "::error::Version mismatch! Expected $EXPECTED_VERSION but got $RESOLVED_VERSION"
+            exit 1
+          fi
+
+          echo "Version check passed!"
+
+      - name: Verify changelog body matches expected output
+        run: |
+          BODY="${{ steps.release-drafter.outputs.body }}"
+          EXPECTED_BODY=$(cat << 'EXPECTED_EOF'
+          ${{ matrix.expected-body }}
+          EXPECTED_EOF
+          )
+
+          # Normalize whitespace for comparison (trim leading/trailing, normalize newlines)
+          BODY_NORMALIZED=$(echo "$BODY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -s '\n')
+          EXPECTED_NORMALIZED=$(echo "$EXPECTED_BODY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -s '\n')
+
+          echo "=== Actual changelog body ==="
+          echo "$BODY"
+          echo ""
+          echo "=== Expected changelog body ==="
+          echo "$EXPECTED_BODY"
+          echo ""
+
+          if [ "$BODY_NORMALIZED" != "$EXPECTED_NORMALIZED" ]; then
+            echo "::error::Changelog body does not match expected output"
+            echo ""
+            echo "=== Diff (expected vs actual) ==="
+            diff <(echo "$EXPECTED_NORMALIZED") <(echo "$BODY_NORMALIZED") || true
+            exit 1
+          fi
+
+          echo "Changelog body check passed!"

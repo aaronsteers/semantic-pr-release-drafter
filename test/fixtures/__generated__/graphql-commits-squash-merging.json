@@ -12,7 +12,7 @@
             {
               "id": "MDY6Q29tbWl0MTgzNzY2OTUzOjNmMzdkODVkNmY4YmM5ZTQ1NmE5MzYwMGQxNjQ4ZmU4MTMxNmFjN2M=",
               "committedDate": "2019-04-27T13:39:23Z",
-              "message": "Add documentation (#15)\n\n* Add documentation\r\n\r\n* Fix typo",
+              "message": "docs: add documentation (#15)\n\n* Add documentation\r\n\r\n* Fix typo",
               "author": {
                 "name": "Timon van Spronsen",
                 "user": {
@@ -53,7 +53,7 @@
             {
               "id": "MDY6Q29tbWl0MTgzNzY2OTUzOmViMmVjZjc4YjNjZGI0Y2VlMzc2MmZkZmQ0MjY2MmMwNWM3MzQzZTM=",
               "committedDate": "2019-04-27T13:39:17Z",
-              "message": "Update dependencies (#14)\n\n* Update Express to 4.16.4\r\n\r\n* Update Mongoose to 5.5.4",
+              "message": "chore: update dependencies (#14)\n\n* Update Express to 4.16.4\r\n\r\n* Update Mongoose to 5.5.4",
               "author": {
                 "name": "Timon van Spronsen",
                 "user": {
@@ -90,7 +90,7 @@
             {
               "id": "MDY6Q29tbWl0MTgzNzY2OTUzOjc5Zjc4ODBmMTU1ZWU3ZGZkZGUxNmVlMTFmYTMwZmFhMDljODhlMjU=",
               "committedDate": "2019-04-27T13:39:10Z",
-              "message": "Bug fixes (#13)\n\n* Fixed a bug\r\n\r\n* Fixed another bug",
+              "message": "fix: bug fixes (#13)\n\n* Fixed a bug\r\n\r\n* Fixed another bug",
               "author": {
                 "name": "Timon van Spronsen",
                 "user": {
@@ -134,7 +134,7 @@
             {
               "id": "MDY6Q29tbWl0MTgzNzY2OTUzOmUyMTZhODViOGNlMzU2MzRkN2IyMGNlMjU5YmRmZTA4ZjFhMGJiZGI=",
               "committedDate": "2019-04-27T13:39:03Z",
-              "message": "Add big feature (#12)\n\n* Add big feature\r\n\r\n* Adjust parameters",
+              "message": "feat: add big feature (#12)\n\n* Add big feature\r\n\r\n* Adjust parameters",
               "author": {
                 "name": "Timon van Spronsen",
                 "user": {
@@ -178,7 +178,7 @@
             {
               "id": "MDY6Q29tbWl0MTgzNzY2OTUzOmQzNmM3YmU4OTBlOGEwYzY3NWYyNzUzMDk0YzYyNmQyN2RiOWI5NmM=",
               "committedDate": "2019-04-27T13:38:46Z",
-              "message": "Add alien technology (#11)",
+              "message": "feat: add alien technology (#11)",
               "author": {
                 "name": "Timon van Spronsen",
                 "user": {

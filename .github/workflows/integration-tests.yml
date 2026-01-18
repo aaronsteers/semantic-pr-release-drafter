@@ -138,10 +138,3 @@ jobs:
           fi
 
           echo "Changelog body check passed!"
-
-      - name: Cleanup
-        if: always()
-        run: |
-          if [ -n "$TEST_REPO" ] && [ -d "$TEST_REPO" ]; then
-            rm -rf "$TEST_REPO"
-          fi

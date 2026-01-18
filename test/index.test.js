@@ -223,20 +223,20 @@ describe('release-drafter', () => {
 
                   ## Features
 
-                  * add big feature (MDY6Q29) (#2) @TimonVS
-                  * add alien technology (MDY6Q29) (#1) @TimonVS
+                  * add big feature () (#2) @TimonVS
+                  * add alien technology () (#1) @TimonVS
 
                   ## Bug Fixes
 
-                  * bug fixes (MDY6Q29) (#3) @TimonVS
+                  * bug fixes () (#3) @TimonVS
 
                   ## Documentation
 
-                  * add documentation (MDY6Q29) (#5) @TimonVS
+                  * add documentation () (#5) @TimonVS
 
                   ## Chores
 
-                  * update dependencies (MDY6Q29) (#4) @TimonVS
+                  * update dependencies () (#4) @TimonVS
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -284,20 +284,20 @@ describe('release-drafter', () => {
                   "body": "Changes:
                 ## Features
 
-                * add big feature (MDY6Q29) (#2) @TimonVS
-                * add alien technology (MDY6Q29) (#1) @TimonVS
+                * add big feature () (#2) @TimonVS
+                * add alien technology () (#1) @TimonVS
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#3) @TimonVS
+                * bug fixes () (#3) @TimonVS
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#5) @TimonVS
+                * add documentation () (#5) @TimonVS
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#4) @TimonVS
+                * update dependencies () (#4) @TimonVS
 
                 Previous tag: ''
                 ",
@@ -351,20 +351,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#2) @TimonVS
-                * add alien technology (MDY6Q29) (#1) @TimonVS
+                * add big feature () (#2) @TimonVS
+                * add alien technology () (#1) @TimonVS
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#3) @TimonVS
+                * bug fixes () (#3) @TimonVS
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#5) @TimonVS
+                * add documentation () (#5) @TimonVS
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#4) @TimonVS
+                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -416,20 +416,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#2) @TimonVS
-                * add alien technology (MDY6Q29) (#1) @TimonVS
+                * add big feature () (#2) @TimonVS
+                * add alien technology () (#1) @TimonVS
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#3) @TimonVS
+                * bug fixes () (#3) @TimonVS
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#5) @TimonVS
+                * add documentation () (#5) @TimonVS
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#4) @TimonVS
+                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -931,20 +931,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#2) @TimonVS
-                * add alien technology (MDY6Q29) (#1) @TimonVS
+                * add big feature () (#2) @TimonVS
+                * add alien technology () (#1) @TimonVS
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#3) @TimonVS
+                * bug fixes () (#3) @TimonVS
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#5) @TimonVS
+                * add documentation () (#5) @TimonVS
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#4) @TimonVS
+                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -993,20 +993,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#2) @TimonVS
-                * add alien technology (MDY6Q29) (#1) @TimonVS
+                * add big feature () (#2) @TimonVS
+                * add alien technology () (#1) @TimonVS
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#3) @TimonVS
+                * bug fixes () (#3) @TimonVS
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#5) @TimonVS
+                * add documentation () (#5) @TimonVS
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#4) @TimonVS
+                * update dependencies () (#4) @TimonVS
 
                 **Full Changelog**: https://github.com/toolmantim/release-drafter-test-project/compare/v2.0.0...v2.1.0
                 ",
@@ -1057,20 +1057,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#2) @TimonVS
-                * add alien technology (MDY6Q29) (#1) @TimonVS
+                * add big feature () (#2) @TimonVS
+                * add alien technology () (#1) @TimonVS
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#3) @TimonVS
+                * bug fixes () (#3) @TimonVS
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#5) @TimonVS
+                * add documentation () (#5) @TimonVS
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#4) @TimonVS
+                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1117,20 +1117,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#2) @TimonVS
-                * add alien technology (MDY6Q29) (#1) @TimonVS
+                * add big feature () (#2) @TimonVS
+                * add alien technology () (#1) @TimonVS
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#3) @TimonVS
+                * bug fixes () (#3) @TimonVS
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#5) @TimonVS
+                * add documentation () (#5) @TimonVS
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#4) @TimonVS
+                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1177,20 +1177,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#2) @TimonVS
-                * add alien technology (MDY6Q29) (#1) @TimonVS
+                * add big feature () (#2) @TimonVS
+                * add alien technology () (#1) @TimonVS
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#3) @TimonVS
+                * bug fixes () (#3) @TimonVS
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#5) @TimonVS
+                * add documentation () (#5) @TimonVS
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#4) @TimonVS
+                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1237,20 +1237,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#19) @jetersen
-                * add alien technology (MDY6Q29) (#18) @jetersen
+                * add big feature () (#19) @jetersen
+                * add alien technology () (#18) @jetersen
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#20) @jetersen
+                * bug fixes () (#20) @jetersen
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#22) @jetersen
+                * add documentation () (#22) @jetersen
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#21) @jetersen
+                * update dependencies () (#21) @jetersen
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1297,20 +1297,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#19) @jetersen
-                * add alien technology (MDY6Q29) (#18) @jetersen
+                * add big feature () (#19) @jetersen
+                * add alien technology () (#18) @jetersen
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#20) @jetersen
+                * bug fixes () (#20) @jetersen
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#22) @jetersen
+                * add documentation () (#22) @jetersen
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#21) @jetersen
+                * update dependencies () (#21) @jetersen
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1357,20 +1357,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#2) @TimonVS
-                * add alien technology (MDY6Q29) (#1) @TimonVS
+                * add big feature () (#2) @TimonVS
+                * add alien technology () (#1) @TimonVS
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#3) @TimonVS
+                * bug fixes () (#3) @TimonVS
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#5) @TimonVS
+                * add documentation () (#5) @TimonVS
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#4) @TimonVS
+                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1419,20 +1419,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#2) @TimonVS
-                * add alien technology (MDY6Q29) (#1) @TimonVS
+                * add big feature () (#2) @TimonVS
+                * add alien technology () (#1) @TimonVS
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#3) @TimonVS
+                * bug fixes () (#3) @TimonVS
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#5) @TimonVS
+                * add documentation () (#5) @TimonVS
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#4) @TimonVS
+                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1836,20 +1836,20 @@ describe('release-drafter', () => {
 
                   ## Features
 
-                  * add big feature (MDY6Q29) (#2) @TimonVS
-                  * add alien technology (MDY6Q29) (#1) @TimonVS
+                  * add big feature () (#2) @TimonVS
+                  * add alien technology () (#1) @TimonVS
 
                   ## Bug Fixes
 
-                  * bug fixes (MDY6Q29) (#3) @TimonVS
+                  * bug fixes () (#3) @TimonVS
 
                   ## Documentation
 
-                  * add documentation (MDY6Q29) (#5) @TimonVS
+                  * add documentation () (#5) @TimonVS
 
                   ## Chores
 
-                  * update dependencies (MDY6Q29) (#4) @TimonVS
+                  * update dependencies () (#4) @TimonVS
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -1901,24 +1901,24 @@ describe('release-drafter', () => {
 
                   ## Features
 
-                  * adjust parameters (MDY6Q29) (#7) @TimonVS
-                  * add big feature (MDY6Q29) (#7) @TimonVS
-                  * add alien technology (MDY6Q29) (#6) @TimonVS
+                  * adjust parameters () (#7) @TimonVS
+                  * add big feature () (#7) @TimonVS
+                  * add alien technology () (#6) @TimonVS
 
                   ## Bug Fixes
 
-                  * fixed another bug (MDY6Q29) (#8) @TimonVS
-                  * fixed a bug (MDY6Q29) (#8) @TimonVS
+                  * fixed another bug () (#8) @TimonVS
+                  * fixed a bug () (#8) @TimonVS
 
                   ## Documentation
 
-                  * fix typo (MDY6Q29) (#10) @TimonVS
-                  * add documentation (MDY6Q29) (#10) @TimonVS
+                  * fix typo () (#10) @TimonVS
+                  * add documentation () (#10) @TimonVS
 
                   ## Chores
 
-                  * update Mongoose to 5.5.4 (MDY6Q29) (#9) @TimonVS
-                  * update Express to 4.16.4 (MDY6Q29) (#9) @TimonVS
+                  * update Mongoose to 5.5.4 () (#9) @TimonVS
+                  * update Express to 4.16.4 () (#9) @TimonVS
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -1970,20 +1970,20 @@ describe('release-drafter', () => {
 
                   ## Features
 
-                  * add big feature (MDY6Q29) (#12) @TimonVS
-                  * add alien technology (MDY6Q29) (#11) @TimonVS
+                  * add big feature () (#12) @TimonVS
+                  * add alien technology () (#11) @TimonVS
 
                   ## Bug Fixes
 
-                  * bug fixes (MDY6Q29) (#13) @TimonVS
+                  * bug fixes () (#13) @TimonVS
 
                   ## Documentation
 
-                  * add documentation (MDY6Q29) (#15) @TimonVS
+                  * add documentation () (#15) @TimonVS
 
                   ## Chores
 
-                  * update dependencies (MDY6Q29) (#14) @TimonVS
+                  * update dependencies () (#14) @TimonVS
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2033,19 +2033,19 @@ describe('release-drafter', () => {
 
                   ## Features
 
-                  * add big feature (MDY6Q29) (#12) @TimonVS
+                  * add big feature () (#12) @TimonVS
 
                   ## Bug Fixes
 
-                  * bug fixes (MDY6Q29) (#13) @TimonVS
+                  * bug fixes () (#13) @TimonVS
 
                   ## Documentation
 
-                  * add documentation (MDY6Q29) (#15) @TimonVS
+                  * add documentation () (#15) @TimonVS
 
                   ## Chores
 
-                  * update dependencies (MDY6Q29) (#14) @TimonVS
+                  * update dependencies () (#14) @TimonVS
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2094,26 +2094,26 @@ describe('release-drafter', () => {
 
                   ## Features
 
-                  * add big feature (MDY6Q29) (#24) @jetersen
-                  * add alien technology (MDY6Q29) (#23) @jetersen
-                  * add alien technology (MDY6Q29) (#1) @TimonVS
+                  * add big feature () (#24) @jetersen
+                  * add alien technology () (#23) @jetersen
+                  * add alien technology () (#1) @TimonVS
 
                   ## Bug Fixes
 
-                  * fixed another bug (MDY6Q29) (#25) @jetersen
-                  * fixed a bug (MDY6Q29) (#25) @jetersen
+                  * fixed another bug () (#25) @jetersen
+                  * fixed a bug () (#25) @jetersen
 
                   ## Documentation
 
-                  * add documentation (MDY6Q29) (#28) @jetersen
-                  * fix typo (MDY6Q29) (#5) @TimonVS
-                  * add documentation (MDY6Q29) (#5) @TimonVS
+                  * add documentation () (#28) @jetersen
+                  * fix typo () (#5) @TimonVS
+                  * add documentation () (#5) @TimonVS
 
                   ## Chores
 
-                  * update dependencies (MDY6Q29) (#27) @jetersen
-                  * update Mongoose to 5.5.4 (MDY6Q29) (#4) @TimonVS
-                  * update Express to 4.16.4 (MDY6Q29) (#4) @TimonVS
+                  * update dependencies () (#27) @jetersen
+                  * update Mongoose to 5.5.4 () (#4) @TimonVS
+                  * update Express to 4.16.4 () (#4) @TimonVS
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2218,20 +2218,20 @@ describe('release-drafter', () => {
 
                 ## Features
 
-                * add big feature (MDY6Q29) (#2) @TimonVS
-                * add alien technology (MDY6Q29) (#1) @TimonVS
+                * add big feature () (#2) @TimonVS
+                * add alien technology () (#1) @TimonVS
 
                 ## Bug Fixes
 
-                * bug fixes (MDY6Q29) (#3) @TimonVS
+                * bug fixes () (#3) @TimonVS
 
                 ## Documentation
 
-                * add documentation (MDY6Q29) (#5) @TimonVS
+                * add documentation () (#5) @TimonVS
 
                 ## Chores
 
-                * update dependencies (MDY6Q29) (#4) @TimonVS
+                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -2395,20 +2395,20 @@ describe('release-drafter', () => {
                 "body": "# What's Changed
               ## Features
 
-              * add big feature (MDY6Q29) (#2) @TimonVS
-              * add alien technology (MDY6Q29) (#1) @TimonVS
+              * add big feature () (#2) @TimonVS
+              * add alien technology () (#1) @TimonVS
 
               ## Bug Fixes
 
-              * bug fixes (MDY6Q29) (#3) @TimonVS
+              * bug fixes () (#3) @TimonVS
 
               ## Documentation
 
-              * add documentation (MDY6Q29) (#5) @TimonVS
+              * add documentation () (#5) @TimonVS
 
               ## Chores
 
-              * update dependencies (MDY6Q29) (#4) @TimonVS
+              * update dependencies () (#4) @TimonVS
               ",
                 "draft": true,
                 "make_latest": "true",

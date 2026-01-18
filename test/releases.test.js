@@ -3,7 +3,7 @@ const { DEFAULT_CONFIG } = require('../lib/default-config')
 
 // Helper to create commits with semantic messages and associated PRs
 const createCommit = (message, prNumber, author = null, commitSha = null) => ({
-  id: commitSha || `sha${prNumber}`,
+  oid: commitSha || `sha${prNumber}`,
   message,
   associatedPullRequests: {
     nodes: [

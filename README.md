@@ -2,31 +2,44 @@
   <img src="design/logo.svg" alt="Release Drafter Logo" width="450" />
 </h1>
 
-<p align="center">Drafts your next release notes as pull requests are merged into master. Built with <a href="https://github.com/probot/probot">Probot</a>.</p>
+<p align="center">Drafts your next release notes based on semantic commit messages. No labels required.</p>
+
+---
+
+## About This Fork
+
+This is a fork of [release-drafter/release-drafter](https://github.com/release-drafter/release-drafter) that replaces label-based categorization and version resolution with **semantic commit-based** logic.
+
+### Key Differences from Upstream
+
+This fork automatically categorizes changes and determines version bumps based on [Conventional Commits](https://www.conventionalcommits.org/) format (`type(scope): description`):
+
+- **Breaking changes** (`feat!:`, `fix!:`, or commits with `BREAKING CHANGE:` in the body) trigger a major version bump (or minor if pre-1.0)
+- **Features** (`feat:`) trigger a minor version bump
+- **Fixes** (`fix:`) trigger a patch version bump
+- **Other types** (`docs:`, `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`, `style:`) are categorized but don't affect version
+
+### Removed Features
+
+The following upstream features have been removed as they are no longer needed:
+
+- **Autolabeler** - Labels are not used for categorization
+- **Label-based version resolver** - Version is determined by commit types
+- **Label-based categorization** - Categories are determined by commit types
 
 ---
 
 ## Usage
 
-You can use the [Release Drafter GitHub Action](https://github.com/marketplace/actions/release-drafter) in a [GitHub Actions Workflow](https://help.github.com/en/actions/about-github-actions) by configuring a YAML-based workflow file, e.g. `.github/workflows/release-drafter.yml`, with the following:
+You can use this action in a [GitHub Actions Workflow](https://help.github.com/en/actions/about-github-actions) by configuring a YAML-based workflow file, e.g. `.github/workflows/release-drafter.yml`, with the following:
 
 ```yaml
 name: Release Drafter
 
 on:
   push:
-    # branches to consider in the event; optional, defaults to all
     branches:
       - main
-      - master
-
-  # pull_request event is required only for autolabeler
-  pull_request:
-    # Only following types are handled by the action, but one can default to all as well
-    types: [opened, reopened, synchronize]
-  # pull_request_target event is required for autolabeler to support PRs from forks
-  # pull_request_target:
-  #   types: [opened, reopened, synchronize]
 
 permissions:
   contents: read
@@ -34,29 +47,13 @@ permissions:
 jobs:
   update_release_draft:
     permissions:
-      # write permission is required to create a github release
       contents: write
-      # write permission is required for autolabeler
-      # otherwise, read permission is required at least
-      pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      # (Optional) GitHub Enterprise requires GHE_HOST variable set
-      #- name: Set GHE_HOST
-      #  run: |
-      #    echo "GHE_HOST=${GITHUB_SERVER_URL##https:\/\/}" >> $GITHUB_ENV
-
-      # Drafts your next Release notes as Pull Requests are merged into "master"
-      - uses: release-drafter/release-drafter@v6
-        # (Optional) specify config name to use, relative to .github/. Default: release-drafter.yml
-        # with:
-        #   config-name: my-config.yml
-        #   disable-autolabeler: true
+      - uses: aaronsteers/semantic-pr-release-drafter@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
-
-If you're unable to use GitHub Actions, you can use the Release Drafter GitHub App. Please refer to the [Release Drafter GitHub App documentation](docs/github-app.md) for more information.
 
 ## Configuration
 
@@ -77,41 +74,20 @@ As pull requests are merged, a draft release is kept up-to-date listing the chan
 
 <img src="design/screenshot.png" alt="Screenshot of generated draft release" width="586" />
 
-The following is a more complicated configuration, which categorises the changes into headings, and automatically suggests the next version number:
+The following is a more complete configuration example:
 
 ```yml
-name-template: 'v$RESOLVED_VERSION 🌈'
+name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
-categories:
-  - title: '🚀 Features'
-    labels:
-      - 'feature'
-      - 'enhancement'
-  - title: '🐛 Bug Fixes'
-    labels:
-      - 'fix'
-      - 'bugfix'
-      - 'bug'
-  - title: '🧰 Maintenance'
-    label: 'chore'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
-change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
-version-resolver:
-  major:
-    labels:
-      - 'major'
-  minor:
-    labels:
-      - 'minor'
-  patch:
-    labels:
-      - 'patch'
-  default: patch
+change-title-escapes: '\<*_&'
 template: |
   ## Changes
 
   $CHANGES
 ```
+
+Note: Version resolution and categorization are handled automatically based on semantic commit types. No labels or version-resolver configuration needed.
 
 ## Configuration Options
 
@@ -191,27 +167,16 @@ You can use any of the following variables in `version-template` to format the `
 | `$MAJOR`    | The major version number.                                    |
 | `$COMPLETE` | The complete version string (including any prerelease info). |
 
-## Version Resolver
+## Version Resolution
 
-With the `version-resolver` option version number incrementing can be resolved automatically based on labels of individual pull requests. Append the following to your `.github/release-drafter.yml` file:
+Version bumps are automatically determined based on semantic commit types:
 
-```yml
-version-resolver:
-  major:
-    labels:
-      - 'major'
-  minor:
-    labels:
-      - 'minor'
-  patch:
-    labels:
-      - 'patch'
-  default: patch
-```
+- **Breaking changes** (`feat!:`, `fix!:`, or commits with `BREAKING CHANGE:` in the body) trigger a major version bump (or minor if pre-1.0)
+- **Features** (`feat:`) trigger a minor version bump
+- **Fixes** (`fix:`) trigger a patch version bump
+- **Other types** (`docs:`, `chore:`, `refactor:`, etc.) don't affect version
 
-The above config controls the output of the `$RESOLVED_VERSION` variable.
-
-If a pull requests is found with the label `major`/`minor`/`patch`, the corresponding version key will be incremented from a semantic version. The maximum out of major, minor and patch found in any of the pull requests will be used to increment the version number. If no pull requests are found with the assigned labels, the `default` will be assigned.
+The `$RESOLVED_VERSION` variable reflects the calculated next version based on these rules.
 
 ## Change Template Variables
 
@@ -221,10 +186,9 @@ You can use any of the following variables in `change-template`:
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `$NUMBER`        | The number of the pull request, e.g. `42`.                                                                                                                                                                                                                                                                                                                                             |
 | `$TITLE`         | The title of the pull request, e.g. `Add alien technology`. Any characters excluding @ and # matching `change-title-escapes` will be prepended with a backslash so that they will appear verbatim instead of being interpreted as markdown format characters. @s and #s if present in `change-title-escapes` will be appended with an HTML comment so that they don't become mentions. |
-| `$AUTHOR`        | The pull request author’s username, e.g. `gracehopper`.                                                                                                                                                                                                                                                                                                                                |
-| `$BODY`          | The body of the pull request e.g. `Fixed spelling mistake`.                                                                                                                                                                                                                                                                                                                            |
-| `$URL`           | The URL of the pull request e.g. `https://github.com/octocat/repo/pull/42`.                                                                                                                                                                                                                                                                                                            |
-| `$BASE_REF_NAME` | The base name of of the base Ref associated with the pull request e.g. `master`.                                                                                                                                                                                                                                                                                                       |
+| `$AUTHOR`        | The pull request author's username, e.g. `gracehopper`.                                                                                                                                                                                                                                                                                                                                |
+| `$COMMIT`        | The short commit SHA, e.g. `abc1234`.                                                                                                                                                                                                                                                                                                                                                  |
+| `$BASE_REF_NAME` | The base name of of the base Ref associated with the pull request e.g. `main`.                                                                                                                                                                                                                                                                                                         |
 | `$HEAD_REF_NAME` | The head name of the head Ref associated with the pull request e.g. `my-bug-fix`.                                                                                                                                                                                                                                                                                                      |
 
 ## References
@@ -242,36 +206,26 @@ references:
 
 Currently matching against any `ref/heads/` and `ref/tags/` references behind the scene
 
-## Categorize Pull Requests
+## Categorize Changes
 
-With the `categories` option you can categorize pull requests in release notes using labels. For example, append the following to your `.github/release-drafter.yml` file:
+Changes are automatically categorized based on semantic commit types. The default categories are:
+
+- **Breaking Changes** - commits with `!` suffix or `BREAKING CHANGE:` in body
+- **Features** - `feat:` commits
+- **Bug Fixes** - `fix:` commits
+- **Documentation** - `docs:` commits
+- **Maintenance** - `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`, `style:` commits
+
+You can customize category titles in your `release-drafter.yml` using the `categories` option with `commit-types` instead of `labels`:
 
 ```yml
 categories:
-  - title: '🚀 Features'
-    label: 'feature'
-  - title: '🐛 Bug Fixes'
-    labels:
+  - title: 'New Features'
+    commit-types:
+      - 'feat'
+  - title: 'Bug Fixes'
+    commit-types:
       - 'fix'
-      - 'bugfix'
-      - 'bug'
-```
-
-Pull requests with the label "feature" or "fix" will now be grouped together:
-
-<img src="design/screenshot-2.png" alt="Screenshot of generated draft release with categories" width="586" />
-
-Adding such labels to your PRs can be automated by using the embedded Autolabeler functionality (see below),
-[PR Labeler](https://github.com/TimonVS/pr-labeler-action) or [Probot Auto Labeler](https://github.com/probot/autolabeler).
-
-Optionally you can add a `collapse-after` entry to your category item, if the category has more than the defined `collapse-after` pull requests then it will show all pull requests collapsed for that category. Append the `collapse-after` integer to your category as following:
-
-```yml
-categories:
-  - title: '⬆️ Dependencies'
-    collapse-after: 3
-    labels:
-      - 'dependencies'
 ```
 
 ## Exclude Pull Requests
@@ -317,30 +271,6 @@ replacers:
     replace: 'My Name'
 ```
 
-## Autolabeler
-
-You can add automatically a label into a pull request, with the `autolabeler` option. Available matchers are `files` (glob), `branch` (regex), `title` (regex) and `body` (regex).
-Matchers are evaluated independently; the label will be set if at least one of the matchers meets the criteria.
-
-```yml
-autolabeler:
-  - label: 'chore'
-    files:
-      - '*.md'
-    branch:
-      - '/docs{0,1}\/.+/'
-  - label: 'bug'
-    branch:
-      - '/fix\/.+/'
-    title:
-      - '/fix/i'
-  - label: 'enhancement'
-    branch:
-      - '/feature\/.+/'
-    body:
-      - '/JIRA-[0-9]{1,4}/'
-```
-
 ## Prerelease increment
 
 When creating prerelease (`prerelease: true`), you can add a prerelease identifier to increment the prerelease version number, with the `prerelease-identifier` option. It accept any string, but it's recommended to use [Semantic Versioning](https://semver.org/) prerelease identifiers (alpha, beta, rc, etc).
@@ -359,42 +289,26 @@ For example, if your project doesn't use patch version numbers, you can set `ver
 
 ## Action Inputs
 
-The Release Drafter GitHub Action accepts a number of optional inputs directly in your workflow configuration. These will typically override default behavior specified in your `release-drafter.yml` config.
-
-| Input                   | Description                                                                                                                                                                                                                                                                                                                                                        |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `config-name`           | If your workflow requires multiple release-drafter configs it be helpful to override the config-name. The config should still be located inside `.github` as that's where we are looking for config files.                                                                                                                                                         |
-| `name`                  | The name that will be used in the GitHub release that's created or updated. This will override any `name-template` specified in your `release-drafter.yml` if defined.                                                                                                                                                                                             |
-| `tag`                   | The tag name to be associated with the GitHub release that's created or updated. This will override any `tag-template` specified in your `release-drafter.yml` if defined.                                                                                                                                                                                         |
-| `version`               | The version to be associated with the GitHub release that's created or updated. This will override any version calculated by the release-drafter.                                                                                                                                                                                                                  |
-| `publish`               | A boolean indicating whether the release being created or updated should be immediately published. This may be useful if the output of a previous workflow step determines that a new version of your project has been (or will be) released, as with [`salsify/action-detect-and-tag-new-version`](https://github.com/salsify/action-detect-and-tag-new-version). |
-| `prerelease`            | A boolean indicating whether the release being created or updated is a prerelease.                                                                                                                                                                                                                                                                                 |
-| `prerelease-identifier` | A string indicating an identifier (alpha, beta, rc, etc), to increment the prerelease version. number                                                                                                                                                                                                                                                              |
-| `latest`                | A string indicating whether the release being created or updated should be marked as latest.                                                                                                                                                                                                                                                                       |
-| `commitish`             | A string specifying the target branch for the release being created.                                                                                                                                                                                                                                                                                               |
-| `header`                | A string that would be added before the template body.                                                                                                                                                                                                                                                                                                             |
-| `footer`                | A string that would be added after the template body.                                                                                                                                                                                                                                                                                                              |
+See [action.yml](action.yml) for the full list of supported inputs and their descriptions.
 
 ## Action Outputs
 
-The Release Drafter GitHub Action sets a couple of outputs which can be used as inputs to other Actions in the workflow ([example](https://github.com/actions/upload-release-asset#example-workflow---upload-a-release-asset)).
+The action sets the following outputs which can be used in subsequent workflow steps:
 
-| Output             | Description                                                                                                                                                                                                                   |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`               | The ID of the release that was created or updated.                                                                                                                                                                            |
-| `name`             | The name of this release.                                                                                                                                                                                                     |
-| `tag_name`         | The name of the tag associated with this release.                                                                                                                                                                             |
-| `body`             | The body of the drafted release, useful if it needs to be included in files.                                                                                                                                                  |
-| `html_url`         | The URL users can navigate to in order to view the release. i.e. `https://github.com/octocat/Hello-World/releases/v1.0.0`.                                                                                                    |
-| `upload_url`       | The URL for uploading assets to the release, which could be used by GitHub Actions for additional uses, for example the [`@actions/upload-release-asset GitHub Action`](https://www.github.com/actions/upload-release-asset). |
-| `resolved_version` | Version resolved by [Version Resolver](#version-resolver). i.e. `6.3.1`                                                                                                                                                       |
-| `major_version`    | Major part of resolved version by [Version Resolver](#version-resolver). i.e. `6` for version `6.3.1`                                                                                                                         |
-| `minor_version`    | Minor part of resolved version by [Version Resolver](#version-resolver). i.e. `3` for version `6.3.1`                                                                                                                         |
-| `patch_version`    | Patch part of resolved version by [Version Resolver](#version-resolver). i.e. `1` for version `6.3.1`                                                                                                                         |
+| Output             | Description                                                          |
+| ------------------ | -------------------------------------------------------------------- |
+| `id`               | The ID of the release that was created or updated.                   |
+| `name`             | The name of this release.                                            |
+| `tag_name`         | The name of the tag associated with this release.                    |
+| `body`             | The body of the drafted release.                                     |
+| `html_url`         | The URL to view the release.                                         |
+| `upload_url`       | The URL for uploading assets to the release.                         |
+| `resolved_version` | The calculated next version based on semantic commits, e.g. `6.3.1`. |
+| `major_version`    | Major part of resolved version, e.g. `6` for version `6.3.1`.        |
+| `minor_version`    | Minor part of resolved version, e.g. `3` for version `6.3.1`.        |
+| `patch_version`    | Patch part of resolved version, e.g. `1` for version `6.3.1`.        |
 
 ## Developing
-
-If you have Node v10+ installed locally, you can run the tests, and a local app, using the following commands:
 
 ```sh
 # Install dependencies
@@ -403,17 +317,8 @@ yarn install
 # Run the tests
 yarn test
 
-# Run the app locally
+# Run tests in watch mode
 yarn test:watch
-```
-
-Once you've started the app, visit `localhost:3000` and you'll get [step-by-step instructions](https://probot.github.io/docs/development/#configuring-a-github-app) for installing it in your GitHub account so you can start pushing commits and testing it locally.
-
-If you don’t have Node installed, you can use [Docker Compose](https://docs.docker.com/compose/):
-
-```sh
-# Run the tests
-docker compose run --rm app
 ```
 
 ## Contributing
@@ -431,12 +336,12 @@ If you want to deploy your own copy of Release Drafter, follow the [Probot Deplo
 Run the following command:
 
 ```bash
-git checkout master && git pull && npm version [major | minor | patch]
+git checkout main && git pull && npm version [major | minor | patch]
 ```
 
 The command does the following:
 
-- Ensures you’re on master and don’t have local, un-commited changes
+- Ensures you're on main and don't have local, uncommitted changes
 - Bumps the version number in [package.json](package.json) based on major, minor or patch
 - Runs the `postversion` npm script in [package.json](package.json), which:
   - Runs test

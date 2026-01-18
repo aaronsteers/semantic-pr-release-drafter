@@ -14,6 +14,8 @@ jobs:
     steps:
       # Use local action (dogfooding)
       - uses: aaronsteers/semantic-pr-release-drafter@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # The following config is commented out because it now matches the defaults.
         # It is kept here as an example of how to customize the action.
         # with:
@@ -53,5 +55,3 @@ jobs:
         #         - 'ci'
         #         - 'build'
         #         - 'test'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

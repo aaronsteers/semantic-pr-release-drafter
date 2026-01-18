@@ -93,6 +93,34 @@ jobs:
                   commit-types:
                     - chore
 
+          # Test inline config inputs (no config file needed)
+          - test-name: 'inline-config-inputs'
+            test-start-version-string: 'v3.0.0'
+            test-commit-list: |
+              feat: inline feature (#100)
+              fix: inline bugfix (#101)
+            expected-version-string: '3.1.0'
+            expected-body: |
+              ## Inline Features
+
+              * inline feature (#100)
+
+              ## Inline Fixes
+
+              * inline bugfix (#101)
+            use-inline-config: true
+            inline-template: |
+              $CHANGES
+            inline-change-template: '* $TITLE (#$NUMBER)'
+            inline-category-template: '## $TITLE'
+            inline-categories: |
+              - title: Inline Features
+                commit-types:
+                  - feat
+              - title: Inline Fixes
+                commit-types:
+                  - fix
+
     name: ${{ matrix.test-name }}
     steps:
       - name: Checkout action code

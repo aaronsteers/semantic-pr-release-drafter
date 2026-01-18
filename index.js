@@ -15,6 +15,7 @@ const { sortPullRequests } = require('./lib/sort-pull-requests')
 const { log } = require('./lib/log')
 const core = require('@actions/core')
 const { runnerIsActions } = require('./lib/utils')
+const { manageReleaseAssets } = require('./lib/assets')
 
 module.exports = (app, { getRouter }) => {
   if (!runnerIsActions() && typeof getRouter === 'function') {
@@ -132,7 +133,7 @@ module.exports = (app, { getRouter }) => {
       message: `Processing ${sortedMergedPullRequests.length} merged pull requests`,
     })
 
-    const { shouldDraft, version, tag, name, dryRun } = input
+    const { shouldDraft, version, tag, name, dryRun, attachFiles } = input
 
     const releaseInfo = generateReleaseInfo({
       context,
@@ -179,6 +180,17 @@ module.exports = (app, { getRouter }) => {
       })
     }
 
+    const releaseId = createOrUpdateReleaseResponse.data.id
+
+    if (attachFiles) {
+      log({ context, message: 'Managing release assets...' })
+      await manageReleaseAssets({
+        context,
+        releaseId,
+        attachFilesInput: attachFiles,
+      })
+    }
+
     if (runnerIsActions()) {
       setActionOutput(createOrUpdateReleaseResponse, releaseInfo)
     }
@@ -211,6 +223,7 @@ function getInput() {
         : undefined,
     preReleaseIdentifier: core.getInput('prerelease-identifier') || undefined,
     latest: core.getInput('latest')?.toLowerCase() || undefined,
+    attachFiles: core.getInput('attach-files') || undefined,
   }
 }
 

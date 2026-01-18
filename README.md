@@ -364,6 +364,97 @@ If your project doesn't follow [Semantic Versioning](https://semver.org) you can
 
 For example, if your project doesn't use patch version numbers, you can set `version-template` to `$MAJOR.$MINOR`. If the current release is version 1.0, then `$NEXT_MINOR_VERSION` will be `1.1`.
 
+## Attaching Files to Releases
+
+The `attach-files` input allows you to automatically attach build artifacts (e.g., wheels, sdists, binaries) to your draft release. This provides a single-step, idempotent experience for managing release assets.
+
+### Basic Usage
+
+```yaml
+- uses: aaronsteers/semantic-pr-release-drafter@main
+  with:
+    attach-files: |
+      dist/*.tar.gz
+      dist/*.whl
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### How It Works
+
+When `attach-files` is set:
+
+1. After the draft release is created or updated, the action identifies all existing assets on the release
+2. All existing assets are deleted (ensuring full idempotency, even when artifact names change)
+3. The glob patterns are expanded and all matching files are uploaded as release assets
+4. If no files match the patterns, the action fails with a clear error message
+
+### Supported Patterns
+
+The `attach-files` input accepts:
+
+- Single file paths: `dist/mypackage-1.0.0.tar.gz`
+- Glob patterns: `dist/*.whl`
+- Brace expansion: `dist/*.{whl,tar.gz}`
+- Multiple patterns (newline-separated):
+  ```yaml
+  attach-files: |
+    dist/*.tar.gz
+    dist/*.whl
+    bin/myapp
+  ```
+
+Paths are resolved relative to `GITHUB_WORKSPACE`.
+
+### Permissions
+
+When using `attach-files`, ensure your `GITHUB_TOKEN` has `contents: write` permission:
+
+```yaml
+permissions:
+  contents: write
+```
+
+### Replacing Multi-Step Workflows
+
+This feature replaces the common pattern of using multiple actions to manage release assets:
+
+```yaml
+# Before: Multiple steps required
+- name: Create or update draft release
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  id: release-drafter
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+- name: Delete existing release assets
+  uses: andreaswilli/delete-release-assets-action@v4.0.0
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    tag: ${{ steps.release-drafter.outputs.tag_name }}
+    deleteOnlyFromDrafts: true
+
+- name: Upload assets to draft release
+  uses: svenstaro/upload-release-action@v2
+  with:
+    repo_token: ${{ secrets.GITHUB_TOKEN }}
+    file: dist/*.{whl,tar.gz}
+    release_id: ${{ steps.release-drafter.outputs.id }}
+    overwrite: true
+    file_glob: true
+    draft: true
+
+# After: Single step with attach-files
+- name: Create or update draft release
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  with:
+    attach-files: |
+      dist/*.tar.gz
+      dist/*.whl
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
 ## Action Inputs
 
 See [action.yml](action.yml) for the full list of supported inputs and their descriptions.

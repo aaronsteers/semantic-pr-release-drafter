@@ -28,7 +28,6 @@ describe('ReleaseChangeLineItem', () => {
           raw: 'feat(auth): add login',
           commitSha: 'abc123def456',
           prNumber: 42,
-          prUrl: 'https://github.com/org/repo/pull/42',
           author: { login: 'user1' },
         },
         {
@@ -39,7 +38,6 @@ describe('ReleaseChangeLineItem', () => {
           raw: 'feat(auth): add login',
           commitSha: 'abc123def456',
           prNumber: 42,
-          prUrl: 'https://github.com/org/repo/pull/42',
           author: { login: 'user1' },
           shortSha: 'abc123d',
           categoryTitle: 'Features',
@@ -63,7 +61,6 @@ describe('ReleaseChangeLineItem', () => {
           raw: 'fix: resolve bug',
           commitSha: null,
           prNumber: null,
-          prUrl: null,
           author: null,
           shortSha: null,
           categoryTitle: 'Bug Fixes',

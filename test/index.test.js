@@ -641,20 +641,20 @@ describe('release-drafter', () => {
                   Object {
                     "body": "## Features
 
-                  * Change: https://github.com/toolmantim/release-drafter-test-project/pull/2 'add big feature' @TimonVS
-                  * Change: https://github.com/toolmantim/release-drafter-test-project/pull/1 'add alien technology' @TimonVS
+                  * Change: $URL 'add big feature' @TimonVS
+                  * Change: $URL 'add alien technology' @TimonVS
 
                   ## Bug Fixes
 
-                  * Change: https://github.com/toolmantim/release-drafter-test-project/pull/3 'bug fixes' @TimonVS
+                  * Change: $URL 'bug fixes' @TimonVS
 
                   ## Documentation
 
-                  * Change: https://github.com/toolmantim/release-drafter-test-project/pull/5 'add documentation' @TimonVS
+                  * Change: $URL 'add documentation' @TimonVS
 
                   ## Chores
 
-                  * Change: https://github.com/toolmantim/release-drafter-test-project/pull/4 'update dependencies' @TimonVS",
+                  * Change: $URL 'update dependencies' @TimonVS",
                     "draft": true,
                     "make_latest": "true",
                     "name": "",

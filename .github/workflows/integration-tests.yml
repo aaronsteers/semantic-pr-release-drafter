@@ -24,42 +24,42 @@ jobs:
           - test-name: 'simple-feature-bump'
             test-start-version-string: 'v1.0.0'
             test-commit-list: |
-              feat: add new feature
+              feat: add new feature (#80)
             expected-version-string: '1.1.0'
             expected-body: |
               ## Features
 
-              * add new feature
+              * add new feature (#80)
 
           - test-name: 'breaking-change-pre-1.0'
             test-start-version-string: 'v0.9.0'
             test-commit-list: |
-              feat!: breaking change in pre-1.0
+              feat!: breaking change in pre-1.0 (#81)
             expected-version-string: '0.10.0'
             expected-body: |
               ## Features
 
-              * breaking change in pre-1.0
+              * breaking change in pre-1.0 (#81)
 
           - test-name: 'multiple-commits-minor-bump'
             test-start-version-string: 'v2.0.0'
             test-commit-list: |
-              fix: fix a bug
-              feat: add another feature
-              docs: update documentation
+              fix: fix a bug (#82)
+              feat: add another feature (#83)
+              docs: update documentation (#84)
             expected-version-string: '2.1.0'
             expected-body: |
               ## Features
 
-              * add another feature
+              * add another feature (#83)
 
               ## Bug Fixes
 
-              * fix a bug
+              * fix a bug (#82)
 
               ## Documentation
 
-              * update documentation
+              * update documentation (#84)
 
     name: ${{ matrix.test-name }}
     steps:

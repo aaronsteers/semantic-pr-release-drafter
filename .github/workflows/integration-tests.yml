@@ -80,7 +80,7 @@ jobs:
           cd "$TEST_REPO"
           git init
           git config user.email "test@example.com"
-          git config user.name "Test User"
+          git config user.name "TestUser"
 
           # Create initial commit
           echo "# Test Repo" > README.md

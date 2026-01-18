@@ -11,7 +11,6 @@ const { sortPullRequests } = require('./lib/sort-pull-requests')
 const { log } = require('./lib/log')
 const core = require('@actions/core')
 const { runnerIsActions } = require('./lib/utils')
-const ignore = require('ignore')
 
 module.exports = (app, { getRouter }) => {
   if (!runnerIsActions() && typeof getRouter === 'function') {
@@ -19,116 +18,6 @@ module.exports = (app, { getRouter }) => {
       response.status(200).json({ status: 'pass' })
     })
   }
-
-  app.on(
-    [
-      'pull_request.opened',
-      'pull_request.reopened',
-      'pull_request.synchronize',
-      'pull_request.edited',
-      'pull_request_target.opened',
-      'pull_request_target.reopened',
-      'pull_request_target.synchronize',
-      'pull_request_target.edited',
-    ],
-    async (context) => {
-      const { configName, disableAutolabeler } = getInput()
-
-      const config = await getConfig({
-        context,
-        configName,
-      })
-
-      if (config === null || disableAutolabeler) return
-
-      let issue = {
-        ...context.issue({ pull_number: context.payload.pull_request.number }),
-      }
-      const changedFiles = await context.octokit.paginate(
-        context.octokit.pulls.listFiles.endpoint.merge(issue),
-        (response) => response.data.map((file) => file.filename)
-      )
-      const labels = new Set()
-
-      for (const autolabel of config['autolabeler']) {
-        let found = false
-        // check modified files
-        if (!found && autolabel.files.length > 0) {
-          const matcher = ignore().add(autolabel.files)
-          if (changedFiles.some((file) => matcher.ignores(file))) {
-            labels.add(autolabel.label)
-            found = true
-            log({
-              context,
-              message: `Found label for files: '${autolabel.label}'`,
-            })
-          }
-        }
-        // check branch names
-        if (!found && autolabel.branch.length > 0) {
-          for (const matcher of autolabel.branch) {
-            if (matcher.test(context.payload.pull_request.head.ref)) {
-              labels.add(autolabel.label)
-              found = true
-              log({
-                context,
-                message: `Found label for branch: '${autolabel.label}'`,
-              })
-              break
-            }
-          }
-        }
-        // check pr title
-        if (!found && autolabel.title.length > 0) {
-          for (const matcher of autolabel.title) {
-            if (matcher.test(context.payload.pull_request.title)) {
-              labels.add(autolabel.label)
-              found = true
-              log({
-                context,
-                message: `Found label for title: '${autolabel.label}'`,
-              })
-              break
-            }
-          }
-        }
-        // check pr body
-        if (
-          !found &&
-          context.payload.pull_request.body != null &&
-          autolabel.body.length > 0
-        ) {
-          for (const matcher of autolabel.body) {
-            if (matcher.test(context.payload.pull_request.body)) {
-              labels.add(autolabel.label)
-              found = true
-              log({
-                context,
-                message: `Found label for body: '${autolabel.label}'`,
-              })
-              break
-            }
-          }
-        }
-      }
-
-      const labelsToAdd = [...labels]
-      if (labelsToAdd.length > 0) {
-        let labelIssue = {
-          ...context.issue({
-            issue_number: context.payload.pull_request.number,
-            labels: labelsToAdd,
-          }),
-        }
-        await context.octokit.issues.addLabels(labelIssue)
-        if (runnerIsActions()) {
-          core.setOutput('number', context.payload.pull_request.number)
-          core.setOutput('labels', labelsToAdd.join(','))
-        }
-        return
-      }
-    }
-  )
 
   const drafter = async (context) => {
     const input = getInput()
@@ -242,8 +131,6 @@ function getInput() {
     tag: core.getInput('tag') || undefined,
     name: core.getInput('name') || undefined,
     disableReleaser: core.getInput('disable-releaser').toLowerCase() === 'true',
-    disableAutolabeler:
-      core.getInput('disable-autolabeler').toLowerCase() === 'true',
     commitish: core.getInput('commitish') || undefined,
     header: core.getInput('header') || undefined,
     footer: core.getInput('footer') || undefined,

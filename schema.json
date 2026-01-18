@@ -1,18 +1,18 @@
 {
-  "title": "JSON schema for Release Drafter yaml files",
-  "id": "https://github.com/release-drafter/release-drafter/blob/master/schema.json",
+  "title": "JSON schema for Semantic PR Release Drafter yaml files",
+  "id": "https://github.com/aaronsteers/semantic-pr-release-drafter/blob/main/schema.json",
   "type": "object",
   "properties": {
     "references": {
       "type": "array",
-      "default": ["master"],
+      "default": ["main"],
       "items": {
         "type": "string"
       }
     },
     "change-template": {
       "type": "string",
-      "default": "'* $TITLE (#$NUMBER) @$AUTHOR'"
+      "default": "'* $TITLE ($COMMIT) (#$NUMBER) @$AUTHOR'"
     },
     "change-title-escapes": {
       "type": "string",
@@ -37,20 +37,6 @@
     "tag-template": {
       "type": "string",
       "default": ""
-    },
-    "exclude-labels": {
-      "type": "array",
-      "default": [],
-      "items": {
-        "type": "string"
-      }
-    },
-    "include-labels": {
-      "type": "array",
-      "default": [],
-      "items": {
-        "type": "string"
-      }
     },
     "include-paths": {
       "type": "array",
@@ -121,48 +107,6 @@
         "additionalProperties": false
       }
     },
-    "autolabeler": {
-      "type": "array",
-      "default": [],
-      "items": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string"
-          },
-          "files": {
-            "type": "array",
-            "default": [],
-            "items": {
-              "type": "string"
-            }
-          },
-          "branch": {
-            "type": "array",
-            "default": [],
-            "items": {
-              "type": "string"
-            }
-          },
-          "title": {
-            "type": "array",
-            "default": [],
-            "items": {
-              "type": "string"
-            }
-          },
-          "body": {
-            "type": "array",
-            "default": [],
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": ["label"],
-        "additionalProperties": false
-      }
-    },
     "categories": {
       "type": "array",
       "default": [],
@@ -177,10 +121,7 @@
             "default": 0,
             "minimum": 0
           },
-          "label": {
-            "type": "string"
-          },
-          "labels": {
+          "commit-types": {
             "type": "array",
             "default": [],
             "items": {
@@ -195,56 +136,20 @@
     "version-resolver": {
       "type": "object",
       "default": {
-        "major": {
-          "labels": []
-        },
-        "minor": {
-          "labels": []
-        },
-        "patch": {
-          "labels": []
-        },
+        "pre-one-zero-minor-for-breaking": true,
+        "no-auto-major": true,
         "default": "patch"
       },
       "properties": {
-        "major": {
-          "type": "object",
-          "properties": {
-            "labels": {
-              "type": "array",
-              "default": [],
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "additionalProperties": false
+        "pre-one-zero-minor-for-breaking": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, breaking changes before v1.0 bump minor instead of major"
         },
-        "minor": {
-          "type": "object",
-          "properties": {
-            "labels": {
-              "type": "array",
-              "default": [],
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "additionalProperties": false
-        },
-        "patch": {
-          "type": "object",
-          "properties": {
-            "labels": {
-              "type": "array",
-              "default": [],
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "additionalProperties": false
+        "no-auto-major": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, breaking changes bump minor by default; users manually bump major when warranted"
         },
         "default": {
           "type": "string",

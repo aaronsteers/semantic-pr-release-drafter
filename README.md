@@ -27,6 +27,40 @@ The following upstream features have been removed as they are no longer needed:
 - **Label-based version resolver** - Version is determined by commit types
 - **Label-based categorization** - Categories are determined by commit types
 
+### Recommended Repo Configuration
+
+To get the most out of this action, we recommend configuring your repository as follows:
+
+**1. Validate PR titles with [amannn/action-semantic-pull-request](https://github.com/amannn/action-semantic-pull-request)**
+
+Add a workflow to ensure all PR titles follow the Conventional Commits format:
+
+```yaml
+name: Validate PR Title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+**2. Configure GitHub repository settings**
+
+In your repository settings (Settings > General > Pull Requests):
+
+- Enable **"Allow squash merging"** and set it as the default merge method
+- Set **"Default commit message"** to **"Pull request title"** so the squashed commit inherits the semantic PR title
+- Optionally disable other merge methods to enforce squash merging
+
+This ensures that when PRs are merged, the resulting commit on main has a properly formatted semantic commit message that this action can parse.
+
 ---
 
 ## Usage

@@ -16,3 +16,4 @@ jobs:
       - uses: aaronsteers/semantic-pr-release-drafter@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LOG_LEVEL: warn

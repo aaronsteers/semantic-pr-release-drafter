@@ -198,6 +198,30 @@ jobs:
                 commit-types:
                   - chore
 
+          # Test attach-files feature in dry-run mode
+          # Verifies that file patterns are resolved and reported correctly
+          - test-name: 'attach-files-dry-run'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat: add build artifacts (#300)
+            expected-version-string: '1.1.0'
+            expected-body: |
+              ## Features
+
+              * add build artifacts (#300)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Features
+                commit-types:
+                  - feat
+            # attach-files patterns to test glob resolution
+            attach-files: |
+              dist/*.txt
+              dist/*.whl
+
     name: ${{ matrix.test-name }}
     steps:
       - name: Checkout action code
@@ -243,6 +267,17 @@ jobs:
           # Create .github directory (required for local-git-root)
           mkdir -p .github
 
+      - name: Create test files for attach-files test
+        if: matrix.attach-files != ''
+        run: |
+          cd "$TEST_REPO"
+          mkdir -p dist
+          echo "test content 1" > dist/file1.txt
+          echo "test content 2" > dist/file2.txt
+          echo "wheel content" > dist/app-1.0.0.whl
+          echo "Files created for attach-files test:"
+          ls -la dist/
+
       - name: Run release-drafter in dry-run mode
         id: release-drafter
         uses: ./
@@ -254,10 +289,12 @@ jobs:
           change-template: ${{ matrix.change-template }}
           category-template: ${{ matrix.category-template }}
           categories: ${{ matrix.categories }}
+          attach-files: ${{ matrix.attach-files }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REF: refs/heads/main
+          GITHUB_WORKSPACE: ${{ env.TEST_REPO }}
 
       - name: Verify resolved version
         run: |

@@ -8,7 +8,7 @@
 
 ## About This Fork
 
-This is a fork of [release-drafter/release-drafter](https://github.com/release-drafter/release-drafter) that replaces label-based categorization and version resolution with **semantic commit-based** logic.
+This is a fork of the much loved [release-drafter/release-drafter](https://github.com/release-drafter/release-drafter) from [TimonVS](https://github.com/TimonVS) and [jetersen](https://github.com/jetersen). This fork replaces label-based categorization and version resolution with **conventional commits** and **semantic PR titles**.
 
 ### Key Differences from Upstream
 

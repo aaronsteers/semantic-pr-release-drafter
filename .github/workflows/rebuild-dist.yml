@@ -5,7 +5,8 @@ on:
     types: [created]
 
 env:
-  # Disable Husky git hooks in CI - hooks are for local development only
+  # Disable Husky git hooks (for local dev only)
+  # https://typicode.github.io/husky/how-to.html#ci-server-and-docker
   HUSKY: '0'
 
 permissions:

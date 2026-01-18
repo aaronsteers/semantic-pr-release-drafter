@@ -14,39 +14,44 @@ jobs:
     steps:
       # Use local action (dogfooding)
       - uses: aaronsteers/semantic-pr-release-drafter@main
-        with:
-          name-template: 'v$RESOLVED_VERSION'
-          tag-template: 'v$RESOLVED_VERSION'
-          template: |
-            $CHANGES
-
-            ---
-
-            **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
-          change-template: '* $TITLE ($URL) $SHA'
-          categories: |
-            - title: '⚠️ Breaking Changes'
-              commit-types:
-                - 'breaking'
-            - title: '✨ New Features'
-              commit-types:
-                - 'feat'
-            - title: '🐛 Bug Fixes'
-              commit-types:
-                - 'fix'
-            - title: '📖 Documentation'
-              collapse-after: 2
-              commit-types:
-                - 'docs'
-            - title: '⚙️ Under the Hood'
-              collapse-after: 2
-              commit-types:
-                - 'chore'
-                - 'ci'
-                - 'build'
-                - 'refactor'
-                - 'style'
-                - 'test'
-                - 'perf'
+        # The following config is commented out because it now matches the defaults.
+        # It is kept here as an example of how to customize the action.
+        # with:
+        #   name-template: 'v$RESOLVED_VERSION'
+        #   tag-template: 'v$RESOLVED_VERSION'
+        #   template: |
+        #     $CHANGES
+        #
+        #     ---
+        #
+        #     **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+        #   change-template: '* $TITLE ($URL) $SHA'
+        #   categories: |
+        #     - title: '⚠️ Breaking Changes'
+        #       commit-types:
+        #         - 'breaking'
+        #     - title: '✨ New Features'
+        #       commit-types:
+        #         - 'feat'
+        #     - title: '🐛 Bug Fixes'
+        #       commit-types:
+        #         - 'fix'
+        #     - title: '▲ Other Changes'
+        #       collapse-after: 2
+        #       commit-types:
+        #         - 'refactor'
+        #         - 'perf'
+        #         - 'style'
+        #     - title: '📖 Documentation'
+        #       collapse-after: 2
+        #       commit-types:
+        #         - 'docs'
+        #     - title: '⚙️ Under the Hood'
+        #       collapse-after: 2
+        #       commit-types:
+        #         - 'chore'
+        #         - 'ci'
+        #         - 'build'
+        #         - 'test'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

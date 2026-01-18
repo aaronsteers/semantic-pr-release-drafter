@@ -176,7 +176,6 @@
       "type": "object",
       "default": {
         "pre-one-zero-minor-for-breaking": true,
-        "no-auto-major": true,
         "default": "patch"
       },
       "properties": {
@@ -186,7 +185,7 @@
         },
         "no-auto-major": {
           "type": "boolean",
-          "default": true
+          "default": false
         },
         "default": {
           "type": "string",

@@ -30,6 +30,14 @@ jobs:
               ## Features
 
               * add new feature (#80)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Features
+                commit-types:
+                  - feat
 
           - test-name: 'breaking-change-pre-1.0'
             test-start-version-string: 'v0.9.0'
@@ -40,6 +48,14 @@ jobs:
               ## Features
 
               * breaking change in pre-1.0 (#81)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Features
+                commit-types:
+                  - feat
 
           - test-name: 'multiple-commits-minor-bump'
             test-start-version-string: 'v2.0.0'
@@ -60,6 +76,20 @@ jobs:
               ## Documentation
 
               * update documentation (#84)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Features
+                commit-types:
+                  - feat
+              - title: Bug Fixes
+                commit-types:
+                  - fix
+              - title: Documentation
+                commit-types:
+                  - docs
 
           # Test that custom emoji category titles are used instead of defaults
           - test-name: 'custom-emoji-categories'
@@ -81,45 +111,20 @@ jobs:
               ## Under the Hood
 
               * update deps (#92)
-            custom-categories: |
-              categories:
-                - title: New Features
-                  commit-types:
-                    - feat
-                - title: Bug Fixes
-                  commit-types:
-                    - fix
-                - title: Under the Hood
-                  commit-types:
-                    - chore
-
-          # Test inline config inputs (no config file needed)
-          - test-name: 'inline-config-inputs'
-            test-start-version-string: 'v3.0.0'
-            test-commit-list: |
-              feat: inline feature (#100)
-              fix: inline bugfix (#101)
-            expected-version-string: '3.1.0'
-            expected-body: |
-              ## Inline Features
-
-              * inline feature (#100)
-
-              ## Inline Fixes
-
-              * inline bugfix (#101)
-            use-inline-config: true
-            inline-template: |
+            template: |
               $CHANGES
-            inline-change-template: '* $TITLE (#$NUMBER)'
-            inline-category-template: '## $TITLE'
-            inline-categories: |
-              - title: Inline Features
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: New Features
                 commit-types:
                   - feat
-              - title: Inline Fixes
+              - title: Bug Fixes
                 commit-types:
                   - fix
+              - title: Under the Hood
+                commit-types:
+                  - chore
 
     name: ${{ matrix.test-name }}
     steps:
@@ -163,72 +168,20 @@ jobs:
             git commit -m "$commit_msg"
           done <<< "${{ matrix.test-commit-list }}"
 
-          # Skip config file creation if using inline config
-          USE_INLINE_CONFIG='${{ matrix.use-inline-config }}'
-          if [ "$USE_INLINE_CONFIG" = "true" ]; then
-            echo "Using inline config inputs, skipping config file creation"
-            # Create empty .github directory (required for local-git-root)
-            mkdir -p .github
-            exit 0
-          fi
-
-          # Create release-drafter config
-          # Include $NUMBER in change-template to show PR numbers parsed from commit messages
-          # Include categories to generate section headers (## Features, ## Bug Fixes, etc.)
+          # Create .github directory (required for local-git-root)
           mkdir -p .github
-          echo 'template: |' > .github/release-drafter.yml
-          echo '  $CHANGES' >> .github/release-drafter.yml
-          echo "change-template: '* \$TITLE (#\$NUMBER)'" >> .github/release-drafter.yml
-          echo "category-template: '## \$TITLE'" >> .github/release-drafter.yml
 
-          # Use custom categories if provided, otherwise use defaults
-          CUSTOM_CATEGORIES='${{ matrix.custom-categories }}'
-          if [ -n "$CUSTOM_CATEGORIES" ]; then
-            echo "$CUSTOM_CATEGORIES" >> .github/release-drafter.yml
-          else
-            echo 'categories:' >> .github/release-drafter.yml
-            echo '  - title: Features' >> .github/release-drafter.yml
-            echo '    commit-types:' >> .github/release-drafter.yml
-            echo '      - feat' >> .github/release-drafter.yml
-            echo '  - title: Bug Fixes' >> .github/release-drafter.yml
-            echo '    commit-types:' >> .github/release-drafter.yml
-            echo '      - fix' >> .github/release-drafter.yml
-            echo '  - title: Documentation' >> .github/release-drafter.yml
-            echo '    commit-types:' >> .github/release-drafter.yml
-            echo '      - docs' >> .github/release-drafter.yml
-            echo '  - title: Chores' >> .github/release-drafter.yml
-            echo '    commit-types:' >> .github/release-drafter.yml
-            echo '      - chore' >> .github/release-drafter.yml
-          fi
-
-      # Run release-drafter with file-based config (default)
       - name: Run release-drafter in dry-run mode
-        if: ${{ matrix.use-inline-config != true }}
         id: release-drafter
         uses: ./
         with:
           dry-run: 'true'
-          config-name: 'release-drafter.yml'
           local-git-root: ${{ env.TEST_REPO }}
           base-ref-override: ${{ matrix.test-start-version-string }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_REF: refs/heads/main
-
-      # Run release-drafter with inline config inputs
-      - name: Run release-drafter with inline config
-        if: ${{ matrix.use-inline-config == true }}
-        id: release-drafter-inline
-        uses: ./
-        with:
-          dry-run: 'true'
-          local-git-root: ${{ env.TEST_REPO }}
-          base-ref-override: ${{ matrix.test-start-version-string }}
-          template: ${{ matrix.inline-template }}
-          change-template: ${{ matrix.inline-change-template }}
-          category-template: ${{ matrix.inline-category-template }}
-          categories: ${{ matrix.inline-categories }}
+          template: ${{ matrix.template }}
+          change-template: ${{ matrix.change-template }}
+          category-template: ${{ matrix.category-template }}
+          categories: ${{ matrix.categories }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -236,12 +189,7 @@ jobs:
 
       - name: Verify resolved version
         run: |
-          # Use the appropriate step output based on config type
-          if [ "${{ matrix.use-inline-config }}" = "true" ]; then
-            RESOLVED_VERSION="${{ steps.release-drafter-inline.outputs.resolved_version }}"
-          else
-            RESOLVED_VERSION="${{ steps.release-drafter.outputs.resolved_version }}"
-          fi
+          RESOLVED_VERSION="${{ steps.release-drafter.outputs.resolved_version }}"
           EXPECTED_VERSION="${{ matrix.expected-version-string }}"
 
           echo "Resolved version: $RESOLVED_VERSION"
@@ -256,12 +204,7 @@ jobs:
 
       - name: Verify changelog body matches expected output
         run: |
-          # Use the appropriate step output based on config type
-          if [ "${{ matrix.use-inline-config }}" = "true" ]; then
-            BODY="${{ steps.release-drafter-inline.outputs.body }}"
-          else
-            BODY="${{ steps.release-drafter.outputs.body }}"
-          fi
+          BODY="${{ steps.release-drafter.outputs.body }}"
           EXPECTED_BODY=$(cat << 'EXPECTED_EOF'
           ${{ matrix.expected-body }}
           EXPECTED_EOF

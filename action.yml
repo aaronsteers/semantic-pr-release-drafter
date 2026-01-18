@@ -101,6 +101,12 @@ inputs:
       This will override any `categories` specified in your config file.
     required: false
     default: ''
+  category-template:
+    description: |
+      The template for category headers. Supports placeholders like $TITLE.
+      This will override any `category-template` specified in your config file.
+    required: false
+    default: ''
   local-git-root:
     description: |
       Path to a local git repository root. When set, the action will use `git log`

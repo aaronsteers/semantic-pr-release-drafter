@@ -8,19 +8,21 @@ template: |
   **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
 
 categories:
-  - title: 'Breaking'
+  - title: '⚠️ Breaking Changes'
     commit-types:
       - 'breaking'
-  - title: 'Features'
+  - title: '✨ New Features'
     commit-types:
       - 'feat'
-  - title: 'Bug Fixes'
+  - title: '🐛 Bug Fixes'
     commit-types:
       - 'fix'
-  - title: 'Documentation'
+  - title: '📖 Documentation'
+    collapse-after: 2
     commit-types:
       - 'docs'
-  - title: 'Maintenance'
+  - title: '⚙️ Under the Hood'
+    collapse-after: 2
     commit-types:
       - 'chore'
       - 'ci'

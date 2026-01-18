@@ -161,9 +161,9 @@ describe('release-drafter', () => {
                   ",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v2.0.1",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v2.0.1",
                     "target_commitish": "refs/heads/some-branch",
                   }
                 `)
@@ -221,28 +221,28 @@ describe('release-drafter', () => {
                   Object {
                     "body": "# What's Changed
 
-                  ## Features
+                  ## ✨ New Features
 
-                  * add big feature () (#2) @TimonVS
-                  * add alien technology () (#1) @TimonVS
+                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
-                  ## Bug Fixes
+                  ## 🐛 Bug Fixes
 
-                  * bug fixes () (#3) @TimonVS
+                  * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
-                  ## Documentation
+                  ## 📖 Documentation
 
-                  * add documentation () (#5) @TimonVS
+                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
-                  ## Chores
+                  ## ⚙️ Under the Hood
 
-                  * update dependencies () (#4) @TimonVS
+                  * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                   ",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v2.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v2.1.0",
                     "target_commitish": "",
                   }
                 `)
@@ -282,30 +282,30 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "Changes:
-                ## Features
+                ## ✨ New Features
 
-                * add big feature () (#2) @TimonVS
-                * add alien technology () (#1) @TimonVS
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
-                ## Bug Fixes
+                ## 🐛 Bug Fixes
 
-                * bug fixes () (#3) @TimonVS
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
-                ## Documentation
+                ## 📖 Documentation
 
-                * add documentation () (#5) @TimonVS
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
-                ## Chores
+                ## ⚙️ Under the Hood
 
-                * update dependencies () (#4) @TimonVS
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
                 Previous tag: ''
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v0.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v0.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -349,28 +349,28 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
+                ## ✨ New Features
 
-                * add big feature () (#2) @TimonVS
-                * add alien technology () (#1) @TimonVS
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
-                ## Bug Fixes
+                ## 🐛 Bug Fixes
 
-                * bug fixes () (#3) @TimonVS
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
-                ## Documentation
+                ## 📖 Documentation
 
-                * add documentation () (#5) @TimonVS
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
-                ## Chores
+                ## ⚙️ Under the Hood
 
-                * update dependencies () (#4) @TimonVS
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -414,28 +414,28 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
+                ## ✨ New Features
 
-                * add big feature () (#2) @TimonVS
-                * add alien technology () (#1) @TimonVS
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
-                ## Bug Fixes
+                ## 🐛 Bug Fixes
 
-                * bug fixes () (#3) @TimonVS
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
-                ## Documentation
+                ## 📖 Documentation
 
-                * add documentation () (#5) @TimonVS
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
-                ## Chores
+                ## ⚙️ Under the Hood
 
-                * update dependencies () (#4) @TimonVS
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -519,27 +519,27 @@ describe('release-drafter', () => {
               (body) => {
                 expect(body).toMatchInlineSnapshot(`
                   Object {
-                    "body": "## Features
+                    "body": "## ✨ New Features
 
                   * Change: #2 'add big feature' @TimonVS
                   * Change: #1 'add alien technology' @TimonVS
 
-                  ## Bug Fixes
+                  ## 🐛 Bug Fixes
 
                   * Change: #3 'bug fixes' @TimonVS
 
-                  ## Documentation
+                  ## 📖 Documentation
 
                   * Change: #5 'add documentation' @TimonVS
 
-                  ## Chores
+                  ## ⚙️ Under the Hood
 
                   * Change: #4 'update dependencies' @TimonVS",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v2.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v2.1.0",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -579,27 +579,27 @@ describe('release-drafter', () => {
               (body) => {
                 expect(body).toMatchInlineSnapshot(`
                   Object {
-                    "body": "## Features
+                    "body": "## ✨ New Features
 
                   * Change: #2 'add big feature'
                   * Change: #1 'add alien technology'
 
-                  ## Bug Fixes
+                  ## 🐛 Bug Fixes
 
                   * Change: #3 'bug fixes'
 
-                  ## Documentation
+                  ## 📖 Documentation
 
                   * Change: #5 'add documentation'
 
-                  ## Chores
+                  ## ⚙️ Under the Hood
 
                   * Change: #4 'update dependencies'",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v2.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v2.1.0",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -639,27 +639,27 @@ describe('release-drafter', () => {
               (body) => {
                 expect(body).toMatchInlineSnapshot(`
                   Object {
-                    "body": "## Features
+                    "body": "## ✨ New Features
 
                   * Change: #2 'add big feature' @TimonVS
                   * Change: #1 'add alien technology' @TimonVS
 
-                  ## Bug Fixes
+                  ## 🐛 Bug Fixes
 
                   * Change: #3 'bug fixes' @TimonVS
 
-                  ## Documentation
+                  ## 📖 Documentation
 
                   * Change: #5 'add documentation' @TimonVS
 
-                  ## Chores
+                  ## ⚙️ Under the Hood
 
                   * Change: #4 'update dependencies' @TimonVS",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v2.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v2.1.0",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -702,9 +702,9 @@ describe('release-drafter', () => {
                     "body": "A big thanks to: @TimonVS and Ada Lovelace",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v2.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v2.1.0",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -745,9 +745,9 @@ describe('release-drafter', () => {
                     "body": "A big thanks to: Nobody",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v2.0.1",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v2.0.1",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -790,9 +790,9 @@ describe('release-drafter', () => {
                     "body": "A big thanks to: Ada Lovelace",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v2.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v2.1.0",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -842,9 +842,9 @@ describe('release-drafter', () => {
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.0.1",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.0.1",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -885,9 +885,9 @@ describe('release-drafter', () => {
                     "body": "* No changes mmkay",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v0.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v0.1.0",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -929,28 +929,28 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
+                ## ✨ New Features
 
-                * add big feature () (#2) @TimonVS
-                * add alien technology () (#1) @TimonVS
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
-                ## Bug Fixes
+                ## 🐛 Bug Fixes
 
-                * bug fixes () (#3) @TimonVS
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
-                ## Documentation
+                ## 📖 Documentation
 
-                * add documentation () (#5) @TimonVS
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
-                ## Chores
+                ## ⚙️ Under the Hood
 
-                * update dependencies () (#4) @TimonVS
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "v3.0.0-beta",
+                  "name": "v0.1.0",
                   "prerelease": false,
-                  "tag_name": "v3.0.0-beta",
+                  "tag_name": "v0.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -991,19 +991,19 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation () (#5) @TimonVS
-                * update dependencies () (#4) @TimonVS
-                * bug fixes () (#3) @TimonVS
-                * add big feature () (#2) @TimonVS
-                * add alien technology () (#1) @TimonVS
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
 
                 **Full Changelog**: https://github.com/toolmantim/release-drafter-test-project/compare/v2.0.0...v2.1.0
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1044,17 +1044,17 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation () (#5) @TimonVS
-                * update dependencies () (#4) @TimonVS
-                * bug fixes () (#3) @TimonVS
-                * add big feature () (#2) @TimonVS
-                * add alien technology () (#1) @TimonVS
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1093,17 +1093,17 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation () (#5) @TimonVS
-                * update dependencies () (#4) @TimonVS
-                * bug fixes () (#3) @TimonVS
-                * add big feature () (#2) @TimonVS
-                * add alien technology () (#1) @TimonVS
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1142,17 +1142,17 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation () (#5) @TimonVS
-                * update dependencies () (#4) @TimonVS
-                * bug fixes () (#3) @TimonVS
-                * add big feature () (#2) @TimonVS
-                * add alien technology () (#1) @TimonVS
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1191,17 +1191,17 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation () (#22) @jetersen
-                * update dependencies () (#21) @jetersen
-                * bug fixes () (#20) @jetersen
-                * add big feature () (#19) @jetersen
-                * add alien technology () (#18) @jetersen
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/22) 
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/21) 
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/20) 
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/19) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/18)
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1240,17 +1240,17 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation () (#22) @jetersen
-                * update dependencies () (#21) @jetersen
-                * bug fixes () (#20) @jetersen
-                * add big feature () (#19) @jetersen
-                * add alien technology () (#18) @jetersen
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/22) 
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/21) 
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/20) 
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/19) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/18)
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1289,17 +1289,17 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation () (#5) @TimonVS
-                * update dependencies () (#4) @TimonVS
-                * bug fixes () (#3) @TimonVS
-                * add big feature () (#2) @TimonVS
-                * add alien technology () (#1) @TimonVS
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1340,22 +1340,22 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
+                ## ✨ New Features
 
-                * add big feature () (#2) @TimonVS
-                * add alien technology () (#1) @TimonVS
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
-                ## Bug Fixes
+                ## 🐛 Bug Fixes
 
-                * bug fixes () (#3) @TimonVS
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
-                ## Documentation
+                ## 📖 Documentation
 
-                * add documentation () (#5) @TimonVS
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
-                ## Chores
+                ## ⚙️ Under the Hood
 
-                * update dependencies () (#4) @TimonVS
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1533,9 +1533,9 @@ describe('release-drafter', () => {
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1576,9 +1576,9 @@ describe('release-drafter', () => {
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1620,9 +1620,9 @@ describe('release-drafter', () => {
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1663,9 +1663,9 @@ describe('release-drafter', () => {
                   "body": "This is at topThis is the template in the middleThis is at bottom",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1710,9 +1710,9 @@ describe('release-drafter', () => {
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -1757,28 +1757,28 @@ describe('release-drafter', () => {
                   Object {
                     "body": "# What's Changed
 
-                  ## Features
+                  ## ✨ New Features
 
-                  * add big feature () (#2) @TimonVS
-                  * add alien technology () (#1) @TimonVS
+                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
-                  ## Bug Fixes
+                  ## 🐛 Bug Fixes
 
-                  * bug fixes () (#3) @TimonVS
+                  * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
-                  ## Documentation
+                  ## 📖 Documentation
 
-                  * add documentation () (#5) @TimonVS
+                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
-                  ## Chores
+                  ## ⚙️ Under the Hood
 
-                  * update dependencies () (#4) @TimonVS
+                  * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                   ",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v0.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v0.1.0",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -1822,32 +1822,32 @@ describe('release-drafter', () => {
                   Object {
                     "body": "# What's Changed
 
-                  ## Features
+                  ## ✨ New Features
 
-                  * adjust parameters () (#7) @TimonVS
-                  * add big feature () (#7) @TimonVS
-                  * add alien technology () (#6) @TimonVS
+                  * adjust parameters (https://github.com/toolmantim/release-drafter-test-project/pull/7) 
+                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/7) 
+                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/6) 
 
-                  ## Bug Fixes
+                  ## 🐛 Bug Fixes
 
-                  * fixed another bug () (#8) @TimonVS
-                  * fixed a bug () (#8) @TimonVS
+                  * fixed another bug (https://github.com/toolmantim/release-drafter-test-project/pull/8) 
+                  * fixed a bug (https://github.com/toolmantim/release-drafter-test-project/pull/8) 
 
-                  ## Documentation
+                  ## 📖 Documentation
 
-                  * fix typo () (#10) @TimonVS
-                  * add documentation () (#10) @TimonVS
+                  * fix typo (https://github.com/toolmantim/release-drafter-test-project/pull/10) 
+                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/10) 
 
-                  ## Chores
+                  ## ⚙️ Under the Hood
 
-                  * update Mongoose to 5.5.4 () (#9) @TimonVS
-                  * update Express to 4.16.4 () (#9) @TimonVS
+                  * update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9) 
+                  * update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9)
                   ",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v0.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v0.1.0",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -1891,28 +1891,28 @@ describe('release-drafter', () => {
                   Object {
                     "body": "# What's Changed
 
-                  ## Features
+                  ## ✨ New Features
 
-                  * add big feature () (#12) @TimonVS
-                  * add alien technology () (#11) @TimonVS
+                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/12) 
+                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/11) 
 
-                  ## Bug Fixes
+                  ## 🐛 Bug Fixes
 
-                  * bug fixes () (#13) @TimonVS
+                  * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/13) 
 
-                  ## Documentation
+                  ## 📖 Documentation
 
-                  * add documentation () (#15) @TimonVS
+                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/15) 
 
-                  ## Chores
+                  ## ⚙️ Under the Hood
 
-                  * update dependencies () (#14) @TimonVS
+                  * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/14)
                   ",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v0.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v0.1.0",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -1954,27 +1954,27 @@ describe('release-drafter', () => {
                   Object {
                     "body": "# What's Changed
 
-                  ## Features
+                  ## ✨ New Features
 
-                  * add big feature () (#12) @TimonVS
+                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/12) 
 
-                  ## Bug Fixes
+                  ## 🐛 Bug Fixes
 
-                  * bug fixes () (#13) @TimonVS
+                  * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/13) 
 
-                  ## Documentation
+                  ## 📖 Documentation
 
-                  * add documentation () (#15) @TimonVS
+                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/15) 
 
-                  ## Chores
+                  ## ⚙️ Under the Hood
 
-                  * update dependencies () (#14) @TimonVS
+                  * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/14)
                   ",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v2.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v2.1.0",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -2015,34 +2015,34 @@ describe('release-drafter', () => {
                   Object {
                     "body": "# What's Changed
 
-                  ## Features
+                  ## ✨ New Features
 
-                  * add big feature () (#24) @jetersen
-                  * add alien technology () (#23) @jetersen
-                  * add alien technology () (#1) @TimonVS
+                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/24) 
+                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/23) 
+                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
-                  ## Bug Fixes
+                  ## 🐛 Bug Fixes
 
-                  * fixed another bug () (#25) @jetersen
-                  * fixed a bug () (#25) @jetersen
+                  * fixed another bug (https://github.com/toolmantim/release-drafter-test-project/pull/25) 
+                  * fixed a bug (https://github.com/toolmantim/release-drafter-test-project/pull/25) 
 
-                  ## Documentation
+                  ## 📖 Documentation
 
-                  * add documentation () (#28) @jetersen
-                  * fix typo () (#5) @TimonVS
-                  * add documentation () (#5) @TimonVS
+                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/28) 
+                  * fix typo (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
-                  ## Chores
+                  ## ⚙️ Under the Hood
 
-                  * update dependencies () (#27) @jetersen
-                  * update Mongoose to 5.5.4 () (#4) @TimonVS
-                  * update Express to 4.16.4 () (#4) @TimonVS
+                  * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/27) 
+                  * update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                  * update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                   ",
                     "draft": true,
                     "make_latest": "true",
-                    "name": "",
+                    "name": "v2.1.0",
                     "prerelease": false,
-                    "tag_name": "",
+                    "tag_name": "v2.1.0",
                     "target_commitish": "refs/heads/master",
                   }
                 `)
@@ -2093,9 +2093,9 @@ describe('release-drafter', () => {
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v0.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v0.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -2139,28 +2139,28 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
+                ## ✨ New Features
 
-                * add big feature () (#2) @TimonVS
-                * add alien technology () (#1) @TimonVS
+                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
-                ## Bug Fixes
+                ## 🐛 Bug Fixes
 
-                * bug fixes () (#3) @TimonVS
+                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
-                ## Documentation
+                ## 📖 Documentation
 
-                * add documentation () (#5) @TimonVS
+                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
-                ## Chores
+                ## ⚙️ Under the Hood
 
-                * update dependencies () (#4) @TimonVS
+                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v0.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v0.1.0",
                   "target_commitish": "refs/heads/master",
                 }
               `)
@@ -2213,9 +2213,9 @@ describe('release-drafter', () => {
               ",
                 "draft": true,
                 "make_latest": "true",
-                "name": "",
+                "name": "v0.1.0",
                 "prerelease": false,
-                "tag_name": "",
+                "tag_name": "v0.1.0",
                 "target_commitish": "refs/heads/master",
               }
             `)
@@ -2267,9 +2267,9 @@ describe('release-drafter', () => {
               ",
                 "draft": true,
                 "make_latest": "true",
-                "name": "",
+                "name": "v0.1.0",
                 "prerelease": false,
-                "tag_name": "",
+                "tag_name": "v0.1.0",
                 "target_commitish": "refs/heads/master",
               }
             `)
@@ -2316,22 +2316,22 @@ describe('release-drafter', () => {
             expect(body).toMatchInlineSnapshot(`
               Object {
                 "body": "# What's Changed
-              ## Features
+              ## ✨ New Features
 
-              * add big feature () (#2) @TimonVS
-              * add alien technology () (#1) @TimonVS
+              * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+              * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
-              ## Bug Fixes
+              ## 🐛 Bug Fixes
 
-              * bug fixes () (#3) @TimonVS
+              * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
-              ## Documentation
+              ## 📖 Documentation
 
-              * add documentation () (#5) @TimonVS
+              * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
-              ## Chores
+              ## ⚙️ Under the Hood
 
-              * update dependencies () (#4) @TimonVS
+              * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
               ",
                 "draft": true,
                 "make_latest": "true",
@@ -2557,9 +2557,9 @@ describe('release-drafter', () => {
               ",
                 "draft": true,
                 "make_latest": "true",
-                "name": "",
+                "name": "v2.0.1",
                 "prerelease": false,
-                "tag_name": "",
+                "tag_name": "v2.0.1",
                 "target_commitish": "refs/heads/master",
               }
             `)
@@ -3418,9 +3418,9 @@ describe('release-drafter', () => {
                   "body": "dummy",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "",
+                  "name": "v2.1.0",
                   "prerelease": false,
-                  "tag_name": "",
+                  "tag_name": "v2.1.0",
                   "target_commitish": "staging",
                 }
               `)

@@ -106,11 +106,7 @@ jobs:
           # Create release-drafter config
           # Use simplified change-template without $NUMBER/$COMMIT since these are local commits
           mkdir -p .github
-          cat > .github/release-drafter.yml << 'EOF'
-          template: |
-            $CHANGES
-          change-template: '* $TITLE'
-          EOF
+          printf '%s\n' "template: |" "  \$CHANGES" "change-template: '* \$TITLE'" > .github/release-drafter.yml
 
       - name: Run release-drafter in dry-run mode
         id: release-drafter

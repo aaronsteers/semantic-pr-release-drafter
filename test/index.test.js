@@ -991,22 +991,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
-
+                * add documentation () (#5) @TimonVS
+                * update dependencies () (#4) @TimonVS
+                * bug fixes () (#3) @TimonVS
                 * add big feature () (#2) @TimonVS
                 * add alien technology () (#1) @TimonVS
-
-                ## Bug Fixes
-
-                * bug fixes () (#3) @TimonVS
-
-                ## Documentation
-
-                * add documentation () (#5) @TimonVS
-
-                ## Chores
-
-                * update dependencies () (#4) @TimonVS
 
                 **Full Changelog**: https://github.com/toolmantim/release-drafter-test-project/compare/v2.0.0...v2.1.0
                 ",
@@ -1055,22 +1044,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
-
+                * add documentation () (#5) @TimonVS
+                * update dependencies () (#4) @TimonVS
+                * bug fixes () (#3) @TimonVS
                 * add big feature () (#2) @TimonVS
                 * add alien technology () (#1) @TimonVS
-
-                ## Bug Fixes
-
-                * bug fixes () (#3) @TimonVS
-
-                ## Documentation
-
-                * add documentation () (#5) @TimonVS
-
-                ## Chores
-
-                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1115,22 +1093,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
-
+                * add documentation () (#5) @TimonVS
+                * update dependencies () (#4) @TimonVS
+                * bug fixes () (#3) @TimonVS
                 * add big feature () (#2) @TimonVS
                 * add alien technology () (#1) @TimonVS
-
-                ## Bug Fixes
-
-                * bug fixes () (#3) @TimonVS
-
-                ## Documentation
-
-                * add documentation () (#5) @TimonVS
-
-                ## Chores
-
-                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1175,22 +1142,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
-
+                * add documentation () (#5) @TimonVS
+                * update dependencies () (#4) @TimonVS
+                * bug fixes () (#3) @TimonVS
                 * add big feature () (#2) @TimonVS
                 * add alien technology () (#1) @TimonVS
-
-                ## Bug Fixes
-
-                * bug fixes () (#3) @TimonVS
-
-                ## Documentation
-
-                * add documentation () (#5) @TimonVS
-
-                ## Chores
-
-                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1235,22 +1191,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
-
+                * add documentation () (#22) @jetersen
+                * update dependencies () (#21) @jetersen
+                * bug fixes () (#20) @jetersen
                 * add big feature () (#19) @jetersen
                 * add alien technology () (#18) @jetersen
-
-                ## Bug Fixes
-
-                * bug fixes () (#20) @jetersen
-
-                ## Documentation
-
-                * add documentation () (#22) @jetersen
-
-                ## Chores
-
-                * update dependencies () (#21) @jetersen
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1295,22 +1240,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
-
+                * add documentation () (#22) @jetersen
+                * update dependencies () (#21) @jetersen
+                * bug fixes () (#20) @jetersen
                 * add big feature () (#19) @jetersen
                 * add alien technology () (#18) @jetersen
-
-                ## Bug Fixes
-
-                * bug fixes () (#20) @jetersen
-
-                ## Documentation
-
-                * add documentation () (#22) @jetersen
-
-                ## Chores
-
-                * update dependencies () (#21) @jetersen
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1355,22 +1289,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                ## Features
-
+                * add documentation () (#5) @TimonVS
+                * update dependencies () (#4) @TimonVS
+                * bug fixes () (#3) @TimonVS
                 * add big feature () (#2) @TimonVS
                 * add alien technology () (#1) @TimonVS
-
-                ## Bug Fixes
-
-                * bug fixes () (#3) @TimonVS
-
-                ## Documentation
-
-                * add documentation () (#5) @TimonVS
-
-                ## Chores
-
-                * update dependencies () (#4) @TimonVS
                 ",
                   "draft": true,
                   "make_latest": "true",

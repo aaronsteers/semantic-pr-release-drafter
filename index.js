@@ -167,7 +167,8 @@ module.exports = (app, { getRouter }) => {
         if (filesToAttach.length === 0) {
           core.setFailed(
             'attach-files was specified but no files matched the pattern(s). ' +
-              'Please check your glob patterns and ensure the files exist.'
+              'Please check your glob patterns and ensure the files exist. ' +
+              `Patterns: ${attachFiles.split('\n').filter((p) => p.trim()).join(', ')}`
           )
           return
         } else {

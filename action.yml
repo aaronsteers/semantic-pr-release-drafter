@@ -75,6 +75,31 @@ inputs:
       but will not create or update any releases.
     required: false
     default: 'false'
+  local-git-root:
+    description: |
+      Path to a local git repository root. When set, the action will use `git log`
+      to fetch commits instead of the GitHub API. This is useful for integration testing.
+      Note: Commit filtering is timestamp-based. When a base-ref-override is provided, it is
+      converted to a timestamp internally, and commits are filtered by their commit date.
+    required: false
+    default: ''
+  base-ref-override:
+    description: |
+      A git ref (tag, branch, or commit SHA) to use as the starting point for finding commits.
+      When set along with local-git-root, the action will get commits since this ref.
+      The ref is converted to a timestamp internally (commit filtering is timestamp-based).
+      This also serves as the base version for calculating the next semver if base-version-override is not set.
+      Format: git ref (e.g., "v1.0.0", "main", or a commit SHA).
+    required: false
+    default: ''
+  base-version-override:
+    description: |
+      Override the base version to use for calculating the next version.
+      When set, the action will skip querying the GitHub API for the last release
+      and use this version as the starting point. Format: semver string (e.g., "1.0.0" or "v1.0.0").
+      If base-ref is also provided, this takes precedence for version calculation.
+    required: false
+    default: ''
 outputs:
   id:
     description: The ID of the release that was created or updated.

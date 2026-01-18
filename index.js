@@ -7,6 +7,10 @@ const {
   updateRelease,
 } = require('./lib/releases')
 const { findCommitsWithAssociatedPullRequests } = require('./lib/commits')
+const {
+  findCommitsFromLocalGit,
+  createMockLastRelease,
+} = require('./lib/local-git')
 const { sortPullRequests } = require('./lib/sort-pull-requests')
 const { log } = require('./lib/log')
 const core = require('@actions/core')
@@ -54,21 +58,55 @@ module.exports = (app, { getRouter }) => {
       includePreReleases || preReleaseIdentifier
     )
 
-    const { draftRelease, lastRelease } = await findReleases({
-      context,
-      targetCommitish,
-      filterByCommitish,
-      includePreReleases: shouldIncludePreReleases,
-      tagPrefix,
-    })
+    const { localGitRoot, baseRefOverride, baseVersionOverride } = input
 
-    const { commits, pullRequests: mergedPullRequests } =
-      await findCommitsWithAssociatedPullRequests({
+    // Local git mode: use git log instead of GitHub API
+    let draftRelease, lastRelease, commits, mergedPullRequests
+
+    if (localGitRoot) {
+      log({
+        context,
+        message: `Using local git mode with root: ${localGitRoot}`,
+      })
+
+      // In local git mode, we don't have a draft release
+      draftRelease = null
+
+      // Create mock lastRelease from baseVersionOverride or baseRefOverride
+      const baseVersion = baseVersionOverride || baseRefOverride
+      lastRelease = baseVersion
+        ? createMockLastRelease(baseVersion, tagPrefix)
+        : null
+
+      // Get commits from local git
+      const localGitResult = findCommitsFromLocalGit({
+        localGitRoot,
+        baseRef: baseRefOverride,
+        context,
+      })
+      commits = localGitResult.commits
+      mergedPullRequests = localGitResult.pullRequests
+    } else {
+      // Standard GitHub API mode
+      const releasesResult = await findReleases({
+        context,
+        targetCommitish,
+        filterByCommitish,
+        includePreReleases: shouldIncludePreReleases,
+        tagPrefix,
+      })
+      draftRelease = releasesResult.draftRelease
+      lastRelease = releasesResult.lastRelease
+
+      const commitsResult = await findCommitsWithAssociatedPullRequests({
         context,
         targetCommitish,
         lastRelease,
         config,
       })
+      commits = commitsResult.commits
+      mergedPullRequests = commitsResult.pullRequests
+    }
 
     const sortedMergedPullRequests = sortPullRequests(
       mergedPullRequests,
@@ -144,6 +182,9 @@ function getInput() {
     name: core.getInput('name') || undefined,
     disableReleaser: core.getInput('disable-releaser').toLowerCase() === 'true',
     dryRun: core.getInput('dry-run').toLowerCase() === 'true',
+    localGitRoot: core.getInput('local-git-root') || undefined,
+    baseRefOverride: core.getInput('base-ref-override') || undefined,
+    baseVersionOverride: core.getInput('base-version-override') || undefined,
     commitish: core.getInput('commitish') || undefined,
     header: core.getInput('header') || undefined,
     footer: core.getInput('footer') || undefined,

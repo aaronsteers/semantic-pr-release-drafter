@@ -97,6 +97,8 @@ jobs:
         with:
           dry-run: 'true'
           config-name: 'release-drafter.yml'
+          local-git-root: ${{ env.TEST_REPO }}
+          base-ref-override: ${{ matrix.test-start-version-string }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}

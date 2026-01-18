@@ -57,6 +57,24 @@ jobs:
                 commit-types:
                   - feat
 
+          - test-name: 'breaking-change-post-1.0'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat!: breaking change in post-1.0 (#85)
+            expected-version-string: '2.0.0'
+            expected-body: |
+              ## Breaking Changes
+
+              * breaking change in post-1.0 (#85)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Breaking Changes
+                commit-types:
+                  - breaking
+
           - test-name: 'multiple-commits-minor-bump'
             test-start-version-string: 'v2.0.0'
             test-commit-list: |

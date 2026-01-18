@@ -6,7 +6,7 @@ const {
 
 const createMockCommits = (messages) =>
   messages.map((message, index) => ({
-    id: `sha${index}`,
+    oid: `sha${index}`,
     message,
     associatedPullRequests: {
       nodes: [
@@ -396,7 +396,7 @@ describe('ReleaseChangeLineItems', () => {
     test('renders with PR number when available', () => {
       const commits = [
         {
-          id: 'sha1',
+          oid: 'sha1',
           message: 'feat: add feature',
           associatedPullRequests: {
             nodes: [{ merged: true, number: 42, url: 'https://pr/42' }],
@@ -416,7 +416,7 @@ describe('ReleaseChangeLineItems', () => {
     test('renders with commit SHA when available', () => {
       const commits = [
         {
-          id: 'abc123def456',
+          oid: 'abc123def456',
           message: 'feat: add feature',
           associatedPullRequests: { nodes: [] },
         },

@@ -90,8 +90,8 @@ describe('schema', () => {
   })
 
   describe('validateSchema', () => {
-    it('Categories are merged with defaults and include user-provided categories', () => {
-      // With semantic commit-based categorization, user categories are merged with defaults
+    it('User-provided categories replace defaults', () => {
+      // User-provided categories should replace defaults, not merge with them
       const result = validateSchema(context, {
         template,
         categories: [
@@ -103,15 +103,15 @@ describe('schema', () => {
           },
         ],
       })
-      // Should include both default categories and user-provided categories
-      expect(result.categories.length).toBeGreaterThan(2)
+      // Should only include user-provided categories (not merged with defaults)
+      expect(result.categories).toHaveLength(2)
       // User-provided categories should be in the result
       const categoryTitles = result.categories.map((c) => c.title)
       expect(categoryTitles).toContain('📝 Other Changes')
       expect(categoryTitles).toContain('📝 Yet Other Changes')
-      // Default categories should also be present
-      expect(categoryTitles).toContain('Features')
-      expect(categoryTitles).toContain('Bug Fixes')
+      // Default categories should NOT be present
+      expect(categoryTitles).not.toContain('Features')
+      expect(categoryTitles).not.toContain('Bug Fixes')
     })
 
     it('User-provided categories have defaults applied', () => {

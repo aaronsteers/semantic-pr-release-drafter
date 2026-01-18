@@ -12,7 +12,7 @@
     },
     "change-template": {
       "type": "string",
-      "default": "'* $TITLE ($SHA) (#$NUMBER) @$AUTHOR'"
+      "default": "'* $TITLE ($URL) $SHA'"
     },
     "change-title-escapes": {
       "type": "string",
@@ -28,7 +28,7 @@
     },
     "name-template": {
       "type": "string",
-      "default": ""
+      "default": "v$RESOLVED_VERSION"
     },
     "tag-prefix": {
       "type": "string",
@@ -36,7 +36,7 @@
     },
     "tag-template": {
       "type": "string",
-      "default": ""
+      "default": "v$RESOLVED_VERSION"
     },
     "include-paths": {
       "type": "array",
@@ -116,59 +116,37 @@
       "type": "array",
       "default": [
         {
-          "title": "Features",
-          "collapse-after": 0,
-          "commit-types": ["feat"]
+          "title": "⚠️ Breaking Changes",
+          "commit-types": ["breaking"],
+          "collapse-after": 0
         },
         {
-          "title": "Bug Fixes",
-          "collapse-after": 0,
-          "commit-types": ["fix"]
+          "title": "✨ New Features",
+          "commit-types": ["feat"],
+          "collapse-after": 0
         },
         {
-          "title": "Documentation",
-          "collapse-after": 0,
-          "commit-types": ["docs"]
+          "title": "🐛 Bug Fixes",
+          "commit-types": ["fix"],
+          "collapse-after": 0
         },
         {
-          "title": "Styles",
-          "collapse-after": 0,
-          "commit-types": ["style"]
+          "title": "📖 Documentation",
+          "commit-types": ["docs"],
+          "collapse-after": 2
         },
         {
-          "title": "Code Refactoring",
-          "collapse-after": 0,
-          "commit-types": ["refactor"]
-        },
-        {
-          "title": "Performance Improvements",
-          "collapse-after": 0,
-          "commit-types": ["perf"]
-        },
-        {
-          "title": "Tests",
-          "collapse-after": 0,
-          "commit-types": ["test"]
-        },
-        {
-          "title": "Build System",
-          "collapse-after": 0,
-          "commit-types": ["build"]
-        },
-        {
-          "title": "Continuous Integration",
-          "collapse-after": 0,
-          "commit-types": ["ci"]
-        },
-        {
-          "title": "Chores",
-          "collapse-after": 0,
-          "commit-types": ["chore"]
-        },
-        {
-          "title": "Reverts",
-          "collapse-after": 0,
-          "commit-types": ["revert"]
+          "title": "⚙️ Under the Hood",
+          "commit-types": [
+            "chore",
+            "ci",
+            "build",
+            "refactor",
+            "style",
+            "test",
+            "perf"
+          ],
+          "collapse-after": 2
         }
       ],
       "items": {

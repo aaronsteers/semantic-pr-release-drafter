@@ -66,21 +66,21 @@ describe('releases', () => {
       expect(changelog).toMatchInlineSnapshot(`
         "## Features
 
-        * B2 (sha2) (#2) @ghost
-        * Adds @nullable annotations to the 1*1+2*4 test in \`tests.java\` (sha8) (#8) @Happypig375
+        * B2 () sha2
+        * Adds @nullable annotations to the 1*1+2*4 test in \`tests.java\` () sha8
 
         ## Bug Fixes
 
-        * A1 (sha1) (#1) @ghost
-        * Adds missing <example> (sha3) (#3) @jetersen
-        * \`#code_block\` (sha4) (#4) @jetersen
-        * Fixes #4 (sha5) (#5) @Happypig375
-        * 2*2 should equal to 4*1 (sha6) (#6) @jetersen
+        * A1 () sha1
+        * Adds missing <example> () sha3
+        * \`#code_block\` () sha4
+        * Fixes #4 () sha5
+        * 2*2 should equal to 4*1 () sha6
 
         ## Chores
 
-        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml (sha7) (#7) @ghost
-        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples (sha9) (#9) @dependabot"
+        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml () sha7
+        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples () sha9"
       `)
     })
 
@@ -93,21 +93,21 @@ describe('releases', () => {
       expect(changelog).toMatchInlineSnapshot(`
         "## Features
 
-        * B2 (sha2) (#2) @ghost
-        * Adds @<!---->nullable annotations to the 1*1+2*4 test in \`tests.java\` (sha8) (#8) @Happypig375
+        * B2 () sha2
+        * Adds @<!---->nullable annotations to the 1*1+2*4 test in \`tests.java\` () sha8
 
         ## Bug Fixes
 
-        * A1 (sha1) (#1) @ghost
-        * Adds missing <example> (sha3) (#3) @jetersen
-        * \`#code_block\` (sha4) (#4) @jetersen
-        * Fixes #4 (sha5) (#5) @Happypig375
-        * 2*2 should equal to 4*1 (sha6) (#6) @jetersen
+        * A1 () sha1
+        * Adds missing <example> () sha3
+        * \`#code_block\` () sha4
+        * Fixes #4 () sha5
+        * 2*2 should equal to 4*1 () sha6
 
         ## Chores
 
-        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml (sha7) (#7) @ghost
-        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples (sha9) (#9) @dependabot"
+        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml () sha7
+        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples () sha9"
       `)
     })
 
@@ -121,21 +121,21 @@ describe('releases', () => {
       expect(changelog).toMatchInlineSnapshot(`
         "## Features
 
-        * B2 (sha2) (#2) @ghost
-        * Adds @<!---->nullable annotations to the 1*1+2*4 test in \`tests.java\` (sha8) (#8) @Happypig375
+        * B2 () sha2
+        * Adds @<!---->nullable annotations to the 1*1+2*4 test in \`tests.java\` () sha8
 
         ## Bug Fixes
 
-        * A1 (sha1) (#1) @ghost
-        * Adds missing <example> (sha3) (#3) @jetersen
-        * \`#code_block\` (sha4) (#4) @jetersen
-        * Fixes #<!---->4 (sha5) (#5) @Happypig375
-        * 2*2 should equal to 4*1 (sha6) (#6) @jetersen
+        * A1 () sha1
+        * Adds missing <example> () sha3
+        * \`#code_block\` () sha4
+        * Fixes #<!---->4 () sha5
+        * 2*2 should equal to 4*1 () sha6
 
         ## Chores
 
-        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml (sha7) (#7) @ghost
-        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples (sha9) (#9) @dependabot"
+        * Rename __confgs\\\\confg.yml to __configs\\\\config.yml () sha7
+        * Bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /examples () sha9"
       `)
     })
 

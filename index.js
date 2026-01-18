@@ -114,6 +114,23 @@ module.exports = (app, { getRouter }) => {
       config['sort-direction']
     )
 
+    // Debug: Log input commits
+    log({ context, message: `Processing ${commits.length} commits` })
+    for (const commit of commits) {
+      log({
+        context,
+        message: `  Commit ${commit.id?.slice(0, 7) || 'unknown'}: ${
+          commit.message?.split('\n')[0] || 'no message'
+        }`,
+      })
+    }
+
+    // Debug: Log merged pull requests
+    log({
+      context,
+      message: `Processing ${sortedMergedPullRequests.length} merged pull requests`,
+    })
+
     const { shouldDraft, version, tag, name, dryRun } = input
 
     const releaseInfo = generateReleaseInfo({

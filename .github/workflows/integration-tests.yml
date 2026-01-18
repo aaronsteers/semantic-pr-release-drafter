@@ -30,6 +30,14 @@ jobs:
               ## Features
 
               * add new feature (#80)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Features
+                commit-types:
+                  - feat
 
           - test-name: 'breaking-change-pre-1.0'
             test-start-version-string: 'v0.9.0'
@@ -40,6 +48,14 @@ jobs:
               ## Features
 
               * breaking change in pre-1.0 (#81)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Features
+                commit-types:
+                  - feat
 
           - test-name: 'multiple-commits-minor-bump'
             test-start-version-string: 'v2.0.0'
@@ -60,6 +76,20 @@ jobs:
               ## Documentation
 
               * update documentation (#84)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Features
+                commit-types:
+                  - feat
+              - title: Bug Fixes
+                commit-types:
+                  - fix
+              - title: Documentation
+                commit-types:
+                  - docs
 
           # Test that custom emoji category titles are used instead of defaults
           - test-name: 'custom-emoji-categories'
@@ -81,17 +111,20 @@ jobs:
               ## Under the Hood
 
               * update deps (#92)
-            custom-categories: |
-              categories:
-                - title: New Features
-                  commit-types:
-                    - feat
-                - title: Bug Fixes
-                  commit-types:
-                    - fix
-                - title: Under the Hood
-                  commit-types:
-                    - chore
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: New Features
+                commit-types:
+                  - feat
+              - title: Bug Fixes
+                commit-types:
+                  - fix
+              - title: Under the Hood
+                commit-types:
+                  - chore
 
     name: ${{ matrix.test-name }}
     steps:
@@ -135,43 +168,20 @@ jobs:
             git commit -m "$commit_msg"
           done <<< "${{ matrix.test-commit-list }}"
 
-          # Create release-drafter config
-          # Include $NUMBER in change-template to show PR numbers parsed from commit messages
-          # Include categories to generate section headers (## Features, ## Bug Fixes, etc.)
+          # Create .github directory (required for local-git-root)
           mkdir -p .github
-          echo 'template: |' > .github/release-drafter.yml
-          echo '  $CHANGES' >> .github/release-drafter.yml
-          echo "change-template: '* \$TITLE (#\$NUMBER)'" >> .github/release-drafter.yml
-          echo "category-template: '## \$TITLE'" >> .github/release-drafter.yml
-
-          # Use custom categories if provided, otherwise use defaults
-          CUSTOM_CATEGORIES='${{ matrix.custom-categories }}'
-          if [ -n "$CUSTOM_CATEGORIES" ]; then
-            echo "$CUSTOM_CATEGORIES" >> .github/release-drafter.yml
-          else
-            echo 'categories:' >> .github/release-drafter.yml
-            echo '  - title: Features' >> .github/release-drafter.yml
-            echo '    commit-types:' >> .github/release-drafter.yml
-            echo '      - feat' >> .github/release-drafter.yml
-            echo '  - title: Bug Fixes' >> .github/release-drafter.yml
-            echo '    commit-types:' >> .github/release-drafter.yml
-            echo '      - fix' >> .github/release-drafter.yml
-            echo '  - title: Documentation' >> .github/release-drafter.yml
-            echo '    commit-types:' >> .github/release-drafter.yml
-            echo '      - docs' >> .github/release-drafter.yml
-            echo '  - title: Chores' >> .github/release-drafter.yml
-            echo '    commit-types:' >> .github/release-drafter.yml
-            echo '      - chore' >> .github/release-drafter.yml
-          fi
 
       - name: Run release-drafter in dry-run mode
         id: release-drafter
         uses: ./
         with:
           dry-run: 'true'
-          config-name: 'release-drafter.yml'
           local-git-root: ${{ env.TEST_REPO }}
           base-ref-override: ${{ matrix.test-start-version-string }}
+          template: ${{ matrix.template }}
+          change-template: ${{ matrix.change-template }}
+          category-template: ${{ matrix.category-template }}
+          categories: ${{ matrix.categories }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}

@@ -63,6 +63,50 @@ inputs:
       A string that would be added after the template body.
     required: false
     default: ''
+  name-template:
+    description: |
+      The template for the release name. Supports placeholders like $RESOLVED_VERSION.
+      This will override any `name-template` specified in your config file.
+    required: false
+    default: ''
+  tag-template:
+    description: |
+      The template for the release tag. Supports placeholders like $RESOLVED_VERSION.
+      This will override any `tag-template` specified in your config file.
+    required: false
+    default: ''
+  change-template:
+    description: |
+      The template for each changelog entry. Supports placeholders like $TITLE, $URL, $SHA, $NUMBER, $AUTHOR.
+      This will override any `change-template` specified in your config file.
+    required: false
+    default: ''
+  template:
+    description: |
+      The template for the release body. Supports placeholders like $CHANGES, $OWNER, $REPOSITORY, etc.
+      This will override any `template` specified in your config file.
+    required: false
+    default: ''
+  categories:
+    description: |
+      A YAML string defining the categories for grouping changes.
+      Example:
+        categories: |
+          - title: 'Features'
+            commit-types:
+              - 'feat'
+          - title: 'Bug Fixes'
+            commit-types:
+              - 'fix'
+      This will override any `categories` specified in your config file.
+    required: false
+    default: ''
+  category-template:
+    description: |
+      The template for category headers. Supports placeholders like $TITLE.
+      This will override any `category-template` specified in your config file.
+    required: false
+    default: ''
   local-git-root:
     description: |
       Path to a local git repository root. When set, the action will use `git log`

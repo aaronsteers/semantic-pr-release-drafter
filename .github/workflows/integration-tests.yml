@@ -132,7 +132,7 @@ jobs:
             # No template, change-template, category-template, or categories provided
             # This tests the zero-config path
 
-          # Test collapse-after feature: items beyond threshold are collapsed
+          # Test collapse-after feature: when item count exceeds threshold, ALL items are collapsed
           # Note: commits are processed in reverse chronological order (newest first)
           - test-name: 'collapse-after-feature'
             test-start-version-string: 'v1.0.0'
@@ -145,12 +145,11 @@ jobs:
             expected-body: |
               ## Under the Hood
 
+              <details>
+              <summary>4 changes</summary>
+
               * bump version (#203)
               * fix typo (#202)
-
-              <details>
-              <summary>2 more changes</summary>
-
               * cleanup code (#201)
               * update deps (#200)
               </details>

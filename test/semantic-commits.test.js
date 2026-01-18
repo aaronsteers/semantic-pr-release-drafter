@@ -316,4 +316,122 @@ describe('ReleaseChangeLineItems', () => {
       expect(array.length).toEqual(2)
     })
   })
+
+  describe('renderWithConfig', () => {
+    const defaultConfig = {
+      'change-template': '* $TITLE',
+      'category-template': '## $TITLE',
+      'no-changes-template': '* No changes',
+      categories: [
+        { title: 'Features', 'commit-types': ['feat'] },
+        { title: 'Bug Fixes', 'commit-types': ['fix'] },
+        { title: 'Documentation', 'commit-types': ['docs'] },
+        { title: 'Chores', 'commit-types': ['chore'] },
+      ],
+    }
+
+    test.each([
+      [
+        'renders single feature',
+        ['feat: add new feature'],
+        defaultConfig,
+        '## Features\n\n* add new feature',
+      ],
+      [
+        'renders single fix',
+        ['fix: resolve bug'],
+        defaultConfig,
+        '## Bug Fixes\n\n* resolve bug',
+      ],
+      [
+        'renders multiple items in same category',
+        ['feat: feature one', 'feat: feature two'],
+        defaultConfig,
+        '## Features\n\n* feature one\n* feature two',
+      ],
+      [
+        'renders multiple categories',
+        ['feat: add feature', 'fix: resolve bug'],
+        defaultConfig,
+        '## Features\n\n* add feature\n\n## Bug Fixes\n\n* resolve bug',
+      ],
+      [
+        'renders multiple categories with multiple items',
+        ['feat: f1', 'fix: bug1', 'feat: f2', 'fix: bug2'],
+        defaultConfig,
+        '## Features\n\n* f1\n* f2\n\n## Bug Fixes\n\n* bug1\n* bug2',
+      ],
+      [
+        'returns no-changes-template for empty collection',
+        [],
+        defaultConfig,
+        '* No changes',
+      ],
+      [
+        'uses custom change-template',
+        ['feat: add feature'],
+        { ...defaultConfig, 'change-template': '- $TITLE ($COMMIT)' },
+        '## Features\n\n- add feature (sha0)',
+      ],
+      [
+        'uses custom category-template',
+        ['feat: add feature'],
+        { ...defaultConfig, 'category-template': '### $TITLE' },
+        '### Features\n\n* add feature',
+      ],
+      [
+        'handles uncategorized items',
+        ['feat: feature', 'perf: improve speed'],
+        {
+          ...defaultConfig,
+          categories: [{ title: 'Features', 'commit-types': ['feat'] }],
+        },
+        '* improve speed\n\n## Features\n\n* feature',
+      ],
+    ])('%s', (name, messages, config, expected) => {
+      const commits = createMockCommits(messages)
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const result = collection.renderWithConfig(config)
+
+      expect(result).toEqual(expected)
+    })
+
+    test('renders with PR number when available', () => {
+      const commits = [
+        {
+          id: 'sha1',
+          message: 'feat: add feature',
+          associatedPullRequests: {
+            nodes: [{ merged: true, number: 42, url: 'https://pr/42' }],
+          },
+        },
+      ]
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        'change-template': '* $TITLE (#$NUMBER)',
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toEqual('## Features\n\n* add feature (#42)')
+    })
+
+    test('renders with commit SHA when available', () => {
+      const commits = [
+        {
+          id: 'abc123def456',
+          message: 'feat: add feature',
+          associatedPullRequests: { nodes: [] },
+        },
+      ]
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        'change-template': '* $TITLE ($COMMIT)',
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toEqual('## Features\n\n* add feature (abc123d)')
+    })
+  })
 })

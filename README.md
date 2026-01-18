@@ -93,7 +93,7 @@ jobs:
 
 Release Drafter can be configured in two ways:
 
-1. **Inline config inputs** (recommended) - Pass configuration directly as action inputs in your workflow file
+1. **Inline config inputs** - Pass configuration directly as action inputs in your workflow file
 2. **Config file** - Create a `.github/release-drafter.yml` file in your repository's default branch
 
 You can use either method, or combine both (inline inputs override file config).

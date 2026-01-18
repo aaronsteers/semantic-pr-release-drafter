@@ -217,10 +217,30 @@ jobs:
               - title: Features
                 commit-types:
                   - feat
-            # attach-files patterns to test glob resolution
-            attach-files: |
-              dist/*.txt
-              dist/*.whl
+            # Flag to indicate this test needs attach-files setup
+            needs-attach-files: true
+
+          # Test attach-files failure when no files match the pattern
+          # Verifies that the action fails with a clear error message
+          - test-name: 'attach-files-no-match-fails'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat: add feature (#301)
+            expected-version-string: '1.1.0'
+            expected-body: |
+              ## Features
+
+              * add feature (#301)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Features
+                commit-types:
+                  - feat
+            # This test expects failure - no files will match
+            attach-files-expect-failure: true
 
     name: ${{ matrix.test-name }}
     steps:
@@ -268,7 +288,7 @@ jobs:
           mkdir -p .github
 
       - name: Create test files for attach-files test
-        if: matrix.attach-files != ''
+        if: matrix.needs-attach-files == true
         run: |
           cd "$TEST_REPO"
           mkdir -p dist
@@ -277,9 +297,21 @@ jobs:
           echo "wheel content" > dist/app-1.0.0.whl
           echo "Files created for attach-files test:"
           ls -la dist/
+          # Set attach-files patterns with absolute paths
+          echo "ATTACH_FILES_PATTERNS<<EOF" >> $GITHUB_ENV
+          echo "$TEST_REPO/dist/*.txt" >> $GITHUB_ENV
+          echo "$TEST_REPO/dist/*.whl" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Set up attach-files failure test
+        if: matrix.attach-files-expect-failure == true
+        run: |
+          # Set a pattern that won't match any files (no files created)
+          echo "ATTACH_FILES_PATTERNS=$TEST_REPO/nonexistent/*.whl" >> $GITHUB_ENV
 
       - name: Run release-drafter in dry-run mode
         id: release-drafter
+        if: matrix.attach-files-expect-failure != true
         uses: ./
         with:
           dry-run: 'true'
@@ -289,14 +321,42 @@ jobs:
           change-template: ${{ matrix.change-template }}
           category-template: ${{ matrix.category-template }}
           categories: ${{ matrix.categories }}
-          attach-files: ${{ matrix.attach-files }}
+          attach-files: ${{ env.ATTACH_FILES_PATTERNS }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REF: refs/heads/main
-          GITHUB_WORKSPACE: ${{ env.TEST_REPO }}
+
+      - name: Run release-drafter expecting failure
+        id: release-drafter-failure
+        if: matrix.attach-files-expect-failure == true
+        uses: ./
+        continue-on-error: true
+        with:
+          dry-run: 'true'
+          local-git-root: ${{ env.TEST_REPO }}
+          base-ref-override: ${{ matrix.test-start-version-string }}
+          template: ${{ matrix.template }}
+          change-template: ${{ matrix.change-template }}
+          category-template: ${{ matrix.category-template }}
+          categories: ${{ matrix.categories }}
+          attach-files: ${{ env.ATTACH_FILES_PATTERNS }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: refs/heads/main
+
+      - name: Verify attach-files failure
+        if: matrix.attach-files-expect-failure == true
+        run: |
+          if [ "${{ steps.release-drafter-failure.outcome }}" != "failure" ]; then
+            echo "::error::Expected release-drafter to fail when no files match attach-files pattern, but it succeeded"
+            exit 1
+          fi
+          echo "Correctly failed when no files matched attach-files pattern"
 
       - name: Verify resolved version
+        if: matrix.attach-files-expect-failure != true
         run: |
           RESOLVED_VERSION="${{ steps.release-drafter.outputs.resolved_version }}"
           EXPECTED_VERSION="${{ matrix.expected-version-string }}"
@@ -312,6 +372,7 @@ jobs:
           echo "Version check passed!"
 
       - name: Verify changelog body matches expected output
+        if: matrix.attach-files-expect-failure != true
         run: |
           BODY="${{ steps.release-drafter.outputs.body }}"
           EXPECTED_BODY=$(cat << 'EXPECTED_EOF'

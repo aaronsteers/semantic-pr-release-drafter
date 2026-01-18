@@ -1,0 +1,47 @@
+name: Check dist/index.js
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+env:
+  HUSKY: '0'
+
+jobs:
+  check-dist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build dist/index.js
+        run: npx ncc build action.js --target es2021 -o dist
+
+      - name: Check for drift
+        run: |
+          if [ -n "$(git status --porcelain dist/)" ]; then
+            echo "::error::dist/index.js is out of sync with source files!"
+            echo ""
+            echo "The committed dist/index.js does not match what would be generated from the current source."
+            echo "Run '/rebuild-dist' as a PR comment to fix this, or run locally:"
+            echo "  npx ncc build action.js --target es2021 -o dist"
+            echo ""
+            echo "Changed files:"
+            git status --porcelain dist/
+            echo ""
+            echo "Diff:"
+            git diff dist/
+            exit 1
+          fi
+          echo "dist/index.js is up to date!"

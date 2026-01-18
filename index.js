@@ -76,7 +76,7 @@ module.exports = (app, { getRouter }) => {
       config['sort-direction']
     )
 
-    const { shouldDraft, version, tag, name } = input
+    const { shouldDraft, version, tag, name, dryRun } = input
 
     const releaseInfo = generateReleaseInfo({
       context,
@@ -92,6 +92,18 @@ module.exports = (app, { getRouter }) => {
       shouldDraft,
       targetCommitish,
     })
+
+    // In dry-run mode, skip creating/updating releases but still set outputs
+    if (dryRun) {
+      log({
+        context,
+        message: 'Dry-run mode: skipping release creation/update',
+      })
+      if (runnerIsActions()) {
+        setDryRunOutput(releaseInfo)
+      }
+      return
+    }
 
     let createOrUpdateReleaseResponse
     if (!draftRelease) {
@@ -131,6 +143,7 @@ function getInput() {
     tag: core.getInput('tag') || undefined,
     name: core.getInput('name') || undefined,
     disableReleaser: core.getInput('disable-releaser').toLowerCase() === 'true',
+    dryRun: core.getInput('dry-run').toLowerCase() === 'true',
     commitish: core.getInput('commitish') || undefined,
     header: core.getInput('header') || undefined,
     footer: core.getInput('footer') || undefined,
@@ -196,5 +209,26 @@ function setActionOutput(
   if (majorVersion) core.setOutput('major_version', majorVersion)
   if (minorVersion) core.setOutput('minor_version', minorVersion)
   if (patchVersion) core.setOutput('patch_version', patchVersion)
+  core.setOutput('body', body)
+}
+
+/**
+ * Set outputs for dry-run mode (no release created/updated)
+ */
+function setDryRunOutput({
+  body,
+  resolvedVersion,
+  majorVersion,
+  minorVersion,
+  patchVersion,
+  tag,
+  name,
+}) {
+  if (resolvedVersion) core.setOutput('resolved_version', resolvedVersion)
+  if (majorVersion) core.setOutput('major_version', majorVersion)
+  if (minorVersion) core.setOutput('minor_version', minorVersion)
+  if (patchVersion) core.setOutput('patch_version', patchVersion)
+  if (tag) core.setOutput('tag_name', tag)
+  if (name) core.setOutput('name', name)
   core.setOutput('body', body)
 }

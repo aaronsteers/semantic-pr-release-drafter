@@ -1,0 +1,142 @@
+name: Integration Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  # Disable Husky git hooks (for local dev only)
+  # https://typicode.github.io/husky/how-to.html#ci-server-and-docker
+  HUSKY: '0'
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test-name: 'simple-feature-bump'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat: add new feature
+            expected-version-string: '1.1.0'
+            expected-text: 'add new feature'
+
+          - test-name: 'breaking-change-pre-1.0'
+            test-start-version-string: 'v0.9.0'
+            test-commit-list: |
+              feat!: breaking change in pre-1.0
+            expected-version-string: '0.10.0'
+            expected-text: 'breaking change in pre-1.0'
+
+          - test-name: 'multiple-commits-minor-bump'
+            test-start-version-string: 'v2.0.0'
+            test-commit-list: |
+              fix: fix a bug
+              feat: add another feature
+              docs: update documentation
+            expected-version-string: '2.1.0'
+            expected-text: 'add another feature'
+
+    name: ${{ matrix.test-name }}
+    steps:
+      - name: Checkout action code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Create test repository
+        run: |
+          # Create a temporary directory for the test repo
+          TEST_REPO=$(mktemp -d)
+          echo "TEST_REPO=$TEST_REPO" >> $GITHUB_ENV
+
+          cd "$TEST_REPO"
+          git init
+          git config user.email "test@example.com"
+          git config user.name "Test User"
+
+          # Create initial commit
+          echo "# Test Repo" > README.md
+          git add README.md
+          git commit -m "chore: initial commit"
+
+          # Create initial tag
+          git tag "${{ matrix.test-start-version-string }}"
+
+          # Apply each commit from the list
+          COMMIT_NUM=0
+          while IFS= read -r commit_msg; do
+            # Skip empty lines
+            if [ -z "$commit_msg" ]; then
+              continue
+            fi
+            COMMIT_NUM=$((COMMIT_NUM + 1))
+            echo "Change $COMMIT_NUM" >> README.md
+            git add README.md
+            git commit -m "$commit_msg"
+          done <<< "${{ matrix.test-commit-list }}"
+
+          # Create release-drafter config
+          mkdir -p .github
+          cat > .github/release-drafter.yml << 'EOF'
+          template: |
+            ## Changes
+            $CHANGES
+          EOF
+
+      - name: Run release-drafter in dry-run mode
+        id: release-drafter
+        uses: ./
+        with:
+          dry-run: 'true'
+          config-name: 'release-drafter.yml'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: refs/heads/main
+
+      - name: Verify resolved version
+        run: |
+          RESOLVED_VERSION="${{ steps.release-drafter.outputs.resolved_version }}"
+          EXPECTED_VERSION="${{ matrix.expected-version-string }}"
+
+          echo "Resolved version: $RESOLVED_VERSION"
+          echo "Expected version: $EXPECTED_VERSION"
+
+          if [ "$RESOLVED_VERSION" != "$EXPECTED_VERSION" ]; then
+            echo "::error::Version mismatch! Expected $EXPECTED_VERSION but got $RESOLVED_VERSION"
+            exit 1
+          fi
+
+          echo "Version check passed!"
+
+      - name: Verify changelog body contains expected text
+        run: |
+          BODY="${{ steps.release-drafter.outputs.body }}"
+          EXPECTED_TEXT="${{ matrix.expected-text }}"
+
+          echo "Changelog body:"
+          echo "$BODY"
+          echo ""
+          echo "Expected text: $EXPECTED_TEXT"
+
+          if [[ "$BODY" != *"$EXPECTED_TEXT"* ]]; then
+            echo "::error::Changelog body does not contain expected text: $EXPECTED_TEXT"
+            exit 1
+          fi
+
+          echo "Changelog body check passed!"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -n "$TEST_REPO" ] && [ -d "$TEST_REPO" ]; then
+            rm -rf "$TEST_REPO"
+          fi

@@ -165,11 +165,10 @@ module.exports = (app, { getRouter }) => {
         })
         const filesToAttach = await resolveFiles(attachFiles, workspacePath)
         if (filesToAttach.length === 0) {
-          log({
-            context,
-            message:
-              'Dry-run mode: WARNING - No files matched the attach-files pattern(s)',
-          })
+          throw new Error(
+            'attach-files was specified but no files matched the pattern(s). ' +
+              'Please check your glob patterns and ensure the files exist.'
+          )
         } else {
           log({
             context,

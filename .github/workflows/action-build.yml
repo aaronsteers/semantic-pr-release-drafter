@@ -3,9 +3,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - 'master'
+      - 'main'
 
 env:
+  # Disable Husky git hooks in CI - hooks are for local development only
   HUSKY: '0'
 
 permissions:

@@ -2,11 +2,12 @@ name: Check dist/index.js
 
 on:
   pull_request:
-    branches: [main, master]
+    branches: [main]
   push:
-    branches: [main, master]
+    branches: [main]
 
 env:
+  # Disable Husky git hooks in CI - hooks are for local development only
   HUSKY: '0'
 
 jobs:

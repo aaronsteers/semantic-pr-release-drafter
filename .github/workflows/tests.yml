@@ -3,10 +3,11 @@ name: Tests
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 
 env:
+  # Disable Husky git hooks in CI - hooks are for local development only
   HUSKY: '0'
 
 jobs:

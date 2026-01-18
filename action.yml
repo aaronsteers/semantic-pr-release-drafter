@@ -63,11 +63,6 @@ inputs:
       A string that would be added after the template body.
     required: false
     default: ''
-  disable-releaser:
-    description: |
-      A boolean indicating whether the releaser mode is disabled.
-    required: false
-    default: ''
   local-git-root:
     description: |
       Path to a local git repository root. When set, the action will use `git log`

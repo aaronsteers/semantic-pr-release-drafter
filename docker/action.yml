@@ -48,16 +48,6 @@ inputs:
       The object that the release should be created to point to.
     required: false
     default: ''
-  disable-releaser:
-    description: |
-      A boolean indicating whether the releaser mode is disabled.
-    required: false
-    default: ''
-  disable-autolabeler:
-    description: |
-      A boolean indicating whether the autolabeler mode is disabled.
-    required: false
-    default: ''
 outputs:
   id:
     description: The ID of the release that was created or updated.

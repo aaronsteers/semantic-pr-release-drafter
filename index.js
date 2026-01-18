@@ -32,7 +32,7 @@ module.exports = (app, { getRouter }) => {
       localGitRoot: input.localGitRoot,
     })
 
-    if (!config || input.disableReleaser) return
+    if (!config) return
 
     updateConfigFromInput(config, input)
 
@@ -198,7 +198,6 @@ function getInput() {
     version: core.getInput('version') || undefined,
     tag: core.getInput('tag') || undefined,
     name: core.getInput('name') || undefined,
-    disableReleaser: core.getInput('disable-releaser').toLowerCase() === 'true',
     dryRun: core.getInput('dry-run').toLowerCase() === 'true',
     localGitRoot: core.getInput('local-git-root') || undefined,
     baseRefOverride: core.getInput('base-ref-override') || undefined,

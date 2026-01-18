@@ -109,6 +109,20 @@ jobs:
                 commit-types:
                   - docs
 
+          # Test zero-config mode (no inputs, pure defaults)
+          - test-name: 'zero-config-defaults'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat: add new feature (#100)
+              fix: fix a bug (#101)
+            expected-version-string: '1.1.0'
+            # With pure defaults, the body uses the default template which includes
+            # the Full Changelog link, so we only check the version here
+            # (body format is tested implicitly by the action succeeding)
+            skip-body-check: 'true'
+            # No template, change-template, category-template, or categories provided
+            # This tests the zero-config path
+
           # Test that custom emoji category titles are used instead of defaults
           - test-name: 'custom-emoji-categories'
             test-start-version-string: 'v1.0.0'
@@ -221,6 +235,7 @@ jobs:
           echo "Version check passed!"
 
       - name: Verify changelog body matches expected output
+        if: ${{ matrix.skip-body-check != 'true' }}
         run: |
           BODY="${{ steps.release-drafter.outputs.body }}"
           EXPECTED_BODY=$(cat << 'EXPECTED_EOF'

@@ -33,19 +33,21 @@ jobs:
         run: npx esbuild action.js --bundle --platform=node --target=node20 --outfile=dist/index.js
 
       - name: Check for drift
+        id: check-drift
+        run: echo "drift=$(git status --porcelain dist/)" >> $GITHUB_OUTPUT
+
+      - name: Report drift
+        if: steps.check-drift.outputs.drift != ''
         run: |
-          if [ -n "$(git status --porcelain dist/)" ]; then
-            echo "::error::dist/index.js is out of sync with source files!"
-            echo ""
-            echo "The committed dist/index.js does not match what would be generated from the current source."
-            echo "Run '/rebuild-dist' as a PR comment to fix this, or run locally:"
-            echo "  npx ncc build action.js --target es2021 -o dist"
-            echo ""
-            echo "Changed files:"
-            git status --porcelain dist/
-            echo ""
-            echo "Diff:"
-            git diff dist/
-            exit 1
-          fi
-          echo "dist/index.js is up to date!"
+          echo "::error::dist/index.js is out of sync with source files!"
+          echo ""
+          echo "The committed dist/index.js does not match what would be generated from the current source."
+          echo "Run '/rebuild-dist' as a PR comment to fix this, or run locally:"
+          echo "  yarn build"
+          echo ""
+          echo "Changed files:"
+          git status --porcelain dist/
+          echo ""
+          echo "Diff:"
+          git diff dist/
+          exit 1

@@ -28,10 +28,11 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
+
+      - run: corepack enable
 
       - run: yarn install --immutable
 

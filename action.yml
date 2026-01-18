@@ -68,13 +68,6 @@ inputs:
       A boolean indicating whether the releaser mode is disabled.
     required: false
     default: ''
-  dry-run:
-    description: |
-      A boolean indicating whether to run in dry-run mode.
-      In dry-run mode, the action will calculate the release info and set outputs,
-      but will not create or update any releases.
-    required: false
-    default: 'false'
   local-git-root:
     description: |
       Path to a local git repository root. When set, the action will use `git log`
@@ -100,6 +93,13 @@ inputs:
       If base-ref is also provided, this takes precedence for version calculation.
     required: false
     default: ''
+  dry-run:
+    description: |
+      A boolean indicating whether to run in dry-run mode.
+      In dry-run mode, the action will calculate the release info and set outputs,
+      but will not create or update any releases.
+    required: false
+    default: 'false'
 outputs:
   id:
     description: The ID of the release that was created or updated.

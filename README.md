@@ -201,7 +201,7 @@ You can use any of the following variables in `version-template` to format the `
 | `$MAJOR`    | The major version number.                                    |
 | `$COMPLETE` | The complete version string (including any prerelease info). |
 
-## Version Resolution
+## Version Resolver
 
 Version bumps are automatically determined based on semantic commit types:
 
@@ -329,18 +329,18 @@ See [action.yml](action.yml) for the full list of supported inputs and their des
 
 The action sets the following outputs which can be used in subsequent workflow steps:
 
-| Output             | Description                                                          |
-| ------------------ | -------------------------------------------------------------------- |
-| `id`               | The ID of the release that was created or updated.                   |
-| `name`             | The name of this release.                                            |
-| `tag_name`         | The name of the tag associated with this release.                    |
-| `body`             | The body of the drafted release.                                     |
-| `html_url`         | The URL to view the release.                                         |
-| `upload_url`       | The URL for uploading assets to the release.                         |
-| `resolved_version` | The calculated next version based on semantic commits, e.g. `6.3.1`. |
-| `major_version`    | Major part of resolved version, e.g. `6` for version `6.3.1`.        |
-| `minor_version`    | Minor part of resolved version, e.g. `3` for version `6.3.1`.        |
-| `patch_version`    | Patch part of resolved version, e.g. `1` for version `6.3.1`.        |
+| Output             | Description                                                                        |
+| ------------------ | ---------------------------------------------------------------------------------- |
+| `id`               | The ID of the release that was created or updated.                                 |
+| `name`             | The name of this release.                                                          |
+| `tag_name`         | The name of the tag associated with this release.                                  |
+| `body`             | The body of the drafted release.                                                   |
+| `html_url`         | The URL to view the release.                                                       |
+| `upload_url`       | The URL for uploading assets to the release.                                       |
+| `resolved_version` | Version resolved by [Version Resolver](#version-resolver), e.g. `6.3.1`.           |
+| `major_version`    | Major part of resolved version by [Version Resolver](#version-resolver), e.g. `6`. |
+| `minor_version`    | Minor part of resolved version by [Version Resolver](#version-resolver), e.g. `3`. |
+| `patch_version`    | Patch part of resolved version by [Version Resolver](#version-resolver), e.g. `1`. |
 
 ## Developing
 

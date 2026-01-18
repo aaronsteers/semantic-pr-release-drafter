@@ -141,9 +141,7 @@ You can configure Release Drafter using the following key in your `.github/relea
 | `change-title-escapes`     | Optional | Characters to escape in `$TITLE` when inserting into `change-template` so that they are not interpreted as Markdown format characters. Default: `""`                               |
 | `no-changes-template`      | Optional | The template to use for when there’s no changes. Default: `"* No changes"`.                                                                                                        |
 | `references`               | Optional | The references to listen for configuration updates to `.github/release-drafter.yml`. Refer to [References](#references) to learn more about this                                   |
-| `categories`               | Optional | Categorize pull requests using labels. Refer to [Categorize Pull Requests](#categorize-pull-requests) to learn more about this option.                                             |
-| `exclude-labels`           | Optional | Exclude pull requests using labels. Refer to [Exclude Pull Requests](#exclude-pull-requests) to learn more about this option.                                                      |
-| `include-labels`           | Optional | Include only the specified pull requests using labels. Refer to [Include Pull Requests](#include-pull-requests) to learn more about this option.                                   |
+| `categories`               | Optional | Categorize pull requests using commit types. Refer to [Categorize Changes](#categorize-changes) to learn more about this option.                                                   |
 | `exclude-contributors`     | Optional | Exclude specific usernames from the generated `$CONTRIBUTORS` variable. Refer to [Exclude Contributors](#exclude-contributors) to learn more about this option.                    |
 | `include-pre-releases`     | Optional | Include pre releases as "full" releases when drafting release notes. Default: `false`.                                                                                             |
 | `no-contributors-template` | Optional | The template to use for `$CONTRIBUTORS` when there's no contributors to list. Default: `"No contributors"`.                                                                        |
@@ -262,28 +260,6 @@ categories:
     commit-types:
       - 'fix'
 ```
-
-## Exclude Pull Requests
-
-With the `exclude-labels` option you can exclude pull requests from the release notes using labels. For example, append the following to your `.github/release-drafter.yml` file:
-
-```yml
-exclude-labels:
-  - 'skip-changelog'
-```
-
-Pull requests with the label "skip-changelog" will now be excluded from the release draft.
-
-## Include Pull Requests
-
-With the `include-labels` option you can specify pull requests from the release notes using labels. Only pull requests that have the configured labels will be included in the release draft. For example, append the following to your `.github/release-drafter.yml` file:
-
-```yml
-include-labels:
-  - 'app-foo'
-```
-
-Pull requests with the label "app-foo" will be the only pull requests included in the release draft.
 
 ## Exclude Contributors
 

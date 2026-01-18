@@ -79,15 +79,15 @@ inputs:
     description: |
       Path to a local git repository root. When set, the action will use `git log`
       to fetch commits instead of the GitHub API. This is useful for integration testing.
-      Note: Commit filtering is timestamp-based. When a base-ref-override is provided, it is
-      converted to a timestamp internally, and commits are filtered by their commit date.
+      Note: Commit filtering is ancestry-based. When a base-ref-override is provided, the action
+      uses git ancestry (for example, `git log BASE_REF..HEAD`) to find commits after that ref.
     required: false
     default: ''
   base-ref-override:
     description: |
       A git ref (tag, branch, or commit SHA) to use as the starting point for finding commits.
-      When set along with local-git-root, the action will get commits since this ref.
-      The ref is converted to a timestamp internally (commit filtering is timestamp-based).
+      When set along with local-git-root, the action will get commits that are descendants of this ref
+      using git ancestry (for example, `git log BASE_REF..HEAD`).
       This also serves as the base version for calculating the next semver if base-version-override is not set.
       Format: git ref (e.g., "v1.0.0", "main", or a commit SHA).
     required: false

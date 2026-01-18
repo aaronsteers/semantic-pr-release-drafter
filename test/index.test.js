@@ -581,20 +581,20 @@ describe('release-drafter', () => {
                   Object {
                     "body": "## Features
 
-                  * Change: #2 'add big feature' $BODY
-                  * Change: #1 'add alien technology' $BODY
+                  * Change: #2 'add big feature'
+                  * Change: #1 'add alien technology'
 
                   ## Bug Fixes
 
-                  * Change: #3 'bug fixes' $BODY
+                  * Change: #3 'bug fixes'
 
                   ## Documentation
 
-                  * Change: #5 'add documentation' $BODY
+                  * Change: #5 'add documentation'
 
                   ## Chores
 
-                  * Change: #4 'update dependencies' $BODY",
+                  * Change: #4 'update dependencies'",
                     "draft": true,
                     "make_latest": "true",
                     "name": "",
@@ -641,20 +641,20 @@ describe('release-drafter', () => {
                   Object {
                     "body": "## Features
 
-                  * Change: $URL 'add big feature' @TimonVS
-                  * Change: $URL 'add alien technology' @TimonVS
+                  * Change: #2 'add big feature' @TimonVS
+                  * Change: #1 'add alien technology' @TimonVS
 
                   ## Bug Fixes
 
-                  * Change: $URL 'bug fixes' @TimonVS
+                  * Change: #3 'bug fixes' @TimonVS
 
                   ## Documentation
 
-                  * Change: $URL 'add documentation' @TimonVS
+                  * Change: #5 'add documentation' @TimonVS
 
                   ## Chores
 
-                  * Change: $URL 'update dependencies' @TimonVS",
+                  * Change: #4 'update dependencies' @TimonVS",
                     "draft": true,
                     "make_latest": "true",
                     "name": "",

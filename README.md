@@ -34,7 +34,7 @@ This fork DROPS all support for:
 
 To get the most out of this action, we recommend configuring your repository as follows:
 
-**1. Validate PR titles with [amannn/action-semantic-pull-request](https://github.com/amannn/action-semantic-pull-request)**
+### 1. Validate PR titles with [amannn/action-semantic-pull-request](https://github.com/amannn/action-semantic-pull-request)
 
 Add a workflow to ensure all PR titles follow the Conventional Commits format:
 
@@ -54,7 +54,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-**2. Configure GitHub repository settings**
+### 2. Configure GitHub repository settings
 
 In your repository settings (Settings > General > Pull Requests):
 
@@ -449,7 +449,9 @@ This feature replaces the common pattern of using multiple actions to manage rel
     overwrite: true
     file_glob: true
     draft: true
+```
 
+```yaml
 # After: Dry-run to get version, build artifacts, then create release
 - name: Get release version (dry-run)
   id: dry-run
@@ -476,6 +478,32 @@ This feature replaces the common pattern of using multiple actions to manage rel
       dist/*.tar.gz
       dist/*.whl
 ```
+
+In some cases, you may need to resolve the version string before building:
+
+```yml
+# Dry-run to get version, then build the artifacts, then prepare release
+- name: Get release version (dry-run)
+  id: dry-run
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    dry-run: true
+
+# ... Build some artifacts here ...
+- run: build-something --version=${{ steps.dry-run.outputs.resolved-version }}
+
+- name: Create or update draft release
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    version: ${{ steps.dry-run.outputs.resolved-version }}
+    attach-files: |
+      dist/*.tar.gz
+      dist/*.whl
+``
 
 ## Action Inputs
 

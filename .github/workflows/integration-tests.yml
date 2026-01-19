@@ -74,6 +74,8 @@ jobs:
               - title: Breaking Changes
                 commit-types:
                   - breaking
+            # Opt-in to major version bumps for this test
+            allow-major-bumps: true
 
           - test-name: 'multiple-commits-minor-bump'
             test-start-version-string: 'v2.0.0'
@@ -322,6 +324,7 @@ jobs:
           category-template: ${{ matrix.category-template }}
           categories: ${{ matrix.categories }}
           attach-files: ${{ env.ATTACH_FILES_PATTERNS }}
+          allow-major-bumps: ${{ matrix.allow-major-bumps }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}

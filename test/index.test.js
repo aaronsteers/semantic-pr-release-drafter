@@ -978,9 +978,9 @@ describe('release-drafter', () => {
                 ",
                   "draft": true,
                   "make_latest": "true",
-                  "name": "v0.1.0",
+                  "name": "v3.0.0-beta",
                   "prerelease": false,
-                  "tag_name": "v0.1.0",
+                  "tag_name": "v3.0.0-beta",
                   "target_commitish": "refs/heads/master",
                 }
               `)

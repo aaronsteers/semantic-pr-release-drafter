@@ -301,14 +301,14 @@ function setActionOutput(
   } = releaseResponse
   if (releaseId && Number.isInteger(releaseId))
     core.setOutput('id', releaseId.toString())
-  if (htmlUrl) core.setOutput('html_url', htmlUrl)
-  if (uploadUrl) core.setOutput('upload_url', uploadUrl)
-  if (tagName) core.setOutput('tag_name', tagName)
+  if (htmlUrl) core.setOutput('html-url', htmlUrl)
+  if (uploadUrl) core.setOutput('upload-url', uploadUrl)
+  if (tagName) core.setOutput('tag-name', tagName)
   if (name) core.setOutput('name', name)
-  if (resolvedVersion) core.setOutput('resolved_version', resolvedVersion)
-  if (majorVersion) core.setOutput('major_version', majorVersion)
-  if (minorVersion) core.setOutput('minor_version', minorVersion)
-  if (patchVersion) core.setOutput('patch_version', patchVersion)
+  if (resolvedVersion) core.setOutput('resolved-version', resolvedVersion)
+  if (majorVersion) core.setOutput('major-version', majorVersion)
+  if (minorVersion) core.setOutput('minor-version', minorVersion)
+  if (patchVersion) core.setOutput('patch-version', patchVersion)
   core.setOutput('body', body)
 }
 
@@ -324,11 +324,11 @@ function setDryRunOutput({
   tag,
   name,
 }) {
-  if (resolvedVersion) core.setOutput('resolved_version', resolvedVersion)
-  if (majorVersion) core.setOutput('major_version', majorVersion)
-  if (minorVersion) core.setOutput('minor_version', minorVersion)
-  if (patchVersion) core.setOutput('patch_version', patchVersion)
-  if (tag) core.setOutput('tag_name', tag)
+  if (resolvedVersion) core.setOutput('resolved-version', resolvedVersion)
+  if (majorVersion) core.setOutput('major-version', majorVersion)
+  if (minorVersion) core.setOutput('minor-version', minorVersion)
+  if (patchVersion) core.setOutput('patch-version', patchVersion)
+  if (tag) core.setOutput('tag-name', tag)
   if (name) core.setOutput('name', name)
   core.setOutput('body', body)
 }

@@ -18,6 +18,7 @@ Besides the change from label-based to commit-based release logic, this fork add
 ### Other Changes
 
 - **Full Category Collapse** - When using `collapse-after=N`, categories with more than `N` changes are fully collapsed, rather than showing the first `N` changes and collapsing the rest.
+- **Kebab-Case Outputs** - All action outputs use kebab-case (e.g., `resolved-version`, `tag-name`) instead of snake_case, for consistency with GitHub Actions input conventions. See [PR #25](https://github.com/aaronsteers/semantic-pr-release-drafter/pull/25).
 
 ### Removed Features
 

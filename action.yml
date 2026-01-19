@@ -160,19 +160,19 @@ outputs:
     description: The ID of the release that was created or updated.
   name:
     description: The name of the release
-  tag_name:
+  tag-name:
     description: The name of the tag associated with the release.
   body:
     description: The body of the drafted release.
-  html_url:
+  html-url:
     description: The URL users can navigate to in order to view the release
-  upload_url:
+  upload-url:
     description: The URL for uploading assets to the release, which could be used by GitHub Actions for additional uses, for example the @actions/upload-release-asset GitHub Action.
-  major_version:
+  major-version:
     description: The next major version number, with 'v' prefix removed (if applicable).
-  minor_version:
+  minor-version:
     description: The next minor version number, with 'v' prefix removed (if applicable).
-  patch_version:
+  patch-version:
     description: The next patch version number, with 'v' prefix removed (if applicable).
-  resolved_version:
+  resolved-version:
     description: The next resolved version number, based on semantic commit types, with 'v' prefix removed (if applicable).

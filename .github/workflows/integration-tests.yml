@@ -359,7 +359,7 @@ jobs:
       - name: Verify resolved version
         if: matrix.attach-files-expect-failure != true
         run: |
-          RESOLVED_VERSION="${{ steps.release-drafter.outputs.resolved_version }}"
+          RESOLVED_VERSION="${{ steps.release-drafter.outputs.resolved-version }}"
           EXPECTED_VERSION="${{ matrix.expected-version-string }}"
 
           echo "Resolved version: $RESOLVED_VERSION"

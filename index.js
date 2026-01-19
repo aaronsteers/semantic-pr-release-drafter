@@ -151,10 +151,12 @@ module.exports = (app, { getRouter }) => {
         // Validate semver - if invalid, warn and ignore (trust humans know what they're doing)
         const parsedVersion = semver.parse(versionWithoutPrefix)
         if (parsedVersion) {
-          effectiveVersion = draftVersionStr
+          // Use versionWithoutPrefix (not draftVersionStr) to avoid double-prefixing
+          // since generateReleaseInfo() will add the tag prefix when creating the tag
+          effectiveVersion = versionWithoutPrefix
           log({
             context,
-            message: `Using draft release version as floor: ${draftVersionStr}`,
+            message: `Using draft release version as floor: ${versionWithoutPrefix}`,
           })
 
           // Warn if draft prerelease is behind the last published release

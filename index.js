@@ -156,6 +156,28 @@ module.exports = (app, { getRouter }) => {
             context,
             message: `Using draft release version as floor: ${draftVersionStr}`,
           })
+
+          // Warn if draft prerelease is behind the last published release
+          if (lastRelease) {
+            const lastReleaseVersionStr =
+              lastRelease.tag_name || lastRelease.name
+            if (lastReleaseVersionStr) {
+              const lastVersionWithoutPrefix =
+                tagPrefix && lastReleaseVersionStr.startsWith(tagPrefix)
+                  ? lastReleaseVersionStr.slice(tagPrefix.length)
+                  : lastReleaseVersionStr
+              const parsedLastVersion = semver.parse(lastVersionWithoutPrefix)
+              if (
+                parsedLastVersion &&
+                semver.gt(parsedLastVersion, parsedVersion)
+              ) {
+                core.warning(
+                  `Draft release version "${draftVersionStr}" is behind the last published release "${lastReleaseVersionStr}". ` +
+                    `Consider advancing the draft to a version greater than ${lastReleaseVersionStr}.`
+                )
+              }
+            }
+          }
         } else {
           core.warning(
             `Draft release version "${draftVersionStr}" is not valid semver. ` +

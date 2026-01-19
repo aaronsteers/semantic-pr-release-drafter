@@ -27,7 +27,7 @@ inputs:
     description: |
       The version to be associated with the GitHub release that's created or updated.
       This will override any version calculated by the release-drafter.
-      Accepts both formats: "1.2.3" or "v1.2.3" (normalized internally).
+      Accepts inputs with or without the 'v' prefix ("1.2.3" or "v1.2.3", normalized internally).
     required: false
   publish:
     description: |
@@ -129,7 +129,7 @@ inputs:
     description: |
       Override the base version to use for calculating the next version.
       When set, the action will skip querying the GitHub API for the last release
-      and use this version as the starting point. Accepts both formats: "1.0.0" or "v1.0.0" (normalized internally).
+      and use this version as the starting point. Accepts inputs with or without the 'v' prefix ("1.0.0" or "v1.0.0", normalized internally).
       If base-ref is also provided, this takes precedence for version calculation.
     required: false
     default: ''

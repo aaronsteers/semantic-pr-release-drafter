@@ -1,6 +1,6 @@
 # <p align="center">🔷 Semantic PR Release Drafter 🔷</p>
 
-✍️ _Draft your next release notes based on semantic PR commit messages. No labels required. _
+✍️ _Draft your next release notes based on semantic PR commit messages. No labels required._
 
 ## About This Fork
 

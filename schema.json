@@ -5,7 +5,9 @@
   "properties": {
     "references": {
       "type": "array",
-      "default": ["master"],
+      "default": [
+        "master"
+      ],
       "items": {
         "type": "string"
       }
@@ -59,12 +61,18 @@
     "sort-by": {
       "type": "string",
       "default": "merged_at",
-      "enum": ["merged_at", "title"]
+      "enum": [
+        "merged_at",
+        "title"
+      ]
     },
     "sort-direction": {
       "type": "string",
       "default": "descending",
-      "enum": ["ascending", "descending"]
+      "enum": [
+        "ascending",
+        "descending"
+      ]
     },
     "prerelease": {
       "type": "boolean",
@@ -108,7 +116,10 @@
             "type": "string"
           }
         },
-        "required": ["search", "replace"],
+        "required": [
+          "search",
+          "replace"
+        ],
         "additionalProperties": false
       }
     },
@@ -117,32 +128,49 @@
       "default": [
         {
           "title": "⚠️ Breaking Changes",
-          "commit-types": ["breaking"],
+          "commit-types": [
+            "breaking"
+          ],
           "collapse-after": 0
         },
         {
           "title": "✨ New Features",
-          "commit-types": ["feat"],
+          "commit-types": [
+            "feat"
+          ],
           "collapse-after": 0
         },
         {
           "title": "🐛 Bug Fixes",
-          "commit-types": ["fix"],
+          "commit-types": [
+            "fix"
+          ],
           "collapse-after": 0
         },
         {
           "title": "▲ Other Changes",
-          "commit-types": ["refactor", "perf", "style"],
+          "commit-types": [
+            "refactor",
+            "perf",
+            "style"
+          ],
           "collapse-after": 2
         },
         {
           "title": "📖 Documentation",
-          "commit-types": ["docs"],
+          "commit-types": [
+            "docs"
+          ],
           "collapse-after": 2
         },
         {
           "title": "⚙️ Under the Hood",
-          "commit-types": ["chore", "ci", "build", "test"],
+          "commit-types": [
+            "chore",
+            "ci",
+            "build",
+            "test"
+          ],
           "collapse-after": 2
         }
       ],
@@ -165,7 +193,9 @@
             }
           }
         },
-        "required": ["title"],
+        "required": [
+          "title"
+        ],
         "additionalProperties": false
       }
     },
@@ -173,6 +203,7 @@
       "type": "object",
       "default": {
         "pre-one-zero-minor-for-breaking": true,
+        "no-auto-major": true,
         "default": "patch"
       },
       "properties": {
@@ -182,12 +213,16 @@
         },
         "no-auto-major": {
           "type": "boolean",
-          "default": false
+          "default": true
         },
         "default": {
           "type": "string",
           "default": "patch",
-          "enum": ["major", "minor", "patch"]
+          "enum": [
+            "major",
+            "minor",
+            "patch"
+          ]
         }
       },
       "additionalProperties": false

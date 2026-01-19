@@ -275,12 +275,57 @@ You can use any of the following variables in `version-template` to format the `
 
 Version bumps are automatically determined based on semantic commit types:
 
-- **Breaking changes** (`feat!:`, `fix!:`, or commits with `BREAKING CHANGE:` in the body) trigger a major version bump (or minor if pre-1.0)
 - **Features** (`feat:`) trigger a minor version bump
 - **Fixes** (`fix:`) trigger a patch version bump
-- **Other types** (`docs:`, `chore:`, `refactor:`, etc.) don't affect version
+- **Other types** (`docs:`, `chore:`, `refactor:`, etc.) trigger a patch version bump
+- **Breaking changes** (`feat!:`, `fix!:`, or commits with `BREAKING CHANGE:` in the body) - see below
 
 The `$RESOLVED_VERSION` variable reflects the calculated next version based on these rules.
+
+### Marketing-Aware Semver (Default Behavior)
+
+By default, this action uses "marketing-aware" semver semantics. This means breaking changes do NOT automatically trigger major version bumps. Instead, breaking changes bump the minor version, giving maintainers full control over when to release a new major version.
+
+This behavior is useful for projects where major version bumps are marketing decisions rather than purely technical ones.
+
+**Default behavior examples:**
+
+| Current Version | Change Type | Result |
+|-----------------|-------------|--------|
+| `0.2.3` | Breaking change | `0.3.0` (pre-1.0 always bumps minor) |
+| `1.2.3` | Breaking change | `1.3.0` (minor bump, not major) |
+| `1.2.3` | Feature | `1.3.0` |
+| `1.2.3` | Fix | `1.2.4` |
+
+### Opting Into Major Version Bumps
+
+If you want breaking changes to trigger major version bumps (standard semver behavior), set the `allow-major-bumps` input to `true`:
+
+```yaml
+- uses: aaronsteers/semantic-pr-release-drafter@v1
+  with:
+    allow-major-bumps: true
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Alternatively, you can configure this in your `.github/release-drafter.yml`:
+
+```yaml
+version-resolver:
+  no-auto-major: false  # Allow major bumps for breaking changes
+```
+
+**With `allow-major-bumps: true`:**
+
+| Current Version | Change Type | Result |
+|-----------------|-------------|--------|
+| `0.2.3` | Breaking change | `0.3.0` (pre-1.0 still bumps minor) |
+| `1.2.3` | Breaking change | `2.0.0` (major bump) |
+| `1.2.3` | Feature | `1.3.0` |
+| `1.2.3` | Fix | `1.2.4` |
+
+Note: Pre-1.0 versions (`0.x.y`) always bump minor for breaking changes, regardless of the `allow-major-bumps` setting. This follows semver conventions for pre-release software.
 
 ## Change Template Variables
 

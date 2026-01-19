@@ -65,7 +65,7 @@ This ensures that when PRs are merged, the resulting commit on main has a proper
 
 ### Example Usages
 
-Looking for real-world examples? Check out the [repositories using this action](https://github.com/aaronsteers/semantic-pr-release-drafter/network/dependents) to see how others have integrated it into their workflows.
+Looking for real-world examples? Check out the [repositories using this action](https://github.com/aaronsteers/semantic-pr-release-drafter/network/dependents) to see how others have integrated it into their workflows. Within each repository, look in the `.github/workflows/` directory for YAML files that reference `aaronsteers/semantic-pr-release-drafter`.
 
 ---
 

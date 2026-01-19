@@ -503,7 +503,7 @@ In some cases, you may need to resolve the version string before building:
     attach-files: |
       dist/*.tar.gz
       dist/*.whl
-``
+```
 
 ## Action Inputs
 

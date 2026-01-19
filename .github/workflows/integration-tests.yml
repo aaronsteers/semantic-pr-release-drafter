@@ -77,6 +77,27 @@ jobs:
             # Opt-in to major version bumps for this test
             allow-major-bumps: true
 
+          # Test default behavior: breaking change post-1.0 WITHOUT allow-major-bumps
+          # should result in minor bump (marketing-aware semver)
+          - test-name: 'breaking-change-post-1.0-default'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat!: breaking change with default settings (#86)
+            expected-version-string: '1.1.0'
+            expected-body: |
+              ## Breaking Changes
+
+              * breaking change with default settings (#86)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Breaking Changes
+                commit-types:
+                  - breaking
+            # No allow-major-bumps set - tests the default behavior (minor bump)
+
           - test-name: 'multiple-commits-minor-bump'
             test-start-version-string: 'v2.0.0'
             test-commit-list: |

@@ -286,7 +286,7 @@ The `$RESOLVED_VERSION` variable reflects the calculated next version based on t
 
 By default, this action uses "marketing-aware" semver semantics. This means breaking changes do NOT automatically trigger major version bumps. Instead, breaking changes bump the minor version, giving maintainers full control over when to release a new major version.
 
-This behavior is useful for projects where major version bumps are marketing decisions rather than purely technical ones.
+This behavior is useful for projects where major version bumps are business decisions rather than purely technical ones.
 
 **Default behavior examples:**
 

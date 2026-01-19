@@ -63,6 +63,10 @@ In your repository settings (Settings > General > Pull Requests):
 
 This ensures that when PRs are merged, the resulting commit on main has a properly formatted semantic commit message that this action can parse. Without squash merging, the action cannot reliably determine version bumps from commit history.
 
+### Example Usages
+
+Looking for real-world examples? Check out the [repositories using this action](https://github.com/aaronsteers/semantic-pr-release-drafter/network/dependents) to see how others have integrated it into their workflows.
+
 ---
 
 ## Usage

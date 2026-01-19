@@ -1,33 +1,33 @@
-<h1 align="center">
-  <img src="design/logo.svg" alt="Release Drafter Logo" width="450" />
-</h1>
+# <p align="center">🔷 Semantic PR Release Drafter 🔷</p>
 
-<p align="center">Drafts your next release notes based on semantic commit messages. No labels required.</p>
-
----
+✍️ _Draft your next release notes based on semantic PR commit messages. No labels required._
 
 ## About This Fork
 
 This is a fork of the much loved [release-drafter/release-drafter](https://github.com/release-drafter/release-drafter) from [TimonVS](https://github.com/TimonVS) and [jetersen](https://github.com/jetersen). This fork replaces label-based categorization and version resolution with **conventional commits** and **semantic PR titles**.
 
-### Key Differences from Upstream
+Besides the change from label-based to commit-based release logic, this fork adds a number of new QoL features:
 
-This fork automatically categorizes changes and determines version bumps based on [Conventional Commits](https://www.conventionalcommits.org/) format (`type(scope): description`):
+1. ✅ **Zero-config lovable defaults** - Works out-of-the-box with lovable defaults. No config file or inline inputs required.
+2. 🔰 **Inline config inputs** - Configure the action directly in your workflow file without needing a separate config file (see [Inline Configuration](#inline-configuration-recommended)).
+3. 💾 **Attach File Assets** - Idempotent file asset attachment - allows you to define the draft text as well as the release assets all in one step.
+4. 🚀 **Pre-1.0 Semver Safety** - Correctly handles version bumps for pre-1.0 projects according to semver rules (major bumps become minor bumps, minor bumps become patch bumps).
+5. 💹 **Marketing-Friendly Semver** - Supports marketing-friendly semver rules, namely: full control whether major version bumps are triggered by breaking changes or based on consent and deliberation.
+6. 📃 **Choose Inline OR File-Based Config** - Supports both inline config inputs and file-based config, allowing you to choose the method that best fits your workflow.
 
-- **Zero-config support** - Works out-of-the-box with lovable defaults. No config file or inline inputs required.
-- **Breaking changes** (`feat!:`, `fix!:`, or commits with `BREAKING CHANGE:` in the body) trigger a major version bump (or minor if pre-1.0)
-- **Features** (`feat:`) trigger a minor version bump
-- **Fixes** (`fix:`) trigger a patch version bump
-- **Other types** (`docs:`, `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`, `style:`) are categorized but don't affect version
-- **Inline config inputs** - Configure the action directly in your workflow file without needing a separate config file (see [Inline Configuration](#inline-configuration-recommended))
+### Other Changes
+
+- **Full Category Collapse** - When using `collapse-after=N`, categories with more than `N` changes are fully collapsed, rather than showing the first `N` changes and collapsing the rest.
 
 ### Removed Features
 
-The following upstream features have been removed as they are no longer needed:
+Labels are _**no longer used**_ for categorization, with all label-related features having been dropped.
 
-- **Autolabeler** - Labels are not used for categorization
-- **Label-based version resolver** - Version is determined by commit types
-- **Label-based categorization** - Categories are determined by commit types
+This fork DROPS all support for:
+
+- **Auto-labeler** - Auto-labeling is no longer supported.
+- **Label-based version resolver** - Version is determined by conventional-commit `type` properties, not labels.
+- **Label-based categorization** - Categories are determined by conventional-commit `scope` and `type` properties, not labels.
 
 ### Recommended Repo Configuration
 

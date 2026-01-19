@@ -1,33 +1,30 @@
-<h1 align="center">
-  <img src="design/logo.svg" alt="Release Drafter Logo" width="450" />
-</h1>
+# <p align="center">🔷 Semantic PR Release Drafter 🔷</p>
 
-<p align="center">Drafts your next release notes based on semantic commit messages. No labels required.</p>
-
----
+✍️ _Draft your next release notes based on semantic PR commit messages. No labels required. _
 
 ## About This Fork
 
 This is a fork of the much loved [release-drafter/release-drafter](https://github.com/release-drafter/release-drafter) from [TimonVS](https://github.com/TimonVS) and [jetersen](https://github.com/jetersen). This fork replaces label-based categorization and version resolution with **conventional commits** and **semantic PR titles**.
 
-### Key Differences from Upstream
-
-This fork automatically categorizes changes and determines version bumps based on [Conventional Commits](https://www.conventionalcommits.org/) format (`type(scope): description`):
+This fork adds a number of features to streamline your workflow, such as:
 
 - **Zero-config support** - Works out-of-the-box with lovable defaults. No config file or inline inputs required.
-- **Breaking changes** (`feat!:`, `fix!:`, or commits with `BREAKING CHANGE:` in the body) trigger a major version bump (or minor if pre-1.0)
-- **Features** (`feat:`) trigger a minor version bump
-- **Fixes** (`fix:`) trigger a patch version bump
-- **Other types** (`docs:`, `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`, `style:`) are categorized but don't affect version
-- **Inline config inputs** - Configure the action directly in your workflow file without needing a separate config file (see [Inline Configuration](#inline-configuration-recommended))
+- **Inline config inputs** - Configure the action directly in your workflow file without needing a separate config file (see [Inline Configuration](#inline-configuration-recommended)).
+- **Attach File Assets** - Idempotent file asset attachment - allowing you to define the draft text as well as the release assets all in one step.
+
+- zero-config lovable defaults
+- ability to attach file assets during draft updates
+- built-in support for immutable releases
 
 ### Removed Features
 
-The following upstream features have been removed as they are no longer needed:
+Labels are _**no longer used**_ for categorization, with all label-related features having been dropped.
 
-- **Autolabeler** - Labels are not used for categorization
-- **Label-based version resolver** - Version is determined by commit types
-- **Label-based categorization** - Categories are determined by commit types
+This fork DROPS all support for:
+
+- **Auto-labeler** - Auto-labeling is no longer supported.
+- **Label-based version resolver** - Version is determined by conventional-commit `type` properties, not labels.
+- **Label-based categorization** - Categories are determined by conventional-commit `scope` and `type` properties, not labels.
 
 ### Recommended Repo Configuration
 

@@ -450,15 +450,31 @@ This feature replaces the common pattern of using multiple actions to manage rel
     file_glob: true
     draft: true
 
-# After: Single step with attach-files
+# After: Dry-run to get version, build artifacts, then create release
+- name: Get release version (dry-run)
+  id: dry-run
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    dry-run: true
+
+- name: Build artifacts
+  run: |
+    # Use the resolved version for your build tool
+    # For uv/hatch: UV_DYNAMIC_VERSIONING_BYPASS=${{ steps.dry-run.outputs.resolved-version }} uv build
+    # For setuptools-scm: SETUPTOOLS_SCM_PRETEND_VERSION=${{ steps.dry-run.outputs.resolved-version }} python -m build
+    echo "Building with version ${{ steps.dry-run.outputs.resolved-version }}"
+
 - name: Create or update draft release
   uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
+    version: ${{ steps.dry-run.outputs.resolved-version }}
     attach-files: |
       dist/*.tar.gz
       dist/*.whl
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Action Inputs

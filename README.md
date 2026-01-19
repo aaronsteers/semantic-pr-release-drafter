@@ -299,7 +299,9 @@ This behavior is useful for projects where major version bumps are marketing dec
 
 ### Opting Into Major Version Bumps
 
-If you want breaking changes to trigger major version bumps (standard semver behavior), set the `allow-major-bumps` input to `true`:
+If you want breaking changes to trigger major version bumps (standard semver behavior) for post-1.0 versions, set the `allow-major-bumps` input to `true`:
+
+> **Note:** This setting only affects versions 1.0.0 and above. Pre-1.0 versions (`0.x.y`) always bump minor for breaking changes, regardless of this setting. This follows standard semver conventions where the major version zero is for initial development and breaking changes are expected.
 
 ```yaml
 - uses: aaronsteers/semantic-pr-release-drafter@v1
@@ -325,7 +327,7 @@ version-resolver:
 | `1.2.3`         | Feature         | `1.3.0`                             |
 | `1.2.3`         | Fix             | `1.2.4`                             |
 
-Note: Pre-1.0 versions (`0.x.y`) always bump minor for breaking changes, regardless of the `allow-major-bumps` setting. This follows semver conventions for pre-release software.
+As shown in the table above, pre-1.0 versions (`0.x.y`) always bump minor for breaking changes, regardless of the `allow-major-bumps` setting.
 
 ## Change Template Variables
 

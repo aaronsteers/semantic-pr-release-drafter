@@ -16,6 +16,7 @@ const { log } = require('./lib/log')
 const core = require('@actions/core')
 const { runnerIsActions } = require('./lib/utils')
 const { manageReleaseAssets, resolveFiles } = require('./lib/assets')
+const semver = require('semver')
 
 module.exports = (app, { getRouter }) => {
   if (!runnerIsActions() && typeof getRouter === 'function') {
@@ -135,13 +136,42 @@ module.exports = (app, { getRouter }) => {
 
     const { shouldDraft, version, tag, name, dryRun, attachFiles } = input
 
+    // Version preservation: use draft release version as floor if no explicit version input
+    // This ensures we never bump backwards from a human-set draft version
+    let effectiveVersion = version
+    if (!effectiveVersion && draftRelease) {
+      const draftVersionStr = draftRelease.tag_name || draftRelease.name
+      if (draftVersionStr) {
+        // Strip tag prefix if present
+        const versionWithoutPrefix =
+          tagPrefix && draftVersionStr.startsWith(tagPrefix)
+            ? draftVersionStr.slice(tagPrefix.length)
+            : draftVersionStr
+
+        // Validate semver - if invalid, warn and ignore (trust humans know what they're doing)
+        const parsedVersion = semver.parse(versionWithoutPrefix)
+        if (parsedVersion) {
+          effectiveVersion = draftVersionStr
+          log({
+            context,
+            message: `Using draft release version as floor: ${draftVersionStr}`,
+          })
+        } else {
+          core.warning(
+            `Draft release version "${draftVersionStr}" is not valid semver. ` +
+              `Ignoring and computing version from commits.`
+          )
+        }
+      }
+    }
+
     const releaseInfo = generateReleaseInfo({
       context,
       commits,
       config,
       lastRelease,
       mergedPullRequests: sortedMergedPullRequests,
-      version,
+      version: effectiveVersion,
       tag,
       name,
       isPreRelease: prerelease,

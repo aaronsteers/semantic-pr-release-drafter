@@ -25,11 +25,6 @@ describe('getConfig', () => {
       ...DEFAULT_CONFIG,
       template: '$CHANGES',
       references: ['master'],
-      // Joi adds no-auto-major: false even though it's not in DEFAULT_CONFIG
-      'version-resolver': {
-        ...DEFAULT_CONFIG['version-resolver'],
-        'no-auto-major': false,
-      },
     })
   })
 

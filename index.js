@@ -253,6 +253,10 @@ function getInput() {
     preReleaseIdentifier: core.getInput('prerelease-identifier') || undefined,
     latest: core.getInput('latest')?.toLowerCase() || undefined,
     attachFiles: core.getInput('attach-files') || undefined,
+    allowMajorBumps:
+      core.getInput('allow-major-bumps') !== ''
+        ? core.getInput('allow-major-bumps').toLowerCase() === 'true'
+        : undefined,
   }
 }
 
@@ -279,6 +283,13 @@ function updateConfigFromInput(config, input) {
 
   if (input.preReleaseIdentifier) {
     config['prerelease-identifier'] = input.preReleaseIdentifier
+  }
+
+  if (input.allowMajorBumps !== undefined) {
+    if (!config['version-resolver']) {
+      config['version-resolver'] = {}
+    }
+    config['version-resolver']['no-auto-major'] = !input.allowMajorBumps
   }
 
   config.latest = config.prerelease

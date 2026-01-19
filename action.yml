@@ -140,6 +140,15 @@ inputs:
       but will not create or update any releases.
     required: false
     default: 'false'
+  allow-major-bumps:
+    description: |
+      A boolean indicating whether to allow automatic major version bumps.
+      When false (default), breaking changes will only bump the minor version,
+      following "marketing-aware" semver semantics. When true, breaking changes
+      will trigger a major version bump according to standard semver rules.
+      Note: Pre-1.0 versions always bump minor for breaking changes regardless of this setting.
+    required: false
+    default: 'false'
   attach-files:
     description: |
       Files to attach to the draft release as assets. Accepts a single file path,

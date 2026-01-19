@@ -6,15 +6,18 @@
 
 This is a fork of the much loved [release-drafter/release-drafter](https://github.com/release-drafter/release-drafter) from [TimonVS](https://github.com/TimonVS) and [jetersen](https://github.com/jetersen). This fork replaces label-based categorization and version resolution with **conventional commits** and **semantic PR titles**.
 
-This fork adds a number of features to streamline your workflow, such as:
+Besides the change from label-based to commit-based release logic, this fork adds a number of new QoL features:
 
-- **Zero-config support** - Works out-of-the-box with lovable defaults. No config file or inline inputs required.
-- **Inline config inputs** - Configure the action directly in your workflow file without needing a separate config file (see [Inline Configuration](#inline-configuration-recommended)).
-- **Attach File Assets** - Idempotent file asset attachment - allowing you to define the draft text as well as the release assets all in one step.
+1. ✅ **Zero-config lovable defaults** - Works out-of-the-box with lovable defaults. No config file or inline inputs required.
+2. 🔰 **Inline config inputs** - Configure the action directly in your workflow file without needing a separate config file (see [Inline Configuration](#inline-configuration-recommended)).
+3. 💾 **Attach File Assets** - Idempotent file asset attachment - allows you to define the draft text as well as the release assets all in one step.
+4. 🚀 **Pre-1.0 Semver Safety** - Correctly handles version bumps for pre-1.0 projects according to semver rules (major bumps become minor bumps, minor bumps become patch bumps).
+5. 💹 **Marketing-Friendly Semver** - Supports marketing-friendly semver rules, namely: full control whether major version bumps are triggered by breaking changes or based on consent and deliberation.
+6. 📃 **Choose Inline OR File-Based Config** - Supports both inline config inputs and file-based config, allowing you to choose the method that best fits your workflow.
 
-- zero-config lovable defaults
-- ability to attach file assets during draft updates
-- built-in support for immutable releases
+### Other Changes
+
+- **Full Category Collapse** - When using `collapse-after=N`, categories with more than `N` changes are fully collapsed, rather than showing the first `N` changes and collapsing the rest.
 
 ### Removed Features
 

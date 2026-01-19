@@ -169,10 +169,10 @@ outputs:
   upload_url:
     description: The URL for uploading assets to the release, which could be used by GitHub Actions for additional uses, for example the @actions/upload-release-asset GitHub Action.
   major_version:
-    description: The next major version number, without 'v' prefix. For example, if the last tag or release was v1.2.3, the value would be "2.0.0".
+    description: The next major version number, with 'v' prefix removed (if applicable).
   minor_version:
-    description: The next minor version number, without 'v' prefix. For example, if the last tag or release was v1.2.3, the value would be "1.3.0".
+    description: The next minor version number, with 'v' prefix removed (if applicable).
   patch_version:
-    description: The next patch version number, without 'v' prefix. For example, if the last tag or release was v1.2.3, the value would be "1.2.4".
+    description: The next patch version number, with 'v' prefix removed (if applicable).
   resolved_version:
-    description: The next resolved version number, based on semantic commit types. Returns raw semver string without 'v' prefix (e.g., "1.2.3").
+    description: The next resolved version number, based on semantic commit types, with 'v' prefix removed (if applicable).

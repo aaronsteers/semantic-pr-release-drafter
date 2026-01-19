@@ -63,6 +63,19 @@ In your repository settings (Settings > General > Pull Requests):
 
 This ensures that when PRs are merged, the resulting commit on main has a properly formatted semantic commit message that this action can parse. Without squash merging, the action cannot reliably determine version bumps from commit history.
 
+### Real-World Examples
+
+Here are some public repositories using this action:
+
+| Repository | Prerelease Workflow | Publish Workflow | Releases |
+| ---------- | ------------------- | ---------------- | -------- |
+| [PyAirbyte](https://github.com/airbytehq/PyAirbyte) | [release_drafter.yml](https://github.com/airbytehq/PyAirbyte/blob/main/.github/workflows/release_drafter.yml) | [pypi_publish.yml](https://github.com/airbytehq/PyAirbyte/blob/main/.github/workflows/pypi_publish.yml) | [Releases](https://github.com/airbytehq/PyAirbyte/releases) |
+| [airbyte-python-cdk](https://github.com/airbytehq/airbyte-python-cdk) | [release_drafter.yml](https://github.com/airbytehq/airbyte-python-cdk/blob/main/.github/workflows/release_drafter.yml) | [publish.yml](https://github.com/airbytehq/airbyte-python-cdk/blob/main/.github/workflows/publish.yml) | [Releases](https://github.com/airbytehq/airbyte-python-cdk/releases) |
+| [fastmcp-extensions](https://github.com/airbytehq/fastmcp-extensions) | [release-drafter.yml](https://github.com/airbytehq/fastmcp-extensions/blob/main/.github/workflows/release-drafter.yml) | [publish.yml](https://github.com/airbytehq/fastmcp-extensions/blob/main/.github/workflows/publish.yml) | [Releases](https://github.com/airbytehq/fastmcp-extensions/releases) |
+| [awesome-python-template](https://github.com/aaronsteers/awesome-python-template) | [release-drafter.yml](https://github.com/aaronsteers/awesome-python-template/blob/main/.github/workflows/release-drafter.yml) | [publish.yml](https://github.com/aaronsteers/awesome-python-template/blob/main/.github/workflows/publish.yml) | [Releases](https://github.com/aaronsteers/awesome-python-template/releases) |
+
+You can also find more examples via [code search](https://github.com/search?q=uses%3A+aaronsteers%2Fsemantic-pr-release-drafter%40&type=code) (requires GitHub sign-in) or by browsing [dependent repositories](https://github.com/aaronsteers/semantic-pr-release-drafter/network/dependents).
+
 ## Usage Examples
 
 You can use this action in a [GitHub Actions Workflow](https://help.github.com/en/actions/about-github-actions) by configuring a YAML-based workflow file, e.g. `.github/workflows/release-drafter.yml`, with the following:

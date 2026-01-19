@@ -481,7 +481,7 @@ This feature replaces the common pattern of using multiple actions to manage rel
 
 In some cases, you may need to resolve the version string before building:
 
-```yml
+````yml
 # Dry-run to get version, then build the artifacts, then prepare release
 - name: Get release version (dry-run)
   id: dry-run
@@ -537,7 +537,7 @@ yarn test
 
 # Run tests in watch mode
 yarn test:watch
-```
+````
 
 ## Contributing
 

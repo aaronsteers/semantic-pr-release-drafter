@@ -290,12 +290,12 @@ This behavior is useful for projects where major version bumps are marketing dec
 
 **Default behavior examples:**
 
-| Current Version | Change Type | Result |
-|-----------------|-------------|--------|
-| `0.2.3` | Breaking change | `0.3.0` (pre-1.0 always bumps minor) |
-| `1.2.3` | Breaking change | `1.3.0` (minor bump, not major) |
-| `1.2.3` | Feature | `1.3.0` |
-| `1.2.3` | Fix | `1.2.4` |
+| Current Version | Change Type     | Result                               |
+| --------------- | --------------- | ------------------------------------ |
+| `0.2.3`         | Breaking change | `0.3.0` (pre-1.0 always bumps minor) |
+| `1.2.3`         | Breaking change | `1.3.0` (minor bump, not major)      |
+| `1.2.3`         | Feature         | `1.3.0`                              |
+| `1.2.3`         | Fix             | `1.2.4`                              |
 
 ### Opting Into Major Version Bumps
 
@@ -313,17 +313,17 @@ Alternatively, you can configure this in your `.github/release-drafter.yml`:
 
 ```yaml
 version-resolver:
-  no-auto-major: false  # Allow major bumps for breaking changes
+  no-auto-major: false # Allow major bumps for breaking changes
 ```
 
 **With `allow-major-bumps: true`:**
 
-| Current Version | Change Type | Result |
-|-----------------|-------------|--------|
-| `0.2.3` | Breaking change | `0.3.0` (pre-1.0 still bumps minor) |
-| `1.2.3` | Breaking change | `2.0.0` (major bump) |
-| `1.2.3` | Feature | `1.3.0` |
-| `1.2.3` | Fix | `1.2.4` |
+| Current Version | Change Type     | Result                              |
+| --------------- | --------------- | ----------------------------------- |
+| `0.2.3`         | Breaking change | `0.3.0` (pre-1.0 still bumps minor) |
+| `1.2.3`         | Breaking change | `2.0.0` (major bump)                |
+| `1.2.3`         | Feature         | `1.3.0`                             |
+| `1.2.3`         | Fix             | `1.2.4`                             |
 
 Note: Pre-1.0 versions (`0.x.y`) always bump minor for breaking changes, regardless of the `allow-major-bumps` setting. This follows semver conventions for pre-release software.
 

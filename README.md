@@ -14,6 +14,7 @@ Besides the change from label-based to commit-based release logic, this fork add
 4. 🚀 **Pre-1.0 Semver Safety** - Correctly handles version bumps for pre-1.0 projects according to semver rules (major bumps become minor bumps, minor bumps become patch bumps).
 5. 💹 **Marketing-Friendly Semver** - Supports marketing-friendly semver rules, namely: full control whether major version bumps are triggered by breaking changes or based on consent and deliberation.
 6. 📃 **Choose Inline OR File-Based Config** - Supports both inline config inputs and file-based config, allowing you to choose the method that best fits your workflow.
+7. 🔒 **Version Preservation** - Respects manually-set draft release versions. If you set a draft to `v2.0.0`, the action will never bump it backwards. Prerelease identifiers (like `-beta`, `-rc.1`) are preserved exactly. See [Version Preservation](#version-preservation).
 
 ### Other Changes
 
@@ -343,6 +344,37 @@ version-resolver:
 | `1.2.3`         | Fix             | `1.2.4`                             |
 
 As shown in the table above, pre-1.0 versions (`0.x.y`) always bump minor for breaking changes, regardless of the `allow-major-bumps` setting.
+
+## Version Preservation
+
+When a draft release already exists with a manually-set version, the action respects that version and uses it as a "floor" for version computation. This ensures that human-set versions are never overwritten with a lower version.
+
+### How It Works
+
+1. **Version Floor**: If the draft release has a valid semver version (e.g., `v2.0.0`), the action will never compute a version lower than that. If commits would normally suggest `v1.0.1`, the draft stays at `v2.0.0`.
+
+2. **Prerelease Preservation**: If the draft version contains a prerelease identifier (e.g., `v1.0.0-beta.1`, `v2.0.0-rc.1`, `v3.0.0-dev`), the version is preserved exactly without modification. Only the release notes are updated.
+
+3. **Invalid Semver Handling**: If the draft version is not valid semver (e.g., `next-release`), the action logs a warning and falls back to computing the version from commits.
+
+4. **Behind-Version Warning**: If the draft version is behind the last published release (e.g., draft is `v1.0.0-rc.1` but last release is `v1.0.0`), the action logs a warning suggesting you advance the draft to a newer version.
+
+### Example Scenarios
+
+| Draft Version   | Last Release | Computed from Commits | Result             | Notes                                          |
+| --------------- | ------------ | --------------------- | ------------------ | ---------------------------------------------- |
+| `v2.0.0`        | `v1.0.0`     | `v1.0.1`              | `v2.0.0`           | Draft version preserved (higher than computed) |
+| `v1.0.0-beta.1` | `v0.9.0`     | `v1.0.0`              | `v1.0.0-beta.1`    | Prerelease preserved exactly                   |
+| `v0.9.0`        | `v1.0.0`     | `v1.0.1`              | `v0.9.0` + warning | Draft preserved, but warning logged            |
+| `next-release`  | `v1.0.0`     | `v1.0.1`              | `v1.0.1` + warning | Invalid semver ignored, computed version used  |
+
+### Use Cases
+
+This feature is useful when you want to:
+
+- **Plan a major release**: Set the draft to `v2.0.0` early, and the action will keep it there while updating release notes as PRs merge.
+- **Manage prereleases**: Set the draft to `v1.0.0-rc.1` for a release candidate, and the prerelease identifier stays intact.
+- **Override computed versions**: If the action would compute `v1.2.3` but you want `v1.3.0`, just edit the draft and the action will respect your choice.
 
 ## Change Template Variables
 

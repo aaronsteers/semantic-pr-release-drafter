@@ -452,7 +452,7 @@ This feature replaces the common pattern of using multiple actions to manage rel
 ```
 
 ```yaml
-# After: Dry-run to get version, build artifacts, then create release
+# After: Draft the release and attach files in one step
 - name: Get release version (dry-run)
   id: dry-run
   uses: aaronsteers/semantic-pr-release-drafter@main

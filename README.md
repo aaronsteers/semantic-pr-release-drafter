@@ -423,10 +423,11 @@ permissions:
 
 ### Replacing Multi-Step Workflows
 
-This feature replaces the common pattern of using multiple actions to manage release assets:
+This feature replaces the common pattern of using multiple actions to manage release assets.
+
+Before: Multiple steps required:
 
 ```yaml
-# Before: Multiple steps required
 - name: Create or update draft release
   uses: aaronsteers/semantic-pr-release-drafter@main
   id: release-drafter
@@ -451,35 +452,20 @@ This feature replaces the common pattern of using multiple actions to manage rel
     draft: true
 ```
 
+After: Draft the release and attach files in one step:
+
 ```yaml
-# After: Draft the release and attach files in one step
-- name: Get release version (dry-run)
-  id: dry-run
-  uses: aaronsteers/semantic-pr-release-drafter@main
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  with:
-    dry-run: true
-
-- name: Build artifacts
-  run: |
-    # Use the resolved version for your build tool
-    # For uv/hatch: UV_DYNAMIC_VERSIONING_BYPASS=${{ steps.dry-run.outputs.resolved-version }} uv build
-    # For setuptools-scm: SETUPTOOLS_SCM_PRETEND_VERSION=${{ steps.dry-run.outputs.resolved-version }} python -m build
-    echo "Building with version ${{ steps.dry-run.outputs.resolved-version }}"
-
 - name: Create or update draft release
   uses: aaronsteers/semantic-pr-release-drafter@main
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    version: ${{ steps.dry-run.outputs.resolved-version }}
     attach-files: |
       dist/*.tar.gz
       dist/*.whl
 ```
 
-In some cases, you may need to resolve the version string before building:
+In some cases, you may need to resolve the version string before building. In such cases, you can perform a dry-run to get the resolved version, build your artifacts, and then create/update the draft release with the built files:
 
 ```yaml
 # Dry-run to get version, then build the artifacts, then prepare release

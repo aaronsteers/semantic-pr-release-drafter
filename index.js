@@ -136,10 +136,13 @@ module.exports = (app, { getRouter }) => {
 
     const { shouldDraft, version, tag, name, dryRun, attachFiles } = input
 
-    // Version preservation: use draft release version as floor if no explicit version input
-    // This ensures we never bump backwards from a human-set draft version
-    let effectiveVersion = version
-    if (!effectiveVersion && draftRelease) {
+    // Separate explicit user input from draft release version:
+    // - overrideVersion: explicit user input via action arg (always wins, skips calculations)
+    // - draftVersion: extracted from draft release (acts as floor vs computed version)
+    const overrideVersion = version
+    let draftVersion
+
+    if (draftRelease) {
       const draftVersionStr = draftRelease.tag_name || draftRelease.name
       if (draftVersionStr) {
         // Strip tag prefix if present
@@ -151,15 +154,13 @@ module.exports = (app, { getRouter }) => {
         // Validate semver - if invalid, warn and ignore (trust humans know what they're doing)
         const parsedVersion = semver.parse(versionWithoutPrefix)
         if (parsedVersion) {
-          // Use versionWithoutPrefix (not draftVersionStr) to avoid double-prefixing
-          // since generateReleaseInfo() will add the tag prefix when creating the tag
-          effectiveVersion = versionWithoutPrefix
+          draftVersion = versionWithoutPrefix
           log({
             context,
-            message: `Using draft release version as floor: ${versionWithoutPrefix}`,
+            message: `Found draft release version: ${versionWithoutPrefix}`,
           })
 
-          // Warn if draft prerelease is behind the last published release
+          // Warn if draft version is behind the last published release
           if (lastRelease) {
             const lastReleaseVersionStr =
               lastRelease.tag_name || lastRelease.name
@@ -195,7 +196,8 @@ module.exports = (app, { getRouter }) => {
       config,
       lastRelease,
       mergedPullRequests: sortedMergedPullRequests,
-      version: effectiveVersion,
+      overrideVersion,
+      draftVersion,
       tag,
       name,
       isPreRelease: prerelease,

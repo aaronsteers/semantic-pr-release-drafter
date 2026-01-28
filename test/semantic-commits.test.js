@@ -463,15 +463,29 @@ describe('ReleaseChangeLineItems', () => {
       expect(result).toContain('* MixedCase Title')
     })
 
-    test('renders without post-processors when not configured', () => {
+    test('renders without post-processors when explicitly disabled', () => {
       const commits = createMockCommits(['feat: lowercase feature'])
       const collection = ReleaseChangeLineItems.fromCommits(commits)
       const config = {
         ...defaultConfig,
+        'title-post-processors': [],
       }
 
       const result = collection.renderWithConfig(config)
       expect(result).toEqual('## Features\n\n* lowercase feature')
+    })
+
+    test('applies sentence-case by default when using DEFAULT_CONFIG', () => {
+      const commits = createMockCommits(['feat: lowercase feature'])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const { DEFAULT_CONFIG } = require('../lib/default-config')
+      const config = {
+        ...defaultConfig,
+        'title-post-processors': DEFAULT_CONFIG['title-post-processors'],
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toEqual('## Features\n\n* Lowercase feature')
     })
   })
 })

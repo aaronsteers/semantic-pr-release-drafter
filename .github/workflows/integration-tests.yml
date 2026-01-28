@@ -29,7 +29,7 @@ jobs:
             expected-body: |
               ## Features
 
-              * add new feature (#80)
+              * Add new feature (#80)
             template: |
               $CHANGES
             change-template: '* $TITLE (#$NUMBER)'
@@ -47,7 +47,7 @@ jobs:
             expected-body: |
               ## Features
 
-              * breaking change in pre-1.0 (#81)
+              * Breaking change in pre-1.0 (#81)
             template: |
               $CHANGES
             change-template: '* $TITLE (#$NUMBER)'
@@ -65,7 +65,7 @@ jobs:
             expected-body: |
               ## Breaking Changes
 
-              * breaking change in post-1.0 (#85)
+              * Breaking change in post-1.0 (#85)
             template: |
               $CHANGES
             change-template: '* $TITLE (#$NUMBER)'
@@ -87,7 +87,7 @@ jobs:
             expected-body: |
               ## Breaking Changes
 
-              * breaking change with default settings (#86)
+              * Breaking change with default settings (#86)
             template: |
               $CHANGES
             change-template: '* $TITLE (#$NUMBER)'
@@ -108,15 +108,15 @@ jobs:
             expected-body: |
               ## Features
 
-              * add another feature (#83)
+              * Add another feature (#83)
 
               ## Bug Fixes
 
-              * fix a bug (#82)
+              * Fix a bug (#82)
 
               ## Documentation
 
-              * update documentation (#84)
+              * Update documentation (#84)
             template: |
               $CHANGES
             change-template: '* $TITLE (#$NUMBER)'
@@ -143,11 +143,11 @@ jobs:
             expected-body: |
               ## ✨ New Features
 
-              * add new feature (https://github.com/aaronsteers/semantic-pr-release-drafter/pull/100) 
+              * Add new feature (https://github.com/aaronsteers/semantic-pr-release-drafter/pull/100) 
 
               ## 🐛 Bug Fixes
 
-              * fix a bug (https://github.com/aaronsteers/semantic-pr-release-drafter/pull/101)
+              * Fix a bug (https://github.com/aaronsteers/semantic-pr-release-drafter/pull/101)
 
               ---
 
@@ -171,10 +171,10 @@ jobs:
               <details>
               <summary>4 changes</summary>
 
-              * bump version (#203)
-              * fix typo (#202)
-              * cleanup code (#201)
-              * update deps (#200)
+              * Bump version (#203)
+              * Fix typo (#202)
+              * Cleanup code (#201)
+              * Update deps (#200)
               </details>
             template: |
               $CHANGES
@@ -197,15 +197,15 @@ jobs:
             expected-body: |
               ## New Features
 
-              * add cool feature (#90)
+              * Add cool feature (#90)
 
               ## Bug Fixes
 
-              * squash a bug (#91)
+              * Squash a bug (#91)
 
               ## Under the Hood
 
-              * update deps (#92)
+              * Update deps (#92)
             template: |
               $CHANGES
             change-template: '* $TITLE (#$NUMBER)'
@@ -231,7 +231,7 @@ jobs:
             expected-body: |
               ## Features
 
-              * add build artifacts (#300)
+              * Add build artifacts (#300)
             template: |
               $CHANGES
             change-template: '* $TITLE (#$NUMBER)'
@@ -253,7 +253,7 @@ jobs:
             expected-body: |
               ## Features
 
-              * add feature (#301)
+              * Add feature (#301)
             template: |
               $CHANGES
             change-template: '* $TITLE (#$NUMBER)'

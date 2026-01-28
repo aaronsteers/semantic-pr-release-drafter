@@ -447,12 +447,14 @@ categories:
 ```
 
 With this configuration:
+
 - `fix(sentry): resolve alert issue` goes to "Sentry Updates"
 - `feat(sentry): add new monitoring` goes to "Sentry Updates"
 - `feat: add new feature` goes to "New Features"
 - `fix: resolve bug` goes to "Bug Fixes"
 
 **Key behaviors:**
+
 - Scope-based matching takes priority over type-based matching
 - Scope matching is case-insensitive (`fix(SENTRY):` matches `sentry`)
 - You can specify multiple scopes per category

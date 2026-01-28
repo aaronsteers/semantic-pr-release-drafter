@@ -5,9 +5,7 @@
   "properties": {
     "references": {
       "type": "array",
-      "default": [
-        "master"
-      ],
+      "default": ["master"],
       "items": {
         "type": "string"
       }
@@ -61,18 +59,12 @@
     "sort-by": {
       "type": "string",
       "default": "merged_at",
-      "enum": [
-        "merged_at",
-        "title"
-      ]
+      "enum": ["merged_at", "title"]
     },
     "sort-direction": {
       "type": "string",
       "default": "descending",
-      "enum": [
-        "ascending",
-        "descending"
-      ]
+      "enum": ["ascending", "descending"]
     },
     "prerelease": {
       "type": "boolean",
@@ -116,10 +108,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "search",
-          "replace"
-        ],
+        "required": ["search", "replace"],
         "additionalProperties": false
       }
     },
@@ -128,54 +117,37 @@
       "default": [
         {
           "title": "⚠️ Breaking Changes",
-          "commit-types": [
-            "breaking"
-          ],
+          "commit-types": ["breaking"],
           "commit-scopes": [],
           "collapse-after": 0
         },
         {
           "title": "✨ New Features",
-          "commit-types": [
-            "feat"
-          ],
+          "commit-types": ["feat"],
           "commit-scopes": [],
           "collapse-after": 0
         },
         {
           "title": "🐛 Bug Fixes",
-          "commit-types": [
-            "fix"
-          ],
+          "commit-types": ["fix"],
           "commit-scopes": [],
           "collapse-after": 0
         },
         {
           "title": "▲ Other Changes",
-          "commit-types": [
-            "refactor",
-            "perf",
-            "style"
-          ],
+          "commit-types": ["refactor", "perf", "style"],
           "commit-scopes": [],
           "collapse-after": 2
         },
         {
           "title": "📖 Documentation",
-          "commit-types": [
-            "docs"
-          ],
+          "commit-types": ["docs"],
           "commit-scopes": [],
           "collapse-after": 2
         },
         {
           "title": "⚙️ Under the Hood",
-          "commit-types": [
-            "chore",
-            "ci",
-            "build",
-            "test"
-          ],
+          "commit-types": ["chore", "ci", "build", "test"],
           "commit-scopes": [],
           "collapse-after": 2
         }
@@ -206,9 +178,7 @@
             }
           }
         },
-        "required": [
-          "title"
-        ],
+        "required": ["title"],
         "additionalProperties": false
       }
     },
@@ -231,11 +201,7 @@
         "default": {
           "type": "string",
           "default": "patch",
-          "enum": [
-            "major",
-            "minor",
-            "patch"
-          ]
+          "enum": ["major", "minor", "patch"]
         }
       },
       "additionalProperties": false

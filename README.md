@@ -427,6 +427,39 @@ categories:
       - 'fix'
 ```
 
+### Scope-Based Categories
+
+In addition to categorizing by commit type, you can also categorize changes by their **scope**. This is useful when you want all changes related to a specific component or feature to appear in a dedicated section, regardless of whether they are features, fixes, or other types.
+
+Use the `commit-scopes` option to match commits by their scope (the part in parentheses, e.g., `fix(sentry): ...`):
+
+```yml
+categories:
+  - title: ':eyes: Sentry Updates'
+    commit-scopes:
+      - 'sentry'
+  - title: 'New Features'
+    commit-types:
+      - 'feat'
+  - title: 'Bug Fixes'
+    commit-types:
+      - 'fix'
+```
+
+With this configuration:
+- `fix(sentry): resolve alert issue` goes to "Sentry Updates"
+- `feat(sentry): add new monitoring` goes to "Sentry Updates"
+- `feat: add new feature` goes to "New Features"
+- `fix: resolve bug` goes to "Bug Fixes"
+
+**Key behaviors:**
+- Scope-based matching takes priority over type-based matching
+- Scope matching is case-insensitive (`fix(SENTRY):` matches `sentry`)
+- You can specify multiple scopes per category
+- Categories can have both `commit-types` and `commit-scopes` (scope matches are checked first)
+
+This feature is particularly useful for monorepos where you want to group all changes for a specific package or component together in the release notes.
+
 ## Exclude Contributors
 
 By default, the `$CONTRIBUTORS` variable will contain the names or usernames of all the contributors of a release. The `exclude-contributors` option allows you to remove certain usernames from that list. This can be useful if don't wish to include yourself, to better highlight only the third-party contributions.

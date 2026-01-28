@@ -387,6 +387,74 @@ describe('ReleaseChangeLineItems', () => {
         },
         '* Improve speed\n\n## Features\n\n* Feature',
       ],
+      [
+        'categorizes by scope using commit-scopes',
+        ['fix(sentry): fix sentry issue', 'feat(sentry): add sentry feature'],
+        {
+          ...defaultConfig,
+          categories: [
+            { title: 'Sentry Updates', 'commit-scopes': ['sentry'] },
+            { title: 'Features', 'commit-types': ['feat'] },
+            { title: 'Bug Fixes', 'commit-types': ['fix'] },
+          ],
+        },
+        '## Sentry Updates\n\n* Fix sentry issue\n* Add sentry feature',
+      ],
+      [
+        'scope-based matching takes priority over type-based',
+        ['feat(sentry): add sentry feature', 'feat: add other feature'],
+        {
+          ...defaultConfig,
+          categories: [
+            { title: 'Sentry Updates', 'commit-scopes': ['sentry'] },
+            { title: 'Features', 'commit-types': ['feat'] },
+          ],
+        },
+        '## Sentry Updates\n\n* Add sentry feature\n\n## Features\n\n* Add other feature',
+      ],
+      [
+        'scope matching is case-insensitive',
+        ['fix(SENTRY): fix sentry issue', 'feat(Sentry): add sentry feature'],
+        {
+          ...defaultConfig,
+          categories: [
+            { title: 'Sentry Updates', 'commit-scopes': ['sentry'] },
+            { title: 'Features', 'commit-types': ['feat'] },
+          ],
+        },
+        '## Sentry Updates\n\n* Fix sentry issue\n* Add sentry feature',
+      ],
+      [
+        'items without scope fall back to type-based matching',
+        ['fix(sentry): fix sentry issue', 'fix: fix other bug'],
+        {
+          ...defaultConfig,
+          categories: [
+            { title: 'Sentry Updates', 'commit-scopes': ['sentry'] },
+            { title: 'Bug Fixes', 'commit-types': ['fix'] },
+          ],
+        },
+        '## Sentry Updates\n\n* Fix sentry issue\n\n## Bug Fixes\n\n* Fix other bug',
+      ],
+      [
+        'multiple scopes can be specified for a category',
+        [
+          'fix(sentry): fix sentry issue',
+          'feat(monitoring): add monitoring',
+          'fix: other fix',
+        ],
+        {
+          ...defaultConfig,
+          categories: [
+            {
+              title: 'Observability Updates',
+              'commit-scopes': ['sentry', 'monitoring'],
+            },
+            { title: 'Bug Fixes', 'commit-types': ['fix'] },
+          ],
+        },
+        '## Observability Updates\n\n* Fix sentry issue\n* Add monitoring\n\n## Bug Fixes\n\n* Other fix',
+      ],
     ])('%s', (name, messages, config, expected) => {
       const commits = createMockCommits(messages)
       const collection = ReleaseChangeLineItems.fromCommits(commits)

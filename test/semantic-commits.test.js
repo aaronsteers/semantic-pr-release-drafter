@@ -548,7 +548,7 @@ describe('ReleaseChangeLineItems', () => {
       expect(result).toContain('* MixedCase Title')
     })
 
-    test('display-order controls category display position', () => {
+    test('sorts categories by display-order values', () => {
       const commits = createMockCommits([
         'feat: feature one',
         'fix: bug fix',
@@ -577,7 +577,7 @@ describe('ReleaseChangeLineItems', () => {
       expect(featuresPos).toBeLessThan(maintenancePos)
     })
 
-    test('display-order with mixed specified and unspecified orders', () => {
+    test('places categories without display-order after sorted categories', () => {
       const commits = createMockCommits([
         'feat: feature',
         'fix: bug fix',

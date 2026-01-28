@@ -487,6 +487,42 @@ With this configuration:
 
 This feature is particularly useful for monorepos where you want to group all changes for a specific package or component together in the release notes.
 
+### Display Order
+
+By default, categories appear in the release notes in the same order they are defined in your config file. This order also determines evaluation priority (first matching category wins).
+
+The `display-order` property lets you decouple display order from evaluation order. Categories are still evaluated top-to-bottom for matching, but the final output is sorted by `display-order` (lower values appear first).
+
+```yml
+categories:
+  # Evaluated first (catches sentry features)
+  - title: ':eyes: Sentry Features'
+    commit-scopes:
+      - 'sentry'
+    commit-types:
+      - 'feat'
+    display-order: 200
+  # Evaluated second (catches remaining sentry items)
+  - title: ':eyes: Sentry Updates'
+    commit-scopes:
+      - 'sentry'
+    display-order: 201
+  # Evaluated third (catches non-sentry features)
+  - title: 'New Features'
+    commit-types:
+      - 'feat'
+    display-order: 100
+  # Evaluated last
+  - title: 'Under the Hood'
+    commit-types:
+      - 'chore'
+    display-order: 999
+```
+
+With this configuration, the output order will be: "New Features" (100), "Sentry Features" (200), "Sentry Updates" (201), "Under the Hood" (999) - even though evaluation happens in config order.
+
+Categories without `display-order` are placed after all categories that have one, maintaining their relative config order among themselves.
+
 ## Exclude Contributors
 
 By default, the `$CONTRIBUTORS` variable will contain the names or usernames of all the contributors of a release. The `exclude-contributors` option allows you to remove certain usernames from that list. This can be useful if don't wish to include yourself, to better highlight only the third-party contributions.

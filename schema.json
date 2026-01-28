@@ -119,37 +119,43 @@
           "title": "⚠️ Breaking Changes",
           "commit-types": ["breaking"],
           "commit-scopes": [],
-          "collapse-after": 0
+          "collapse-after": 0,
+          "display-order": null
         },
         {
           "title": "✨ New Features",
           "commit-types": ["feat"],
           "commit-scopes": [],
-          "collapse-after": 0
+          "collapse-after": 0,
+          "display-order": null
         },
         {
           "title": "🐛 Bug Fixes",
           "commit-types": ["fix"],
           "commit-scopes": [],
-          "collapse-after": 0
+          "collapse-after": 0,
+          "display-order": null
         },
         {
           "title": "▲ Other Changes",
           "commit-types": ["refactor", "perf", "style"],
           "commit-scopes": [],
-          "collapse-after": 2
+          "collapse-after": 2,
+          "display-order": null
         },
         {
           "title": "📖 Documentation",
           "commit-types": ["docs"],
           "commit-scopes": [],
-          "collapse-after": 2
+          "collapse-after": 2,
+          "display-order": null
         },
         {
           "title": "⚙️ Under the Hood",
           "commit-types": ["chore", "ci", "build", "test"],
           "commit-scopes": [],
-          "collapse-after": 2
+          "collapse-after": 2,
+          "display-order": null
         }
       ],
       "items": {
@@ -162,6 +168,10 @@
             "type": "integer",
             "default": 0,
             "minimum": 0
+          },
+          "display-order": {
+            "type": ["integer", "null"],
+            "description": "Controls the display order of this category in the changelog. Categories are evaluated in config order (first match wins), but displayed sorted by display-order (lower values first). Categories without display-order are displayed in their natural config order after sorted categories."
           },
           "commit-types": {
             "type": "array",

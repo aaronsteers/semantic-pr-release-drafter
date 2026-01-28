@@ -267,6 +267,57 @@ jobs:
                 commit-types:
                   - fix
 
+          # Test display-order feature
+          # Categories are evaluated in config order but displayed sorted by display-order
+          - test-name: 'display-order-feature'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat(sentry): add sentry feature (#500)
+              fix(sentry): fix sentry bug (#501)
+              feat: add regular feature (#502)
+              chore: maintenance task (#503)
+            expected-version-string: '1.1.0'
+            # Output order should be: Features (100), Sentry Features (200), Sentry Updates (201), Under the Hood (999)
+            expected-body: |
+              ## Features
+
+              * Add regular feature (#502)
+
+              ## Sentry Features
+
+              * Add sentry feature (#500)
+
+              ## Sentry Updates
+
+              * Fix sentry bug (#501)
+
+              ## Under the Hood
+
+              * Maintenance task (#503)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Sentry Features
+                commit-scopes:
+                  - sentry
+                commit-types:
+                  - feat
+                display-order: 200
+              - title: Sentry Updates
+                commit-scopes:
+                  - sentry
+                display-order: 201
+              - title: Features
+                commit-types:
+                  - feat
+                display-order: 100
+              - title: Under the Hood
+                commit-types:
+                  - chore
+                display-order: 999
+
           # Test attach-files feature in dry-run mode
           # Verifies that file patterns are resolved and reported correctly
           - test-name: 'attach-files-dry-run'

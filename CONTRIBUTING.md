@@ -23,7 +23,7 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 
 In addition to unit tests, this project has integration tests that run the action in dry-run mode against test repositories. These tests are defined in `.github/workflows/integration-tests.yml` and run automatically on pull requests.
 
-When adding new features, consider adding an integration test case to the matrix in that workflow file. Each test case specifies:
+When adding new features, you should ALWAYS add an integration test case to the matrix in that workflow file. Each test case specifies:
 
 - `test-name`: A descriptive name for the test
 - `test-start-version-string`: The starting version tag

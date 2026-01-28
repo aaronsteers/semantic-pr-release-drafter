@@ -455,10 +455,35 @@ With this configuration:
 
 **Key behaviors:**
 
-- Scope-based matching takes priority over type-based matching
 - Scope matching is case-insensitive (`fix(SENTRY):` matches `sentry`)
 - You can specify multiple scopes per category
-- Categories can have both `commit-types` and `commit-scopes` (scope matches are checked first)
+- When both `commit-scopes` and `commit-types` are specified, they are **ANDed** together (must match both)
+- First matching category wins (no duplicates)
+
+**Advanced example with AND logic:**
+
+```yml
+categories:
+  - title: ':eyes: Sentry Features'
+    commit-scopes:
+      - 'sentry'
+    commit-types:
+      - 'feat'
+  - title: ':bug: Sentry Fixes'
+    commit-scopes:
+      - 'sentry'
+    commit-types:
+      - 'fix'
+  - title: 'New Features'
+    commit-types:
+      - 'feat'
+```
+
+With this configuration:
+
+- `feat(sentry): add monitoring` goes to "Sentry Features" (matches both scope AND type)
+- `fix(sentry): resolve issue` goes to "Sentry Fixes" (matches both scope AND type)
+- `feat: add feature` goes to "New Features" (matches type only)
 
 This feature is particularly useful for monorepos where you want to group all changes for a specific package or component together in the release notes.
 

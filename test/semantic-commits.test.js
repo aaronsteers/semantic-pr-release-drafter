@@ -455,6 +455,31 @@ describe('ReleaseChangeLineItems', () => {
         },
         '## Observability Updates\n\n* Fix sentry issue\n* Add monitoring\n\n## Bug Fixes\n\n* Other fix',
       ],
+      [
+        'scopes and types are ANDed when both specified',
+        [
+          'feat(sentry): sentry feature',
+          'fix(sentry): sentry fix',
+          'feat: other feature',
+        ],
+        {
+          ...defaultConfig,
+          categories: [
+            {
+              title: 'Sentry Features',
+              'commit-scopes': ['sentry'],
+              'commit-types': ['feat'],
+            },
+            {
+              title: 'Sentry Fixes',
+              'commit-scopes': ['sentry'],
+              'commit-types': ['fix'],
+            },
+            { title: 'Features', 'commit-types': ['feat'] },
+          ],
+        },
+        '## Sentry Features\n\n* Sentry feature\n\n## Sentry Fixes\n\n* Sentry fix\n\n## Features\n\n* Other feature',
+      ],
     ])('%s', (name, messages, config, expected) => {
       const commits = createMockCommits(messages)
       const collection = ReleaseChangeLineItems.fromCommits(commits)

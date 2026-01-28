@@ -2,6 +2,8 @@ const {
   ReleaseChangeLineItem,
   ReleaseChangeLineItems,
   COMMIT_TYPES,
+  TITLE_POST_PROCESSORS,
+  applyTitlePostProcessors,
 } = require('../lib/semantic-commits')
 
 const createMockCommits = (messages) =>
@@ -332,31 +334,31 @@ describe('ReleaseChangeLineItems', () => {
         'renders single feature',
         ['feat: add new feature'],
         defaultConfig,
-        '## Features\n\n* add new feature',
+        '## Features\n\n* Add new feature',
       ],
       [
         'renders single fix',
         ['fix: resolve bug'],
         defaultConfig,
-        '## Bug Fixes\n\n* resolve bug',
+        '## Bug Fixes\n\n* Resolve bug',
       ],
       [
         'renders multiple items in same category',
         ['feat: feature one', 'feat: feature two'],
         defaultConfig,
-        '## Features\n\n* feature one\n* feature two',
+        '## Features\n\n* Feature one\n* Feature two',
       ],
       [
         'renders multiple categories',
         ['feat: add feature', 'fix: resolve bug'],
         defaultConfig,
-        '## Features\n\n* add feature\n\n## Bug Fixes\n\n* resolve bug',
+        '## Features\n\n* Add feature\n\n## Bug Fixes\n\n* Resolve bug',
       ],
       [
         'renders multiple categories with multiple items',
         ['feat: f1', 'fix: bug1', 'feat: f2', 'fix: bug2'],
         defaultConfig,
-        '## Features\n\n* f1\n* f2\n\n## Bug Fixes\n\n* bug1\n* bug2',
+        '## Features\n\n* F1\n* F2\n\n## Bug Fixes\n\n* Bug1\n* Bug2',
       ],
       [
         'returns no-changes-template for empty collection',
@@ -368,13 +370,13 @@ describe('ReleaseChangeLineItems', () => {
         'uses custom change-template',
         ['feat: add feature'],
         { ...defaultConfig, 'change-template': '- $TITLE ($SHA)' },
-        '## Features\n\n- add feature (sha0)',
+        '## Features\n\n- Add feature (sha0)',
       ],
       [
         'uses custom category-template',
         ['feat: add feature'],
         { ...defaultConfig, 'category-template': '### $TITLE' },
-        '### Features\n\n* add feature',
+        '### Features\n\n* Add feature',
       ],
       [
         'handles uncategorized items',
@@ -383,7 +385,7 @@ describe('ReleaseChangeLineItems', () => {
           ...defaultConfig,
           categories: [{ title: 'Features', 'commit-types': ['feat'] }],
         },
-        '* improve speed\n\n## Features\n\n* feature',
+        '* Improve speed\n\n## Features\n\n* Feature',
       ],
     ])('%s', (name, messages, config, expected) => {
       const commits = createMockCommits(messages)
@@ -410,7 +412,7 @@ describe('ReleaseChangeLineItems', () => {
       }
 
       const result = collection.renderWithConfig(config)
-      expect(result).toEqual('## Features\n\n* add feature (#42)')
+      expect(result).toEqual('## Features\n\n* Add feature (#42)')
     })
 
     test('renders with commit SHA when available', () => {
@@ -428,7 +430,65 @@ describe('ReleaseChangeLineItems', () => {
       }
 
       const result = collection.renderWithConfig(config)
-      expect(result).toEqual('## Features\n\n* add feature (abc123d)')
+      expect(result).toEqual('## Features\n\n* Add feature (abc123d)')
     })
+
+    test('always applies sentence-case to titles', () => {
+      const commits = createMockCommits(['feat: add new feature'])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+
+      const result = collection.renderWithConfig(defaultConfig)
+      expect(result).toEqual('## Features\n\n* Add new feature')
+    })
+
+    test('sentence-case capitalizes first letter only, preserves rest', () => {
+      const commits = createMockCommits([
+        'feat: lowercase title',
+        'fix: UPPERCASE TITLE',
+        'docs: mixedCase Title',
+      ])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+
+      const result = collection.renderWithConfig(defaultConfig)
+      expect(result).toContain('* Lowercase title')
+      expect(result).toContain('* UPPERCASE TITLE')
+      expect(result).toContain('* MixedCase Title')
+    })
+  })
+})
+
+describe('applyTitlePostProcessors', () => {
+  test.each([
+    [
+      'capitalizes first letter',
+      'hello world',
+      ['sentence-case'],
+      'Hello world',
+    ],
+    ['handles empty string', '', ['sentence-case'], ''],
+    ['handles single character', 'a', ['sentence-case'], 'A'],
+    [
+      'preserves already capitalized',
+      'Hello world',
+      ['sentence-case'],
+      'Hello world',
+    ],
+    ['handles uppercase input', 'HELLO', ['sentence-case'], 'HELLO'],
+    ['returns unchanged with no processors', 'hello', [], 'hello'],
+    ['ignores unknown processors', 'hello', ['unknown-processor'], 'hello'],
+  ])('%s', (name, input, processors, expected) => {
+    expect(applyTitlePostProcessors(input, processors)).toEqual(expected)
+  })
+})
+
+describe('TITLE_POST_PROCESSORS', () => {
+  test('sentence-case processor exists', () => {
+    expect(TITLE_POST_PROCESSORS['sentence-case']).toBeDefined()
+    expect(typeof TITLE_POST_PROCESSORS['sentence-case']).toBe('function')
+  })
+
+  test('sentence-case handles null/undefined gracefully', () => {
+    expect(TITLE_POST_PROCESSORS['sentence-case'](null)).toBeNull()
+    expect(TITLE_POST_PROCESSORS['sentence-case']()).toBeUndefined()
   })
 })

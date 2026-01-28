@@ -253,20 +253,20 @@ describe('release-drafter', () => {
 
                   ## ✨ New Features
 
-                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
+                  * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                  * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
                   ## 🐛 Bug Fixes
 
-                  * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                  * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
                   ## 📖 Documentation
 
-                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                  * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
                   ## ⚙️ Under the Hood
 
-                  * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+                  * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -314,20 +314,20 @@ describe('release-drafter', () => {
                   "body": "Changes:
                 ## ✨ New Features
 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
                 ## 🐛 Bug Fixes
 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
                 ## 📖 Documentation
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
                 ## ⚙️ Under the Hood
 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
                 Previous tag: ''
                 ",
@@ -381,20 +381,20 @@ describe('release-drafter', () => {
 
                 ## ✨ New Features
 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
                 ## 🐛 Bug Fixes
 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
                 ## 📖 Documentation
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
                 ## ⚙️ Under the Hood
 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -446,20 +446,20 @@ describe('release-drafter', () => {
 
                 ## ✨ New Features
 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
                 ## 🐛 Bug Fixes
 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
                 ## 📖 Documentation
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
                 ## ⚙️ Under the Hood
 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -551,20 +551,20 @@ describe('release-drafter', () => {
                   Object {
                     "body": "## ✨ New Features
 
-                  * Change: #2 'add big feature' @TimonVS
-                  * Change: #1 'add alien technology' @TimonVS
+                  * Change: #2 'Add big feature' @TimonVS
+                  * Change: #1 'Add alien technology' @TimonVS
 
                   ## 🐛 Bug Fixes
 
-                  * Change: #3 'bug fixes' @TimonVS
+                  * Change: #3 'Bug fixes' @TimonVS
 
                   ## 📖 Documentation
 
-                  * Change: #5 'add documentation' @TimonVS
+                  * Change: #5 'Add documentation' @TimonVS
 
                   ## ⚙️ Under the Hood
 
-                  * Change: #4 'update dependencies' @TimonVS",
+                  * Change: #4 'Update dependencies' @TimonVS",
                     "draft": true,
                     "make_latest": "true",
                     "name": "v2.1.0",
@@ -611,20 +611,20 @@ describe('release-drafter', () => {
                   Object {
                     "body": "## ✨ New Features
 
-                  * Change: #2 'add big feature'
-                  * Change: #1 'add alien technology'
+                  * Change: #2 'Add big feature'
+                  * Change: #1 'Add alien technology'
 
                   ## 🐛 Bug Fixes
 
-                  * Change: #3 'bug fixes'
+                  * Change: #3 'Bug fixes'
 
                   ## 📖 Documentation
 
-                  * Change: #5 'add documentation'
+                  * Change: #5 'Add documentation'
 
                   ## ⚙️ Under the Hood
 
-                  * Change: #4 'update dependencies'",
+                  * Change: #4 'Update dependencies'",
                     "draft": true,
                     "make_latest": "true",
                     "name": "v2.1.0",
@@ -671,20 +671,20 @@ describe('release-drafter', () => {
                   Object {
                     "body": "## ✨ New Features
 
-                  * Change: #2 'add big feature' @TimonVS
-                  * Change: #1 'add alien technology' @TimonVS
+                  * Change: #2 'Add big feature' @TimonVS
+                  * Change: #1 'Add alien technology' @TimonVS
 
                   ## 🐛 Bug Fixes
 
-                  * Change: #3 'bug fixes' @TimonVS
+                  * Change: #3 'Bug fixes' @TimonVS
 
                   ## 📖 Documentation
 
-                  * Change: #5 'add documentation' @TimonVS
+                  * Change: #5 'Add documentation' @TimonVS
 
                   ## ⚙️ Under the Hood
 
-                  * Change: #4 'update dependencies' @TimonVS",
+                  * Change: #4 'Update dependencies' @TimonVS",
                     "draft": true,
                     "make_latest": "true",
                     "name": "v2.1.0",
@@ -961,20 +961,20 @@ describe('release-drafter', () => {
 
                 ## ✨ New Features
 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
                 ## 🐛 Bug Fixes
 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
                 ## 📖 Documentation
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
                 ## ⚙️ Under the Hood
 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1021,11 +1021,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
 
                 **Full Changelog**: https://github.com/toolmantim/release-drafter-test-project/compare/v2.0.0...v2.1.0
                 ",
@@ -1074,11 +1074,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1123,11 +1123,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1172,11 +1172,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1221,11 +1221,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/22) 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/21) 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/20) 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/19) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/18)
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/22) 
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/21) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/20) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/19) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/18)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1270,11 +1270,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/22) 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/21) 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/20) 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/19) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/18)
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/22) 
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/21) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/20) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/19) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/18)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1319,11 +1319,11 @@ describe('release-drafter', () => {
                 Object {
                   "body": "# What's Changed
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1372,20 +1372,20 @@ describe('release-drafter', () => {
 
                 ## ✨ New Features
 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
                 ## 🐛 Bug Fixes
 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
                 ## 📖 Documentation
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
                 ## ⚙️ Under the Hood
 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1789,20 +1789,20 @@ describe('release-drafter', () => {
 
                   ## ✨ New Features
 
-                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
+                  * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                  * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
                   ## 🐛 Bug Fixes
 
-                  * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                  * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
                   ## 📖 Documentation
 
-                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                  * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
                   ## ⚙️ Under the Hood
 
-                  * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+                  * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -1854,24 +1854,24 @@ describe('release-drafter', () => {
 
                   ## ✨ New Features
 
-                  * adjust parameters (https://github.com/toolmantim/release-drafter-test-project/pull/7) 
-                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/7) 
-                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/6) 
+                  * Adjust parameters (https://github.com/toolmantim/release-drafter-test-project/pull/7) 
+                  * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/7) 
+                  * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/6) 
 
                   ## 🐛 Bug Fixes
 
-                  * fixed another bug (https://github.com/toolmantim/release-drafter-test-project/pull/8) 
-                  * fixed a bug (https://github.com/toolmantim/release-drafter-test-project/pull/8) 
+                  * Fixed another bug (https://github.com/toolmantim/release-drafter-test-project/pull/8) 
+                  * Fixed a bug (https://github.com/toolmantim/release-drafter-test-project/pull/8) 
 
                   ## 📖 Documentation
 
-                  * fix typo (https://github.com/toolmantim/release-drafter-test-project/pull/10) 
-                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/10) 
+                  * Fix typo (https://github.com/toolmantim/release-drafter-test-project/pull/10) 
+                  * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/10) 
 
                   ## ⚙️ Under the Hood
 
-                  * update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9) 
-                  * update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9)
+                  * Update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9) 
+                  * Update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9)
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -1923,20 +1923,20 @@ describe('release-drafter', () => {
 
                   ## ✨ New Features
 
-                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/12) 
-                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/11) 
+                  * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/12) 
+                  * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/11) 
 
                   ## 🐛 Bug Fixes
 
-                  * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/13) 
+                  * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/13) 
 
                   ## 📖 Documentation
 
-                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/15) 
+                  * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/15) 
 
                   ## ⚙️ Under the Hood
 
-                  * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/14)
+                  * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/14)
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -1986,19 +1986,19 @@ describe('release-drafter', () => {
 
                   ## ✨ New Features
 
-                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/12) 
+                  * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/12) 
 
                   ## 🐛 Bug Fixes
 
-                  * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/13) 
+                  * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/13) 
 
                   ## 📖 Documentation
 
-                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/15) 
+                  * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/15) 
 
                   ## ⚙️ Under the Hood
 
-                  * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/14)
+                  * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/14)
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2047,23 +2047,23 @@ describe('release-drafter', () => {
 
                   ## ✨ New Features
 
-                  * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/24) 
-                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/23) 
-                  * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
+                  * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/24) 
+                  * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/23) 
+                  * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
                   ## 🐛 Bug Fixes
 
-                  * fixed another bug (https://github.com/toolmantim/release-drafter-test-project/pull/25) 
-                  * fixed a bug (https://github.com/toolmantim/release-drafter-test-project/pull/25) 
+                  * Fixed another bug (https://github.com/toolmantim/release-drafter-test-project/pull/25) 
+                  * Fixed a bug (https://github.com/toolmantim/release-drafter-test-project/pull/25) 
 
                   ## 📖 Documentation
 
                   <details>
                   <summary>3 changes</summary>
 
-                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/28) 
-                  * fix typo (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
-                  * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                  * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/28) 
+                  * Fix typo (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                  * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
                   </details>
 
                   ## ⚙️ Under the Hood
@@ -2071,9 +2071,9 @@ describe('release-drafter', () => {
                   <details>
                   <summary>3 changes</summary>
 
-                  * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/27) 
-                  * update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
-                  * update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                  * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/27) 
+                  * Update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
+                  * Update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
                   </details>
                   ",
                     "draft": true,
@@ -2179,20 +2179,20 @@ describe('release-drafter', () => {
 
                 ## ✨ New Features
 
-                * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-                * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
+                * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+                * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
                 ## 🐛 Bug Fixes
 
-                * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+                * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
                 ## 📖 Documentation
 
-                * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+                * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
                 ## ⚙️ Under the Hood
 
-                * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+                * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -2356,20 +2356,20 @@ describe('release-drafter', () => {
                 "body": "# What's Changed
               ## ✨ New Features
 
-              * add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
-              * add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
+              * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
+              * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
               ## 🐛 Bug Fixes
 
-              * bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
+              * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
 
               ## 📖 Documentation
 
-              * add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
+              * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
 
               ## ⚙️ Under the Hood
 
-              * update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+              * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
               ",
                 "draft": true,
                 "make_latest": "true",

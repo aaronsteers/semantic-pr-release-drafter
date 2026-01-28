@@ -2,6 +2,8 @@ const {
   ReleaseChangeLineItem,
   ReleaseChangeLineItems,
   COMMIT_TYPES,
+  TITLE_POST_PROCESSORS,
+  applyTitlePostProcessors,
 } = require('../lib/semantic-commits')
 
 const createMockCommits = (messages) =>
@@ -430,5 +432,82 @@ describe('ReleaseChangeLineItems', () => {
       const result = collection.renderWithConfig(config)
       expect(result).toEqual('## Features\n\n* add feature (abc123d)')
     })
+
+    test('applies sentence-case post-processor to titles', () => {
+      const commits = createMockCommits(['feat: add new feature'])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        'title-post-processors': ['sentence-case'],
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toEqual('## Features\n\n* Add new feature')
+    })
+
+    test('sentence-case post-processor capitalizes first letter only', () => {
+      const commits = createMockCommits([
+        'feat: lowercase title',
+        'fix: UPPERCASE TITLE',
+        'docs: mixedCase Title',
+      ])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        'title-post-processors': ['sentence-case'],
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toContain('* Lowercase title')
+      expect(result).toContain('* UPPERCASE TITLE')
+      expect(result).toContain('* MixedCase Title')
+    })
+
+    test('renders without post-processors when not configured', () => {
+      const commits = createMockCommits(['feat: lowercase feature'])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toEqual('## Features\n\n* lowercase feature')
+    })
+  })
+})
+
+describe('applyTitlePostProcessors', () => {
+  test.each([
+    [
+      'capitalizes first letter',
+      'hello world',
+      ['sentence-case'],
+      'Hello world',
+    ],
+    ['handles empty string', '', ['sentence-case'], ''],
+    ['handles single character', 'a', ['sentence-case'], 'A'],
+    [
+      'preserves already capitalized',
+      'Hello world',
+      ['sentence-case'],
+      'Hello world',
+    ],
+    ['handles uppercase input', 'HELLO', ['sentence-case'], 'HELLO'],
+    ['returns unchanged with no processors', 'hello', [], 'hello'],
+    ['ignores unknown processors', 'hello', ['unknown-processor'], 'hello'],
+  ])('%s', (name, input, processors, expected) => {
+    expect(applyTitlePostProcessors(input, processors)).toEqual(expected)
+  })
+})
+
+describe('TITLE_POST_PROCESSORS', () => {
+  test('sentence-case processor exists', () => {
+    expect(TITLE_POST_PROCESSORS['sentence-case']).toBeDefined()
+    expect(typeof TITLE_POST_PROCESSORS['sentence-case']).toBe('function')
+  })
+
+  test('sentence-case handles null/undefined gracefully', () => {
+    expect(TITLE_POST_PROCESSORS['sentence-case'](null)).toBeNull()
+    expect(TITLE_POST_PROCESSORS['sentence-case']()).toBeUndefined()
   })
 })

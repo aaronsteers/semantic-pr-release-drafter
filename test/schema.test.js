@@ -58,7 +58,10 @@ const invalidConfigs = [
   [{ commitish: false }, 'must be a string'],
   [{ 'pull-request-limit': 'forty nine' }, 'must be a number'],
   [{ 'title-post-processors': 'sentence-case' }, 'must be an array'],
-  [{ 'title-post-processors': ['invalid-processor'] }, 'must be [sentence-case]'],
+  [
+    { 'title-post-processors': ['invalid-processor'] },
+    'must be [sentence-case]',
+  ],
 ]
 
 describe('schema', () => {

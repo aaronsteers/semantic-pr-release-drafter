@@ -221,6 +221,52 @@ jobs:
                 commit-types:
                   - chore
 
+          # Test scope-based categories with AND logic
+          # When both commit-scopes and commit-types are specified, they are ANDed
+          - test-name: 'scope-based-categories'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat(sentry): add sentry monitoring (#400)
+              fix(sentry): fix sentry alert (#401)
+              feat: add other feature (#402)
+              fix: fix other bug (#403)
+            expected-version-string: '1.1.0'
+            expected-body: |
+              ## Sentry Features
+
+              * Add sentry monitoring (#400)
+
+              ## Sentry Updates
+
+              * Fix sentry alert (#401)
+
+              ## Features
+
+              * Add other feature (#402)
+
+              ## Bug Fixes
+
+              * Fix other bug (#403)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Sentry Features
+                commit-scopes:
+                  - sentry
+                commit-types:
+                  - feat
+              - title: Sentry Updates
+                commit-scopes:
+                  - sentry
+              - title: Features
+                commit-types:
+                  - feat
+              - title: Bug Fixes
+                commit-types:
+                  - fix
+
           # Test attach-files feature in dry-run mode
           # Verifies that file patterns are resolved and reported correctly
           - test-name: 'attach-files-dry-run'

@@ -15,6 +15,9 @@ Besides the change from label-based to commit-based release logic, this fork add
 5. 💹 **Marketing-Friendly Semver** - Supports marketing-friendly semver rules, namely: full control whether major version bumps are triggered by breaking changes or based on consent and deliberation.
 6. 📃 **Choose Inline OR File-Based Config** - Supports both inline config inputs and file-based config, allowing you to choose the method that best fits your workflow.
 7. 🔒 **Version Preservation** - Respects manually-set draft release versions. If you set a draft to `v2.0.0`, the action will never bump it backwards. Prerelease identifiers (like `-beta`, `-rc.1`) are preserved exactly. See [Version Preservation](#version-preservation).
+8. 🎯 **Scope-Based Categories** - Group changes by commit scope (e.g., all `sentry` changes together) in addition to commit type. Supports AND logic when combining scopes and types. See [Scope-Based Categories](#scope-based-categories).
+9. 📊 **Display Order Control** - Decouple category evaluation order from display order. Categories are evaluated top-to-bottom but can be displayed in any order using `display-order`. See [Display Order](#display-order).
+10. 🔤 **Sentence-Case Titles** - Automatically normalizes commit titles to sentence case for consistent, professional-looking release notes.
 
 ### Other Changes
 

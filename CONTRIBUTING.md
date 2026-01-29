@@ -19,6 +19,21 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 1. Push to your fork and [submit a pull request][pr]
 1. Give yourself a high five, and wait for your pull request to be reviewed and merged.
 
+## Integration Tests
+
+In addition to unit tests, this project has integration tests that run the action in dry-run mode against test repositories. These tests are defined in `.github/workflows/integration-tests.yml` and run automatically on pull requests.
+
+When adding new features, you should ALWAYS add an integration test case to the matrix in that workflow file. Each test case specifies:
+
+- `test-name`: A descriptive name for the test
+- `test-start-version-string`: The starting version tag
+- `test-commit-list`: A list of commits to create
+- `expected-version-string`: The expected resolved version
+- `expected-body`: The expected changelog body
+- Template and category configuration options
+
+See existing test cases in the workflow file for examples.
+
 Here are a few things you can do that will increase the likelihood of your pull request being accepted:
 
 - Follow the [style guide][style] which is using standard. Any linting errors should be shown when running `yarn test`

@@ -118,32 +118,44 @@
         {
           "title": "⚠️ Breaking Changes",
           "commit-types": ["breaking"],
-          "collapse-after": 0
+          "commit-scopes": [],
+          "collapse-after": 0,
+          "display-order": null
         },
         {
           "title": "✨ New Features",
           "commit-types": ["feat"],
-          "collapse-after": 0
+          "commit-scopes": [],
+          "collapse-after": 0,
+          "display-order": null
         },
         {
           "title": "🐛 Bug Fixes",
           "commit-types": ["fix"],
-          "collapse-after": 0
+          "commit-scopes": [],
+          "collapse-after": 0,
+          "display-order": null
         },
         {
           "title": "▲ Other Changes",
           "commit-types": ["refactor", "perf", "style"],
-          "collapse-after": 2
+          "commit-scopes": [],
+          "collapse-after": 2,
+          "display-order": null
         },
         {
           "title": "📖 Documentation",
           "commit-types": ["docs"],
-          "collapse-after": 2
+          "commit-scopes": [],
+          "collapse-after": 2,
+          "display-order": null
         },
         {
           "title": "⚙️ Under the Hood",
           "commit-types": ["chore", "ci", "build", "test"],
-          "collapse-after": 2
+          "commit-scopes": [],
+          "collapse-after": 2,
+          "display-order": null
         }
       ],
       "items": {
@@ -157,7 +169,18 @@
             "default": 0,
             "minimum": 0
           },
+          "display-order": {
+            "type": ["integer", "null"],
+            "description": "Controls the display order of this category in the changelog. Categories are evaluated in config order (first match wins), but displayed sorted by display-order (lower values first). Categories without display-order are displayed in their natural config order after sorted categories."
+          },
           "commit-types": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "string"
+            }
+          },
+          "commit-scopes": {
             "type": "array",
             "default": [],
             "items": {

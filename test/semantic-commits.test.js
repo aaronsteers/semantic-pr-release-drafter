@@ -387,6 +387,99 @@ describe('ReleaseChangeLineItems', () => {
         },
         '* Improve speed\n\n## Features\n\n* Feature',
       ],
+      [
+        'categorizes by scope using commit-scopes',
+        ['fix(sentry): fix sentry issue', 'feat(sentry): add sentry feature'],
+        {
+          ...defaultConfig,
+          categories: [
+            { title: 'Sentry Updates', 'commit-scopes': ['sentry'] },
+            { title: 'Features', 'commit-types': ['feat'] },
+            { title: 'Bug Fixes', 'commit-types': ['fix'] },
+          ],
+        },
+        '## Sentry Updates\n\n* Fix sentry issue\n* Add sentry feature',
+      ],
+      [
+        'scope-based matching takes priority over type-based',
+        ['feat(sentry): add sentry feature', 'feat: add other feature'],
+        {
+          ...defaultConfig,
+          categories: [
+            { title: 'Sentry Updates', 'commit-scopes': ['sentry'] },
+            { title: 'Features', 'commit-types': ['feat'] },
+          ],
+        },
+        '## Sentry Updates\n\n* Add sentry feature\n\n## Features\n\n* Add other feature',
+      ],
+      [
+        'scope matching is case-insensitive',
+        ['fix(SENTRY): fix sentry issue', 'feat(Sentry): add sentry feature'],
+        {
+          ...defaultConfig,
+          categories: [
+            { title: 'Sentry Updates', 'commit-scopes': ['sentry'] },
+            { title: 'Features', 'commit-types': ['feat'] },
+          ],
+        },
+        '## Sentry Updates\n\n* Fix sentry issue\n* Add sentry feature',
+      ],
+      [
+        'items without scope fall back to type-based matching',
+        ['fix(sentry): fix sentry issue', 'fix: fix other bug'],
+        {
+          ...defaultConfig,
+          categories: [
+            { title: 'Sentry Updates', 'commit-scopes': ['sentry'] },
+            { title: 'Bug Fixes', 'commit-types': ['fix'] },
+          ],
+        },
+        '## Sentry Updates\n\n* Fix sentry issue\n\n## Bug Fixes\n\n* Fix other bug',
+      ],
+      [
+        'multiple scopes can be specified for a category',
+        [
+          'fix(sentry): fix sentry issue',
+          'feat(monitoring): add monitoring',
+          'fix: other fix',
+        ],
+        {
+          ...defaultConfig,
+          categories: [
+            {
+              title: 'Observability Updates',
+              'commit-scopes': ['sentry', 'monitoring'],
+            },
+            { title: 'Bug Fixes', 'commit-types': ['fix'] },
+          ],
+        },
+        '## Observability Updates\n\n* Fix sentry issue\n* Add monitoring\n\n## Bug Fixes\n\n* Other fix',
+      ],
+      [
+        'scopes and types are ANDed when both specified',
+        [
+          'feat(sentry): sentry feature',
+          'fix(sentry): sentry fix',
+          'feat: other feature',
+        ],
+        {
+          ...defaultConfig,
+          categories: [
+            {
+              title: 'Sentry Features',
+              'commit-scopes': ['sentry'],
+              'commit-types': ['feat'],
+            },
+            {
+              title: 'Sentry Fixes',
+              'commit-scopes': ['sentry'],
+              'commit-types': ['fix'],
+            },
+            { title: 'Features', 'commit-types': ['feat'] },
+          ],
+        },
+        '## Sentry Features\n\n* Sentry feature\n\n## Sentry Fixes\n\n* Sentry fix\n\n## Features\n\n* Other feature',
+      ],
     ])('%s', (name, messages, config, expected) => {
       const commits = createMockCommits(messages)
       const collection = ReleaseChangeLineItems.fromCommits(commits)
@@ -453,6 +546,106 @@ describe('ReleaseChangeLineItems', () => {
       expect(result).toContain('* Lowercase title')
       expect(result).toContain('* UPPERCASE TITLE')
       expect(result).toContain('* MixedCase Title')
+    })
+
+    test('sorts categories by display-order values', () => {
+      const commits = createMockCommits([
+        'feat: feature one',
+        'fix: bug fix',
+        'chore: maintenance',
+      ])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        categories: [
+          { title: 'Features', 'commit-types': ['feat'], 'display-order': 200 },
+          { title: 'Bug Fixes', 'commit-types': ['fix'], 'display-order': 100 },
+          {
+            title: 'Maintenance',
+            'commit-types': ['chore'],
+            'display-order': 300,
+          },
+        ],
+      }
+
+      const result = collection.renderWithConfig(config)
+      // Bug Fixes (100) should come before Features (200) which comes before Maintenance (300)
+      const bugFixPos = result.indexOf('## Bug Fixes')
+      const featuresPos = result.indexOf('## Features')
+      const maintenancePos = result.indexOf('## Maintenance')
+      expect(bugFixPos).toBeLessThan(featuresPos)
+      expect(featuresPos).toBeLessThan(maintenancePos)
+    })
+
+    test('places categories without display-order after sorted categories', () => {
+      const commits = createMockCommits([
+        'feat: feature',
+        'fix: bug fix',
+        'docs: documentation',
+      ])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        categories: [
+          { title: 'Features', 'commit-types': ['feat'] }, // no display-order
+          { title: 'Bug Fixes', 'commit-types': ['fix'], 'display-order': 1 },
+          { title: 'Docs', 'commit-types': ['docs'] }, // no display-order
+        ],
+      }
+
+      const result = collection.renderWithConfig(config)
+      // Bug Fixes (has display-order) should come first
+      // Features and Docs (no display-order) maintain natural order after
+      const bugFixPos = result.indexOf('## Bug Fixes')
+      const featuresPos = result.indexOf('## Features')
+      const docsPos = result.indexOf('## Docs')
+      expect(bugFixPos).toBeLessThan(featuresPos)
+      expect(featuresPos).toBeLessThan(docsPos)
+    })
+
+    test('display-order with scope-based categories - Sentry example', () => {
+      const commits = createMockCommits([
+        'feat(sentry): add sentry feature',
+        'fix(sentry): fix sentry bug',
+        'feat: regular feature',
+        'chore: maintenance task',
+      ])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        categories: [
+          // Sentry categories evaluated first (top of config) but displayed later (200 series)
+          {
+            title: 'Sentry Features',
+            'commit-scopes': ['sentry'],
+            'commit-types': ['feat'],
+            'display-order': 200,
+          },
+          {
+            title: 'Sentry Updates',
+            'commit-scopes': ['sentry'],
+            'display-order': 201,
+          },
+          // Regular categories evaluated after Sentry but displayed first (100 series)
+          { title: 'Features', 'commit-types': ['feat'], 'display-order': 100 },
+          {
+            title: 'Under the Hood',
+            'commit-types': ['chore'],
+            'display-order': 999,
+          },
+        ],
+      }
+
+      const result = collection.renderWithConfig(config)
+      // Display order: Features (100) < Sentry Features (200) < Sentry Updates (201) < Under the Hood (999)
+      const featuresPos = result.indexOf('## Features')
+      const sentryFeaturesPos = result.indexOf('## Sentry Features')
+      const sentryUpdatesPos = result.indexOf('## Sentry Updates')
+      const underHoodPos = result.indexOf('## Under the Hood')
+
+      expect(featuresPos).toBeLessThan(sentryFeaturesPos)
+      expect(sentryFeaturesPos).toBeLessThan(sentryUpdatesPos)
+      expect(sentryUpdatesPos).toBeLessThan(underHoodPos)
     })
   })
 })

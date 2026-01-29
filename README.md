@@ -15,6 +15,9 @@ Besides the change from label-based to commit-based release logic, this fork add
 5. 💹 **Marketing-Friendly Semver** - Supports marketing-friendly semver rules, namely: full control whether major version bumps are triggered by breaking changes or based on consent and deliberation.
 6. 📃 **Choose Inline OR File-Based Config** - Supports both inline config inputs and file-based config, allowing you to choose the method that best fits your workflow.
 7. 🔒 **Version Preservation** - Respects manually-set draft release versions. If you set a draft to `v2.0.0`, the action will never bump it backwards. Prerelease identifiers (like `-beta`, `-rc.1`) are preserved exactly. See [Version Preservation](#version-preservation).
+8. 🎯 **Scope-Based Categories** - Group changes by commit scope (e.g., all `sentry` changes together) in addition to commit type. Supports AND logic when combining scopes and types. See [Scope-Based Categories](#scope-based-categories).
+9. 📊 **Display Order Control** - Decouple category evaluation order from display order. Categories are evaluated top-to-bottom but can be displayed in any order using `display-order`. See [Display Order](#display-order).
+10. 🔤 **Sentence-Case Titles** - Automatically normalizes commit titles to sentence case for consistent, professional-looking release notes.
 
 ### Other Changes
 
@@ -426,6 +429,102 @@ categories:
     commit-types:
       - 'fix'
 ```
+
+### Scope-Based Categories
+
+In addition to categorizing by commit type, you can also categorize changes by their **scope**. This is useful when you want all changes related to a specific component or feature to appear in a dedicated section, regardless of whether they are features, fixes, or other types.
+
+Use the `commit-scopes` option to match commits by their scope (the part in parentheses, e.g., `fix(sentry): ...`):
+
+```yml
+categories:
+  - title: ':eyes: Sentry Updates'
+    commit-scopes:
+      - 'sentry'
+  - title: 'New Features'
+    commit-types:
+      - 'feat'
+  - title: 'Bug Fixes'
+    commit-types:
+      - 'fix'
+```
+
+With this configuration:
+
+- `fix(sentry): resolve alert issue` goes to "Sentry Updates"
+- `feat(sentry): add new monitoring` goes to "Sentry Updates"
+- `feat: add new feature` goes to "New Features"
+- `fix: resolve bug` goes to "Bug Fixes"
+
+**Key behaviors:**
+
+- Scope matching is case-insensitive (`fix(SENTRY):` matches `sentry`)
+- You can specify multiple scopes per category
+- When both `commit-scopes` and `commit-types` are specified, they are **ANDed** together (must match both)
+- First matching category wins (no duplicates)
+
+**Advanced example with AND logic:**
+
+```yml
+categories:
+  - title: ':eyes: Sentry Features'
+    commit-scopes:
+      - 'sentry'
+    commit-types:
+      - 'feat'
+  - title: ':bug: Sentry Fixes'
+    commit-scopes:
+      - 'sentry'
+    commit-types:
+      - 'fix'
+  - title: 'New Features'
+    commit-types:
+      - 'feat'
+```
+
+With this configuration:
+
+- `feat(sentry): add monitoring` goes to "Sentry Features" (matches both scope AND type)
+- `fix(sentry): resolve issue` goes to "Sentry Fixes" (matches both scope AND type)
+- `feat: add feature` goes to "New Features" (matches type only)
+
+This feature is particularly useful for monorepos where you want to group all changes for a specific package or component together in the release notes.
+
+### Display Order
+
+By default, categories appear in the release notes in the same order they are defined in your config file. This order also determines evaluation priority (first matching category wins).
+
+The `display-order` property lets you decouple display order from evaluation order. Categories are still evaluated top-to-bottom for matching, but the final output is sorted by `display-order` (lower values appear first).
+
+```yml
+categories:
+  # Evaluated first (catches sentry features)
+  - title: ':eyes: Sentry Features'
+    commit-scopes:
+      - 'sentry'
+    commit-types:
+      - 'feat'
+    display-order: 200
+  # Evaluated second (catches remaining sentry items)
+  - title: ':eyes: Sentry Updates'
+    commit-scopes:
+      - 'sentry'
+    display-order: 201
+  # Evaluated third (catches non-sentry features)
+  - title: 'New Features'
+    commit-types:
+      - 'feat'
+    display-order: 100
+  # Evaluated last
+  - title: 'Under the Hood'
+    commit-types:
+      - 'chore'
+    display-order: 999
+```
+
+With this configuration, the output order will be: "New Features" (100), "Sentry Features" (200), "Sentry Updates" (201), "Under the Hood" (999) - even though evaluation happens in config order.
+
+Categories without `display-order` are placed after all categories that have one, maintaining their relative config order among themselves.
 
 ## Exclude Contributors
 

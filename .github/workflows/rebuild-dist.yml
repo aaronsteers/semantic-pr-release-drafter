@@ -62,7 +62,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Enable Corepack
         run: corepack enable
@@ -71,7 +71,7 @@ jobs:
         run: yarn install --immutable
 
       - name: Build dist/index.js
-        run: npx esbuild action.js --bundle --platform=node --target=node20 --outfile=dist/index.js
+        run: npx esbuild action.js --bundle --platform=node --target=node24 --outfile=dist/index.js
 
       - name: Check for changes
         id: git-diff

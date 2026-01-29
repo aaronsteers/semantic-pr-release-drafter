@@ -7,7 +7,7 @@
   "license": "ISC",
   "repository": "https://github.com/release-drafter/release-drafter",
   "scripts": {
-    "build": "esbuild action.js --bundle --platform=node --target=node20 --outfile=dist/index.js",
+    "build": "esbuild action.js --bundle --platform=node --target=node24 --outfile=dist/index.js",
     "start": "probot run ./index.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch --notify --notifyMode=change --coverage",
@@ -51,7 +51,7 @@
     "prettier": "2.7.1"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   },
   "jest": {
     "testEnvironment": "jest-environment-node",

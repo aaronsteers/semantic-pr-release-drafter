@@ -281,7 +281,7 @@ module.exports = (app, { getRouter }) => {
 
     const releaseId = createOrUpdateReleaseResponse.data.id
 
-    if (shouldResetFiles && !attachFiles) {
+    if (shouldResetFiles === true && !attachFiles) {
       log({
         context,
         message: 'Resetting release assets (reset-files=true)...',

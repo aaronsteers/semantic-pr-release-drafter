@@ -142,9 +142,9 @@ module.exports = (app, { getRouter }) => {
       input
 
     let shouldResetFiles
-    if (resetFiles === true) {
+    if (resetFiles === 'true') {
       shouldResetFiles = true
-    } else if (resetFiles === false) {
+    } else if (resetFiles === 'false') {
       shouldResetFiles = false
     } else {
       shouldResetFiles = !!attachFiles
@@ -332,10 +332,7 @@ function getInput() {
     preReleaseIdentifier: core.getInput('prerelease-identifier') || undefined,
     latest: core.getInput('latest')?.toLowerCase() || undefined,
     attachFiles: core.getInput('attach-files') || undefined,
-    resetFiles:
-      core.getInput('reset-files') !== ''
-        ? core.getInput('reset-files').toLowerCase() === 'true'
-        : null,
+    resetFiles: core.getInput('reset-files').toLowerCase() || 'auto',
     allowMajorBumps:
       core.getInput('allow-major-bumps') !== ''
         ? core.getInput('allow-major-bumps').toLowerCase() === 'true'

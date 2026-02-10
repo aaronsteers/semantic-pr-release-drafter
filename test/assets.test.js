@@ -202,6 +202,7 @@ describe('manageReleaseAssets integration', () => {
       context: mockContext,
       releaseId: 12_345,
       attachFilesInput: 'dist/*.whl\ndist/*.tar.gz',
+      resetFiles: true,
     })
 
     process.env.GITHUB_WORKSPACE = originalEnv
@@ -227,6 +228,7 @@ describe('manageReleaseAssets integration', () => {
       context: mockContext,
       releaseId: 12_345,
       attachFilesInput: 'dist/*.whl',
+      resetFiles: true,
     })
 
     process.env.GITHUB_WORKSPACE = originalEnv
@@ -251,6 +253,7 @@ describe('manageReleaseAssets integration', () => {
         context: mockContext,
         releaseId: 12_345,
         attachFilesInput: 'dist/*.whl',
+        resetFiles: true,
       })
     ).rejects.toThrow('attach-files was specified but no files matched')
 
@@ -268,6 +271,7 @@ describe('manageReleaseAssets integration', () => {
       context: mockContext,
       releaseId: 12_345,
       attachFilesInput: 'dist/*',
+      resetFiles: true,
     })
 
     process.env.GITHUB_WORKSPACE = originalEnv

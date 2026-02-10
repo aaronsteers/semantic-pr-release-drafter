@@ -15,7 +15,11 @@ const { sortPullRequests } = require('./lib/sort-pull-requests')
 const { log } = require('./lib/log')
 const core = require('@actions/core')
 const { runnerIsActions } = require('./lib/utils')
-const { manageReleaseAssets, resolveFiles } = require('./lib/assets')
+const {
+  manageReleaseAssets,
+  resolveFiles,
+  deleteAllReleaseAssets,
+} = require('./lib/assets')
 const semver = require('semver')
 
 module.exports = (app, { getRouter }) => {
@@ -134,7 +138,11 @@ module.exports = (app, { getRouter }) => {
       message: `Processing ${sortedMergedPullRequests.length} merged pull requests`,
     })
 
-    const { shouldDraft, version, tag, name, dryRun, attachFiles } = input
+    const { shouldDraft, version, tag, name, dryRun, attachFiles, resetFiles } =
+      input
+
+    const shouldResetFiles =
+      resetFiles === true ? true : (resetFiles === false ? false : !!attachFiles)
 
     // Separate explicit user input from draft release version:
     // - overrideVersion: explicit user input via action arg (always wins, skips calculations)
@@ -267,12 +275,21 @@ module.exports = (app, { getRouter }) => {
 
     const releaseId = createOrUpdateReleaseResponse.data.id
 
+    if (shouldResetFiles && !attachFiles) {
+      log({
+        context,
+        message: 'Resetting release assets (reset-files=true)...',
+      })
+      await deleteAllReleaseAssets({ context, releaseId })
+    }
+
     if (attachFiles) {
       log({ context, message: 'Managing release assets...' })
       await manageReleaseAssets({
         context,
         releaseId,
         attachFilesInput: attachFiles,
+        resetFiles: shouldResetFiles,
       })
     }
 
@@ -309,6 +326,10 @@ function getInput() {
     preReleaseIdentifier: core.getInput('prerelease-identifier') || undefined,
     latest: core.getInput('latest')?.toLowerCase() || undefined,
     attachFiles: core.getInput('attach-files') || undefined,
+    resetFiles:
+      core.getInput('reset-files') !== ''
+        ? core.getInput('reset-files').toLowerCase() === 'true'
+        : null,
     allowMajorBumps:
       core.getInput('allow-major-bumps') !== ''
         ? core.getInput('allow-major-bumps').toLowerCase() === 'true'

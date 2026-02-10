@@ -157,13 +157,22 @@ inputs:
       Paths are resolved relative to GITHUB_WORKSPACE.
 
       When set, the action will:
-      1. Delete ALL existing assets on the draft release (for full idempotency)
+      1. Delete ALL existing assets on the draft release (unless reset-files is false)
       2. Upload all matched files as release assets
 
       If the pattern matches zero files, the action will fail with an error.
       Requires GITHUB_TOKEN with contents: write permission.
     required: false
     default: ''
+  reset-files:
+    description: |
+      Controls whether existing release assets are deleted before uploading new ones.
+        - 'true': Delete all existing release assets (even if attach-files is not set).
+        - 'false': Keep all existing release assets.
+        - 'auto': Automatically delete existing assets if attach-files is provided,
+          otherwise keep them.
+    required: false
+    default: 'auto'
 outputs:
   id:
     description: The ID of the release that was created or updated.

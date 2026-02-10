@@ -141,8 +141,14 @@ module.exports = (app, { getRouter }) => {
     const { shouldDraft, version, tag, name, dryRun, attachFiles, resetFiles } =
       input
 
-    const shouldResetFiles =
-      resetFiles === true ? true : (resetFiles === false ? false : !!attachFiles)
+    let shouldResetFiles
+    if (resetFiles === true) {
+      shouldResetFiles = true
+    } else if (resetFiles === false) {
+      shouldResetFiles = false
+    } else {
+      shouldResetFiles = !!attachFiles
+    }
 
     // Separate explicit user input from draft release version:
     // - overrideVersion: explicit user input via action arg (always wins, skips calculations)

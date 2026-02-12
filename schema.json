@@ -152,7 +152,7 @@
         },
         {
           "title": "⚙️ Under the Hood",
-          "commit-types": ["chore", "ci", "build", "test"],
+          "commit-types": ["chore", "ci", "build", "test", "revert", "infra"],
           "commit-scopes": [],
           "collapse-after": 2,
           "display-order": null

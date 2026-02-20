@@ -1,6 +1,24 @@
 # How to Release
 
+> [!INFO]
+> If your repo uses `semantic-pr-release-drafter`, we recommend linking to this guide from your `CONTRIBUTING.md` rather than duplicating release instructions. For example, add a `## Releasing` section with a link to this page.
+
 This guide covers the common release workflow for repositories using [`semantic-pr-release-drafter`](https://github.com/aaronsteers/semantic-pr-release-drafter).
+
+## Publishing a Release
+
+1. Navigate to your repository's [Releases](../../releases) page.
+2. You should see a **Draft** release at the top with auto-generated release notes.
+3. Review the draft:
+   - Verify the version number is correct.
+   - Review the changelog entries.
+   - Optionally edit the release notes if needed.
+4. Click **"Publish release"** to finalize.
+
+Once published, any downstream workflows (e.g., PyPI publish, npm publish, Docker build) will be triggered automatically via the `on: release` event.
+
+<details>
+<summary><b>🔍 How It Works</b></summary>
 
 ## How It Works
 
@@ -25,17 +43,10 @@ For projects that haven't reached `v1.0.0` yet, semver safety rules apply automa
 - Major bumps become minor bumps (e.g., `0.2.3` -> `0.3.0` instead of `1.0.0`)
 - Minor bumps become patch bumps (e.g., `0.2.3` -> `0.2.4` instead of `0.3.0`)
 
-## Publishing a Release
+</details>
 
-1. Navigate to your repository's [Releases](../../releases) page.
-2. You should see a **Draft** release at the top with auto-generated release notes.
-3. Review the draft:
-   - Verify the version number is correct.
-   - Review the changelog entries.
-   - Optionally edit the release notes if needed.
-4. Click **"Publish release"** to finalize.
-
-Once published, any downstream workflows (e.g., PyPI publish, npm publish, Docker build) will be triggered automatically via the `on: release` event.
+<details>
+<summary><b>⚙️ Advanced Usage</b></summary>
 
 ## Version Preservation
 
@@ -65,3 +76,5 @@ For the best experience with this action, configure your repository as follows:
 3. **Add PR title validation** using [`amannn/action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request) to enforce conventional commit format on all PRs.
 
 For full configuration details, see the [semantic-pr-release-drafter README](https://github.com/aaronsteers/semantic-pr-release-drafter#readme).
+
+</details>

@@ -34,6 +34,12 @@ This fork DROPS all support for:
 - **Label-based version resolver** - Version is determined by conventional-commit `type` properties, not labels.
 - **Label-based categorization** - Categories are determined by conventional-commit `scope` and `type` properties, not labels.
 
+## How to Release
+
+For a step-by-step guide on publishing releases in repos that use this action, see **[How to Release](docs/releasing.md)**.
+
+We recommend linking to this guide from your repo's `CONTRIBUTING.md` so contributors know how the release process works.
+
 ## Recommended Repo Configuration
 
 To get the most out of this action, we recommend configuring your repository as follows:

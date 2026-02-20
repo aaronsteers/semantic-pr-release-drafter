@@ -1,6 +1,6 @@
 # How to Release
 
-> [!INFO]
+> [!NOTE]
 > If your repo uses `semantic-pr-release-drafter`, we recommend linking to this guide from your `CONTRIBUTING.md` rather than duplicating release instructions. For example, add a `## Releasing` section with a link to this page.
 
 This guide covers the common release workflow for repositories using [`semantic-pr-release-drafter`](https://github.com/aaronsteers/semantic-pr-release-drafter).

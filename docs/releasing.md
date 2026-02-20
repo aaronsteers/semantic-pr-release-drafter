@@ -30,11 +30,11 @@ Once published, any downstream workflows (e.g., PyPI publish, npm publish, Docke
 
 Versions are resolved automatically based on the semantic commit types of merged PRs:
 
-| Commit type | Version bump |
-|---|---|
-| Breaking change (`feat!:`, `fix!:`, etc.) | Minor* (e.g., `1.2.3` -> `1.3.0`) |
-| `feat` | Minor (e.g., `1.2.3` -> `1.3.0`) |
-| `fix`, `docs`, `chore`, `ci`, `refactor`, `test`, `perf`, `build`, `style` | Patch (e.g., `1.2.3` -> `1.2.4`) |
+| Commit type                                                                | Version bump                       |
+| -------------------------------------------------------------------------- | ---------------------------------- |
+| Breaking change (`feat!:`, `fix!:`, etc.)                                  | Minor\* (e.g., `1.2.3` -> `1.3.0`) |
+| `feat`                                                                     | Minor (e.g., `1.2.3` -> `1.3.0`)   |
+| `fix`, `docs`, `chore`, `ci`, `refactor`, `test`, `perf`, `build`, `style` | Patch (e.g., `1.2.3` -> `1.2.4`)   |
 
 \*By default, breaking changes trigger minor bumps (marketing-friendly semver). To enable automatic major bumps for breaking changes, set `allow-major-bumps: true` in your workflow configuration.
 

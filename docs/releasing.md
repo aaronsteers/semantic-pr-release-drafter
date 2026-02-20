@@ -22,7 +22,7 @@ Once published, any downstream workflows (e.g., PyPI publish, npm publish, Docke
 
 ## How It Works
 
-1. **Semantic PR titles** drive versioning. Every PR merged to `main` should have a title following [Conventional Commits](https://www.conventionalcommits.org/) format (e.g., `feat: add new feature`, `fix: resolve bug`, `breaking: remove deprecated API`).
+1. **Semantic PR titles** drive versioning. Every PR merged to `main` should have a title following [Conventional Commits](https://www.conventionalcommits.org/) format (e.g., `feat: add new feature`, `fix: resolve bug`, `feat!: remove deprecated API`).
 2. **Draft releases are updated automatically.** On each push to `main`, the release drafter workflow creates or updates a draft GitHub Release with auto-generated release notes and a resolved version number.
 3. **You publish when ready.** A maintainer reviews the draft and clicks "Publish release" to finalize it.
 
@@ -32,9 +32,11 @@ Versions are resolved automatically based on the semantic commit types of merged
 
 | Commit type | Version bump |
 |---|---|
-| `breaking` | Major (e.g., `1.2.3` -> `2.0.0`) |
+| Breaking change (`feat!:`, `fix!:`, etc.) | Minor* (e.g., `1.2.3` -> `1.3.0`) |
 | `feat` | Minor (e.g., `1.2.3` -> `1.3.0`) |
 | `fix`, `docs`, `chore`, `ci`, `refactor`, `test`, `perf`, `build`, `style` | Patch (e.g., `1.2.3` -> `1.2.4`) |
+
+\*By default, breaking changes trigger minor bumps (marketing-friendly semver). To enable automatic major bumps for breaking changes, set `allow-major-bumps: true` in your workflow configuration.
 
 ### Pre-1.0 Projects
 

@@ -7,7 +7,7 @@ This guide covers the common release workflow for repositories using [`semantic-
 
 ## Publishing a Release
 
-1. Navigate to your repository's [Releases](../../releases) page.
+1. Navigate to your repository's **Releases** page (e.g., `https://github.com/<owner>/<repo>/releases`).
 2. You should see a **Draft** release at the top with auto-generated release notes.
 3. Review the draft:
    - Verify the version number is correct.

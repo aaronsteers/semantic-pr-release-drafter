@@ -89,7 +89,7 @@ inputs:
       Inside this template, $SCOPE is the raw lowercase scope value (e.g., "registry", "cli, mcp").
       Multi-scopes are normalized with spaces (e.g., "cli,mcp" becomes "cli, mcp").
       When no scope is present, the entire scope-template is skipped and $SCOPE in change-template resolves to "".
-      Examples: '$SCOPE: ' (default), '[$SCOPE] ', '$SCOPE/ '.
+      Default is '' (disabled). Examples: '$SCOPE: ', '[$SCOPE] ', '$SCOPE/ '.
     required: false
     default: ''
   template:

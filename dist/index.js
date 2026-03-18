@@ -146331,7 +146331,7 @@ var require_default_config = __commonJS({
       "filter-by-commitish": false,
       commitish: "",
       "pull-request-limit": 5,
-      "scope-template": "$SCOPE: ",
+      "scope-template": "",
       "category-template": "## $TITLE",
       header: "",
       footer: ""

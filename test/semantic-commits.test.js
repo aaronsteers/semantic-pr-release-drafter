@@ -535,6 +535,7 @@ describe('ReleaseChangeLineItems', () => {
       const config = {
         ...defaultConfig,
         'change-template': '* $SCOPE$TITLE',
+        'scope-template': '$SCOPE: ',
       }
 
       const result = collection.renderWithConfig(config)
@@ -548,6 +549,7 @@ describe('ReleaseChangeLineItems', () => {
       const config = {
         ...defaultConfig,
         'change-template': '* $SCOPE$TITLE',
+        'scope-template': '$SCOPE: ',
       }
 
       const result = collection.renderWithConfig(config)
@@ -564,6 +566,7 @@ describe('ReleaseChangeLineItems', () => {
       const config = {
         ...defaultConfig,
         'change-template': '* $SCOPE$TITLE',
+        'scope-template': '$SCOPE: ',
       }
 
       const result = collection.renderWithConfig(config)
@@ -578,6 +581,7 @@ describe('ReleaseChangeLineItems', () => {
       const config = {
         ...defaultConfig,
         'change-template': '* $SCOPE$TITLE',
+        'scope-template': '$SCOPE: ',
       }
 
       const result = collection.renderWithConfig(config)
@@ -598,10 +602,40 @@ describe('ReleaseChangeLineItems', () => {
       const config = {
         ...defaultConfig,
         'change-template': '* $SCOPE$TITLE (#$NUMBER) $SHA',
+        'scope-template': '$SCOPE: ',
       }
 
       const result = collection.renderWithConfig(config)
       expect(result).toContain('* registry: Add delete command (#42) abc123d')
+    })
+
+    test('scope-template supports custom formatting', () => {
+      const commits = createMockCommits([
+        'feat(registry): add delete command',
+        'fix: resolve bug',
+      ])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        'change-template': '* $SCOPE$TITLE',
+        'scope-template': '[$SCOPE] ',
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toContain('* [registry] Add delete command')
+      expect(result).toContain('* Resolve bug')
+    })
+
+    test('$SCOPE without scope-template renders empty', () => {
+      const commits = createMockCommits(['feat(registry): add delete command'])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        'change-template': '* $SCOPE$TITLE',
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toContain('* Add delete command')
     })
 
     test('always applies sentence-case to titles', () => {

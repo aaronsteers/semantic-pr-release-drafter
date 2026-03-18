@@ -78,7 +78,10 @@ inputs:
     default: ''
   change-template:
     description: |
-      The template for each changelog entry. Supports placeholders like $TITLE, $URL, $SHA, $NUMBER, $AUTHOR.
+      The template for each changelog entry. Supports placeholders like $TITLE, $URL, $SHA, $NUMBER, $AUTHOR, $SCOPE.
+      $SCOPE is a pre-formatted scope prefix from the semantic commit scope (e.g., "registry: " for "feat(registry): ...").
+      Multi-scopes are normalized with spaces (e.g., "cli, mcp: " for "feat(cli,mcp): ...").
+      When no scope is present, $SCOPE resolves to an empty string. Use "$SCOPE$TITLE" to prefix scoped entries.
       This will override any `change-template` specified in your config file.
     required: false
     default: ''

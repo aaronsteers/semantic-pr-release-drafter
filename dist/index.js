@@ -149083,11 +149083,13 @@ var require_semantic_commits = __commonJS({
           const processedTitle = TITLE_POST_PROCESSORS["sentence-case"](
             item.description
           );
+          const scopePrefix = item.scope ? item.scope.toLowerCase().replace(/,/g, ", ").replace(/, +/g, ", ") + ": " : "";
           return template(changeTemplate, {
             $TITLE: escapeTitle(processedTitle),
             $NUMBER: prNumber,
             $AUTHOR: item.author || "ghost",
             $SHA: item.shortSha || "",
+            $SCOPE: scopePrefix,
             $URL: prNumber && repoInfo.owner && repoInfo.repo ? `https://github.com/${repoInfo.owner}/${repoInfo.repo}/pull/${prNumber}` : ""
           });
         };

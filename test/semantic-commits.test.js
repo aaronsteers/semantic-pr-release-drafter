@@ -526,6 +526,74 @@ describe('ReleaseChangeLineItems', () => {
       expect(result).toEqual('## Features\n\n* Add feature (abc123d)')
     })
 
+    test('renders with $SCOPE prefix when scope is present', () => {
+      const commits = createMockCommits([
+        'feat(registry): add delete command',
+        'fix: resolve bug',
+      ])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        'change-template': '* $SCOPE$TITLE',
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toContain('* Registry: Add delete command')
+      expect(result).toContain('* Resolve bug')
+    })
+
+    test('$SCOPE resolves to empty string when no scope', () => {
+      const commits = createMockCommits(['feat: add feature'])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        'change-template': '* $SCOPE$TITLE',
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toEqual('## Features\n\n* Add feature')
+    })
+
+    test('$SCOPE applies sentence-case to scope', () => {
+      const commits = createMockCommits([
+        'feat(mcp): add tool',
+        'feat(CLI): add command',
+        'fix(sentry): fix alert',
+      ])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        'change-template': '* $SCOPE$TITLE',
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toContain('* Mcp: Add tool')
+      expect(result).toContain('* CLI: Add command')
+      expect(result).toContain('* Sentry: Fix alert')
+    })
+
+    test('$SCOPE works with full change-template including URL and SHA', () => {
+      const commits = [
+        {
+          oid: 'abc123def456',
+          message: 'feat(registry): add delete command',
+          associatedPullRequests: {
+            nodes: [{ merged: true, number: 42, url: 'https://pr/42' }],
+          },
+        },
+      ]
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        'change-template': '* $SCOPE$TITLE (#$NUMBER) $SHA',
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toContain(
+        '* Registry: Add delete command (#42) abc123d'
+      )
+    })
+
     test('always applies sentence-case to titles', () => {
       const commits = createMockCommits(['feat: add new feature'])
       const collection = ReleaseChangeLineItems.fromCommits(commits)

@@ -267,6 +267,35 @@ jobs:
                 commit-types:
                   - fix
 
+          # Test $SCOPE template variable with force-lowercase and comma normalization
+          - test-name: 'scope-template-variable'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat(registry): add delete command (#600)
+              feat(cli,mcp): new cool stuff (#601)
+              fix: resolve bug (#602)
+            expected-version-string: '1.1.0'
+            expected-body: |
+              ## Features
+
+              * cli, mcp: New cool stuff (#601)
+              * registry: Add delete command (#600)
+
+              ## Bug Fixes
+
+              * Resolve bug (#602)
+            template: |
+              $CHANGES
+            change-template: '* $SCOPE$TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Features
+                commit-types:
+                  - feat
+              - title: Bug Fixes
+                commit-types:
+                  - fix
+
           # Test display-order feature
           # Categories are evaluated in config order but displayed sorted by display-order
           - test-name: 'display-order-feature'

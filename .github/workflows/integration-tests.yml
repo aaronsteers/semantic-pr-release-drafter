@@ -267,7 +267,7 @@ jobs:
                 commit-types:
                   - fix
 
-          # Test $SCOPE template variable with force-lowercase and comma normalization
+          # Test $SCOPE template variable with scope-template, force-lowercase, and comma normalization
           - test-name: 'scope-template-variable'
             test-start-version-string: 'v1.0.0'
             test-commit-list: |
@@ -287,6 +287,7 @@ jobs:
             template: |
               $CHANGES
             change-template: '* $SCOPE$TITLE (#$NUMBER)'
+            scope-template: '$SCOPE: '
             category-template: '## $TITLE'
             categories: |
               - title: Features
@@ -468,6 +469,7 @@ jobs:
           base-ref-override: ${{ matrix.test-start-version-string }}
           template: ${{ matrix.template }}
           change-template: ${{ matrix.change-template }}
+          scope-template: ${{ matrix.scope-template }}
           category-template: ${{ matrix.category-template }}
           categories: ${{ matrix.categories }}
           attach-files: ${{ env.ATTACH_FILES_PATTERNS }}

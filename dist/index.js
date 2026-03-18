@@ -146331,6 +146331,7 @@ var require_default_config = __commonJS({
       "filter-by-commitish": false,
       commitish: "",
       "pull-request-limit": 5,
+      "scope-template": "",
       "category-template": "## $TITLE",
       header: "",
       footer: ""
@@ -146508,6 +146509,7 @@ var require_schema6 = __commonJS({
           "no-auto-major": Joi.boolean().default(true),
           default: Joi.string().valid("major", "minor", "patch").default("patch")
         }).default(DEFAULT_CONFIG["version-resolver"]),
+        "scope-template": Joi.string().allow("").default(DEFAULT_CONFIG["scope-template"]),
         "category-template": Joi.string().allow("").default(DEFAULT_CONFIG["category-template"]),
         header: Joi.string().allow("").default(DEFAULT_CONFIG.header),
         template: Joi.string().required(),
@@ -146583,6 +146585,12 @@ var require_config = __commonJS({
       if (template) {
         overrides.template = template;
       }
+      const scopeTemplate = core2.getInput("scope-template", {
+        trimWhitespace: false
+      });
+      if (scopeTemplate) {
+        overrides["scope-template"] = scopeTemplate;
+      }
       const categoryTemplate = core2.getInput("category-template");
       if (categoryTemplate) {
         overrides["category-template"] = categoryTemplate;
@@ -146603,7 +146611,7 @@ var require_config = __commonJS({
       return overrides;
     }
     function hasInlineConfig() {
-      return core2.getInput("name-template") || core2.getInput("tag-template") || core2.getInput("change-template") || core2.getInput("template") || core2.getInput("category-template") || core2.getInput("categories");
+      return core2.getInput("name-template") || core2.getInput("tag-template") || core2.getInput("change-template") || core2.getInput("template") || core2.getInput("scope-template") || core2.getInput("category-template") || core2.getInput("categories");
     }
     async function getConfig({ context, configName, localGitRoot }) {
       try {
@@ -149031,6 +149039,7 @@ var require_semantic_commits = __commonJS({
         const categories = config.categories || [];
         const categoryTemplate = config["category-template"] || "## $TITLE";
         const changeTemplate = config["change-template"] || "* $TITLE";
+        const scopeTemplate = config["scope-template"] !== void 0 ? config["scope-template"] : "";
         const escapeChars = config["change-title-escapes"] || "";
         const repoInfo = context ? context.repo() : { owner: "", repo: "" };
         const categorizedItems = categories.map((cat) => ({
@@ -149083,13 +149092,14 @@ var require_semantic_commits = __commonJS({
           const processedTitle = TITLE_POST_PROCESSORS["sentence-case"](
             item.description
           );
-          const scopePrefix = item.scope ? item.scope.toLowerCase().replace(/,/g, ", ").replace(/, +/g, ", ") + ": " : "";
+          const rawScope = item.scope ? item.scope.toLowerCase().replace(/,/g, ", ").replace(/, +/g, ", ") : "";
+          const renderedScope = rawScope && scopeTemplate ? template(scopeTemplate, { $SCOPE: rawScope }) : "";
           return template(changeTemplate, {
             $TITLE: escapeTitle(processedTitle),
             $NUMBER: prNumber,
             $AUTHOR: item.author || "ghost",
             $SHA: item.shortSha || "",
-            $SCOPE: scopePrefix,
+            $SCOPE: renderedScope,
             $URL: prNumber && repoInfo.owner && repoInfo.repo ? `https://github.com/${repoInfo.owner}/${repoInfo.repo}/pull/${prNumber}` : ""
           });
         };

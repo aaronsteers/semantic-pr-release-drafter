@@ -589,9 +589,7 @@ describe('ReleaseChangeLineItems', () => {
       }
 
       const result = collection.renderWithConfig(config)
-      expect(result).toContain(
-        '* Registry: Add delete command (#42) abc123d'
-      )
+      expect(result).toContain('* Registry: Add delete command (#42) abc123d')
     })
 
     test('always applies sentence-case to titles', () => {

@@ -146585,7 +146585,9 @@ var require_config = __commonJS({
       if (template) {
         overrides.template = template;
       }
-      const scopeTemplate = core2.getInput("scope-template");
+      const scopeTemplate = core2.getInput("scope-template", {
+        trimWhitespace: false
+      });
       if (scopeTemplate) {
         overrides["scope-template"] = scopeTemplate;
       }

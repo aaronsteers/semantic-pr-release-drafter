@@ -149083,7 +149083,7 @@ var require_semantic_commits = __commonJS({
           const processedTitle = TITLE_POST_PROCESSORS["sentence-case"](
             item.description
           );
-          const scopePrefix = item.scope ? TITLE_POST_PROCESSORS["sentence-case"](item.scope) + ": " : "";
+          const scopePrefix = item.scope ? item.scope.toLowerCase().replace(/,/g, ", ").replace(/, +/g, ", ") + ": " : "";
           return template(changeTemplate, {
             $TITLE: escapeTitle(processedTitle),
             $NUMBER: prNumber,

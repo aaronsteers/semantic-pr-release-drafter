@@ -538,7 +538,7 @@ describe('ReleaseChangeLineItems', () => {
       }
 
       const result = collection.renderWithConfig(config)
-      expect(result).toContain('* Registry: Add delete command')
+      expect(result).toContain('* registry: Add delete command')
       expect(result).toContain('* Resolve bug')
     })
 
@@ -554,11 +554,11 @@ describe('ReleaseChangeLineItems', () => {
       expect(result).toEqual('## Features\n\n* Add feature')
     })
 
-    test('$SCOPE applies sentence-case to scope', () => {
+    test('$SCOPE applies force-lowercase to scope', () => {
       const commits = createMockCommits([
         'feat(mcp): add tool',
         'feat(CLI): add command',
-        'fix(sentry): fix alert',
+        'fix(Sentry): fix alert',
       ])
       const collection = ReleaseChangeLineItems.fromCommits(commits)
       const config = {
@@ -567,9 +567,21 @@ describe('ReleaseChangeLineItems', () => {
       }
 
       const result = collection.renderWithConfig(config)
-      expect(result).toContain('* Mcp: Add tool')
-      expect(result).toContain('* CLI: Add command')
-      expect(result).toContain('* Sentry: Fix alert')
+      expect(result).toContain('* mcp: Add tool')
+      expect(result).toContain('* cli: Add command')
+      expect(result).toContain('* sentry: Fix alert')
+    })
+
+    test('$SCOPE normalizes comma-separated scopes with spaces', () => {
+      const commits = createMockCommits(['feat(cli,mcp): new cool stuff'])
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+      const config = {
+        ...defaultConfig,
+        'change-template': '* $SCOPE$TITLE',
+      }
+
+      const result = collection.renderWithConfig(config)
+      expect(result).toContain('* cli, mcp: New cool stuff')
     })
 
     test('$SCOPE works with full change-template including URL and SHA', () => {
@@ -589,7 +601,7 @@ describe('ReleaseChangeLineItems', () => {
       }
 
       const result = collection.renderWithConfig(config)
-      expect(result).toContain('* Registry: Add delete command (#42) abc123d')
+      expect(result).toContain('* registry: Add delete command (#42) abc123d')
     })
 
     test('always applies sentence-case to titles', () => {

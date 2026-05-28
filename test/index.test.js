@@ -1,6 +1,6 @@
 const nock = require('nock')
 const { Probot, ProbotOctokit } = require('probot')
-const { getConfigMock } = require('./helpers/config-mock')
+const { configFixture, getConfigMock } = require('./helpers/config-mock')
 const releaseDrafter = require('../index')
 const mockedEnv = require('mocked-env')
 const pino = require('pino')
@@ -2683,6 +2683,43 @@ describe('release-drafter', () => {
       expect(getConfigScope.isDone()).toBe(true)
 
       expect.assertions(2)
+
+      restoreEnvironment()
+    })
+
+    it('loads config from GITHUB_REF_NAME when running in GitHub Actions', async () => {
+      let restoreEnvironment = mockedEnv({
+        GITHUB_ACTIONS: 'true',
+        GITHUB_REF_NAME: 'feature-branch',
+        'INPUT_CONFIG-NAME': 'config-name-input.yml',
+      })
+
+      const getConfigScope = nock('https://api.github.com')
+        .get(
+          '/repos/toolmantim/release-drafter-test-project/contents/.github%2Fconfig-name-input.yml'
+        )
+        .query({ ref: 'feature-branch' })
+        .reply(200, configFixture('config-name-input.yml'))
+
+      nock('https://api.github.com')
+        .post('/graphql', (body) =>
+          body.query.includes('query findCommitsWithAssociatedPullRequests')
+        )
+        .reply(200, graphqlCommitsNoPRsPayload)
+
+      nock('https://api.github.com')
+        .get('/repos/toolmantim/release-drafter-test-project/releases')
+        .query(true)
+        .reply(200, [releasePayload])
+        .post('/repos/toolmantim/release-drafter-test-project/releases')
+        .reply(200, releasePayload)
+
+      await probot.receive({
+        name: 'push',
+        payload: pushPayload,
+      })
+
+      expect(getConfigScope.isDone()).toBe(true)
 
       restoreEnvironment()
     })

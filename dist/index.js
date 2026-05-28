@@ -146633,7 +146633,20 @@ var require_config = __commonJS({
             });
           }
         } else {
-          repoConfig = await context.config(configName || DEFAULT_CONFIG_NAME, null);
+          const configPath = path.posix.join(
+            ".github",
+            configName || DEFAULT_CONFIG_NAME
+          );
+          const configResponse = await context.octokit.config.get(
+            context.repo({
+              path: configPath,
+              branch: process.env.GITHUB_REF_NAME,
+              defaults(configs) {
+                return Object.assign({}, ...configs);
+              }
+            })
+          );
+          repoConfig = configResponse.config;
           if (repoConfig != null) {
             configFileFound = true;
           } else {

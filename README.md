@@ -324,7 +324,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-The [`demo-project`](demo-project/) directory contains fixture configs for one existing unprefixed project and two prefixed packages. Real GitHub Actions workflows and release-drafter config files must live under the repository root `.github` directory. This repository keeps active copies of the demo configs in root `.github` for the post-merge release-draft workflow, and CI copies the `demo-project` fixture configs into a temporary root `.github` directory before running dry-run E2E smoke tests.
+The [`demo-project`](demo-project/) directory contains fixture configs for one existing unprefixed project and two prefixed packages. Real GitHub Actions workflows and release-drafter config files must live under the repository root `.github` directory. In GitHub API mode, file-based configs must be committed to the default branch under root `.github`; branch-dispatched workflows can load configs from the selected branch. This repository keeps active copies of the demo configs in root `.github` for the post-merge release-draft workflow, and CI copies the `demo-project` fixture configs into a temporary root `.github` directory before running dry-run E2E smoke tests.
 
 #### How `include-paths` works
 

@@ -16,8 +16,6 @@ jobs:
       fail-fast: false
       matrix:
         release:
-          - name: release
-            config-name: release-drafter.yml
           - name: demo-project/package-a
             config-name: release-drafter-package-a.yml
           - name: demo-project/package-b

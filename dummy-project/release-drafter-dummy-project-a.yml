@@ -1,0 +1,24 @@
+name-template: dummy-project-a v$RESOLVED_VERSION
+tag-template: dummy-project-a/v$RESOLVED_VERSION
+tag-prefix: dummy-project-a/v
+template: |
+  $CHANGES
+change-template: '* $TITLE (#$NUMBER)'
+category-template: '## $TITLE'
+categories:
+  - title: Dummy Project A Features
+    commit-scopes:
+      - dummy-project-a
+    commit-types:
+      - feat
+  - title: Dummy Project A Fixes
+    commit-scopes:
+      - dummy-project-a
+    commit-types:
+      - fix
+  - title: Dummy Project A Maintenance
+    commit-scopes:
+      - dummy-project-a
+include-paths:
+  - dummy-project/dummy-project-a
+  - dummy-project/shared

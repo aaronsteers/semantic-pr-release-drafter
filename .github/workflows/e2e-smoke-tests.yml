@@ -392,49 +392,49 @@ jobs:
             # This test expects failure - no files will match
             attach-files-expect-failure: true
 
-          - test-name: 'monorepo-package-a-release'
-            test-start-version-string: 'package-a/v1.4.0'
+          - test-name: 'monorepo-dummy-project-a-release'
+            test-start-version-string: 'dummy-project-a/v1.4.0'
             test-commit-list: |
-              feat(existing-project): add existing project feature (#600)|demo-project/existing-project/feature.md
-              feat(package-a): add package a feature (#601)|demo-project/package-a/feature.md
-              fix(package-b): fix package b bug (#602)|demo-project/package-b/fix.md
-              fix(package-a): patch package a bug (#603)|demo-project/package-a/fix.md
+              feat(existing-project): add existing project feature (#600)|dummy-project/existing-project/feature.md
+              feat(dummy-project-a): add dummy project a feature (#601)|dummy-project/dummy-project-a/feature.md
+              fix(dummy-project-b): fix dummy project b bug (#602)|dummy-project/dummy-project-b/fix.md
+              fix(dummy-project-a): patch dummy project a bug (#603)|dummy-project/dummy-project-a/fix.md
             expected-version-string: '1.5.0'
-            expected-tag-name: 'package-a/v1.5.0'
+            expected-tag-name: 'dummy-project-a/v1.5.0'
             expected-body: |
-              ## Package A Features
+              ## Dummy Project A Features
 
-              * Add package a feature (#601)
+              * Add dummy project a feature (#601)
 
-              ## Package A Fixes
+              ## Dummy Project A Fixes
 
-              * Patch package a bug (#603)
-            config-name: 'release-drafter-package-a.yml'
-            demo-config-source: 'demo-project/release-drafter-package-a.yml'
+              * Patch dummy project a bug (#603)
+            config-name: 'release-drafter-dummy-project-a.yml'
+            dummy-config-source: 'dummy-project/release-drafter-dummy-project-a.yml'
 
-          - test-name: 'monorepo-package-b-release'
-            test-start-version-string: 'package-b/v2.7.3'
+          - test-name: 'monorepo-dummy-project-b-release'
+            test-start-version-string: 'dummy-project-b/v2.7.3'
             test-commit-list: |
-              feat(existing-project): add existing project feature (#600)|demo-project/existing-project/feature.md
-              feat(package-a): add package a feature (#601)|demo-project/package-a/feature.md
-              fix(package-b): fix package b bug (#602)|demo-project/package-b/fix.md
-              fix(package-a): patch package a bug (#603)|demo-project/package-a/fix.md
+              feat(existing-project): add existing project feature (#600)|dummy-project/existing-project/feature.md
+              feat(dummy-project-a): add dummy project a feature (#601)|dummy-project/dummy-project-a/feature.md
+              fix(dummy-project-b): fix dummy project b bug (#602)|dummy-project/dummy-project-b/fix.md
+              fix(dummy-project-a): patch dummy project a bug (#603)|dummy-project/dummy-project-a/fix.md
             expected-version-string: '2.7.4'
-            expected-tag-name: 'package-b/v2.7.4'
+            expected-tag-name: 'dummy-project-b/v2.7.4'
             expected-body: |
-              ## Package B Fixes
+              ## Dummy Project B Fixes
 
-              * Fix package b bug (#602)
-            config-name: 'release-drafter-package-b.yml'
-            demo-config-source: 'demo-project/release-drafter-package-b.yml'
+              * Fix dummy project b bug (#602)
+            config-name: 'release-drafter-dummy-project-b.yml'
+            dummy-config-source: 'dummy-project/release-drafter-dummy-project-b.yml'
 
           - test-name: 'monorepo-existing-project-release'
             test-start-version-string: 'v3.2.0'
             test-commit-list: |
-              feat(existing-project): add existing project feature (#600)|demo-project/existing-project/feature.md
-              feat(package-a): add package a feature (#601)|demo-project/package-a/feature.md
-              fix(package-b): fix package b bug (#602)|demo-project/package-b/fix.md
-              fix(existing-project): patch existing project bug (#604)|demo-project/existing-project/fix.md
+              feat(existing-project): add existing project feature (#600)|dummy-project/existing-project/feature.md
+              feat(dummy-project-a): add dummy project a feature (#601)|dummy-project/dummy-project-a/feature.md
+              fix(dummy-project-b): fix dummy project b bug (#602)|dummy-project/dummy-project-b/fix.md
+              fix(existing-project): patch existing project bug (#604)|dummy-project/existing-project/fix.md
             expected-version-string: '3.3.0'
             expected-tag-name: 'v3.3.0'
             expected-body: |
@@ -446,7 +446,7 @@ jobs:
 
               * Patch existing project bug (#604)
             config-name: 'release-drafter.yml'
-            demo-config-source: 'demo-project/release-drafter.yml'
+            dummy-config-source: 'dummy-project/release-drafter.yml'
 
     name: ${{ matrix.test-name }}
     steps:
@@ -500,11 +500,11 @@ jobs:
           # Create .github directory (required for local-git-root)
           mkdir -p .github
 
-      - name: Copy demo project config
-        if: matrix.demo-config-source != ''
+      - name: Copy dummy project config
+        if: matrix.dummy-config-source != ''
         run: |
           cd "$TEST_REPO"
-          cp "$GITHUB_WORKSPACE/${{ matrix.demo-config-source }}" ".github/${{ matrix.config-name }}"
+          cp "$GITHUB_WORKSPACE/${{ matrix.dummy-config-source }}" ".github/${{ matrix.config-name }}"
 
       - name: Create test files for attach-files test
         if: matrix.needs-attach-files == true

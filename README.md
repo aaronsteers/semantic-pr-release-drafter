@@ -229,8 +229,8 @@ For monorepos with independently versioned packages, run one release-drafter inv
 
 1. Use a package-specific config file for each package.
 2. Keep the existing project on the repository's existing tags, such as `v1.2.3`, if it already has release history.
-3. Use slash-delimited tag namespaces for added packages, such as `package-a/v1.2.3` and `package-b/v4.5.6`.
-4. Set each prefixed package config's `tag-prefix` to the matching namespace, such as `package-a/v`. Omit `tag-prefix` for the existing unprefixed project.
+3. Use slash-delimited tag namespaces for added packages, such as `dummy-project-a/v1.2.3` and `dummy-project-b/v4.5.6`.
+4. Set each prefixed package config's `tag-prefix` to the matching namespace, such as `dummy-project-a/v`. Omit `tag-prefix` for the existing unprefixed project.
 5. Set each config's `include-paths` to the package directory plus any shared files that should trigger that package's release notes.
 6. Use a GitHub Actions matrix to invoke the action once per package.
 
@@ -263,28 +263,28 @@ include-paths:
 Example config for an added package with prefixed tags:
 
 ```yaml
-name-template: package-a v$RESOLVED_VERSION
-tag-template: package-a/v$RESOLVED_VERSION
-tag-prefix: package-a/v
+name-template: dummy-project-a v$RESOLVED_VERSION
+tag-template: dummy-project-a/v$RESOLVED_VERSION
+tag-prefix: dummy-project-a/v
 template: |
   $CHANGES
 change-template: '* $TITLE (#$NUMBER)'
 category-template: '## $TITLE'
 categories:
-  - title: Package A Features
+  - title: Dummy Project A Features
     commit-scopes:
-      - package-a
+      - dummy-project-a
     commit-types:
       - feat
-  - title: Package A Fixes
+  - title: Dummy Project A Fixes
     commit-scopes:
-      - package-a
+      - dummy-project-a
     commit-types:
       - fix
 include-paths:
-  - packages/package-a
+  - packages/dummy-project-a
   - packages/shared
-  - .github/release-drafter-package-a.yml
+  - .github/release-drafter-dummy-project-a.yml
 ```
 
 Example matrix workflow:
@@ -311,10 +311,10 @@ jobs:
         package:
           - name: existing-project
             config-name: release-drafter.yml
-          - name: package-a
-            config-name: release-drafter-package-a.yml
-          - name: package-b
-            config-name: release-drafter-package-b.yml
+          - name: dummy-project-a
+            config-name: release-drafter-dummy-project-a.yml
+          - name: dummy-project-b
+            config-name: release-drafter-dummy-project-b.yml
 
     steps:
       - uses: aaronsteers/semantic-pr-release-drafter@v1
@@ -324,11 +324,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-The [`demo-project`](demo-project/) directory contains fixture configs for one existing unprefixed project and two prefixed packages. Real GitHub Actions workflows and release-drafter config files must live under the repository root `.github` directory. In GitHub API mode, file-based configs must be committed to the default branch under root `.github`; branch-dispatched workflows can load configs from the selected branch. This repository keeps active copies of the demo configs in root `.github` for the post-merge release-draft workflow, and CI copies the `demo-project` fixture configs into a temporary root `.github` directory before running dry-run E2E smoke tests.
+The [`dummy-project`](dummy-project/) directory contains fixture configs for one existing unprefixed project and two prefixed packages. Real GitHub Actions workflows and release-drafter config files must live under the repository root `.github` directory. In GitHub API mode, file-based configs must be committed to the default branch under root `.github`; branch-dispatched workflows can load configs from the selected branch. This repository keeps active copies of the dummy configs in root `.github` for the post-merge release-draft workflow, and CI copies the `dummy-project` fixture configs into a temporary root `.github` directory before running dry-run E2E smoke tests.
 
 #### How `include-paths` works
 
-`include-paths` is a positive selection list. A commit is included when it modified at least one configured file or directory path. Directory entries match files under that directory. Negated paths such as `!packages/package-a` are not supported.
+`include-paths` is a positive selection list. A commit is included when it modified at least one configured file or directory path. Directory entries match files under that directory. Negated paths such as `!packages/dummy-project-a` are not supported.
 
 In normal GitHub API mode, the action asks GitHub GraphQL for commits touching each configured path using `history(path: ...)`, then intersects those commit IDs with the commits considered for the release. In local dry-run mode, used by integration tests, the action runs `git log` to find candidate commits and `git diff-tree --name-only` for each commit to apply the same positive path selection locally.
 
@@ -340,10 +340,10 @@ include-paths:
   - packages/existing-project
   - packages/shared
 
-# .github/release-drafter-package-a.yml uses package-a/v1.2.3 tags and selects only package A.
-tag-prefix: package-a/v
+# .github/release-drafter-dummy-project-a.yml uses dummy-project-a/v1.2.3 tags and selects only dummy project A.
+tag-prefix: dummy-project-a/v
 include-paths:
-  - packages/package-a
+  - packages/dummy-project-a
   - packages/shared
 ```
 

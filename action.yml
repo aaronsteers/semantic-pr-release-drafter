@@ -11,6 +11,7 @@ inputs:
     description: |
       If your workflow requires multiple release-drafter configs it be helpful to override the config-name.
       The config should still be located inside `.github` as that's where we are looking for config files.
+      In GitHub Actions, config files are loaded from the running ref (`GITHUB_REF_NAME`).
     required: false
     default: 'release-drafter.yml'
   name:

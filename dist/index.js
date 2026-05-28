@@ -146632,6 +146632,26 @@ var require_config = __commonJS({
               message: `Loaded config from local filesystem: ${configPath}`
             });
           }
+        } else if (process.env.GITHUB_REF_NAME && context.octokit?.config?.get) {
+          const configPath = path.posix.join(
+            ".github",
+            configName || DEFAULT_CONFIG_NAME
+          );
+          const configResponse = await context.octokit.config.get(
+            context.repo({
+              path: configPath,
+              branch: process.env.GITHUB_REF_NAME,
+              defaults(configs) {
+                return Object.assign({}, ...configs);
+              }
+            })
+          );
+          repoConfig = configResponse.config;
+          if (repoConfig != null) {
+            configFileFound = true;
+          } else {
+            repoConfig = {};
+          }
         } else {
           repoConfig = await context.config(configName || DEFAULT_CONFIG_NAME, null);
           if (repoConfig != null) {

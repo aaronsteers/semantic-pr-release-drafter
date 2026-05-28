@@ -16,24 +16,15 @@ jobs:
       fail-fast: false
       matrix:
         release:
-          - name: release
-            config-name: release-drafter.yml
           - name: demo-project/package-a
             config-name: release-drafter-package-a.yml
-            config-source: demo-project/release-drafter-package-a.yml
           - name: demo-project/package-b
             config-name: release-drafter-package-b.yml
-            config-source: demo-project/release-drafter-package-b.yml
           - name: demo-project/existing-project
             config-name: release-drafter-demo-existing-project.yml
-            config-source: demo-project/release-drafter.yml
     name: Draft release (${{ matrix.release.name }})
     steps:
       - uses: actions/checkout@v4
-
-      - name: Copy demo release config
-        if: matrix.release.config-source != ''
-        run: cp "${{ matrix.release.config-source }}" ".github/${{ matrix.release.config-name }}"
 
       # Use local action (dogfooding)
       - uses: ./

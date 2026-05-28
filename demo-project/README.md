@@ -14,6 +14,6 @@ Run one action invocation per package from a workflow in the repository root `.g
 - `tag-prefix` in that config to the package tag namespace, or omit it for the existing unprefixed project.
 - `include-paths` in that config to the project directory and any shared files that should trigger that project's release notes.
 
-The fixture config files in this directory are examples only. They are not loaded by GitHub directly unless copied to the repository root `.github` directory or supplied as inline workflow config.
+The fixture config files in this directory are examples only. They are not loaded by GitHub directly unless committed to the default branch under the repository root `.github` directory, loaded from a selected branch via `workflow_dispatch`, or supplied as inline workflow config.
 
 This lets each project calculate a next version from only the commits that touched that project, while ignoring unrelated commits elsewhere in the repository. `include-paths` is selection-only today; it does not support negated paths such as `!demo-project/package-a`.

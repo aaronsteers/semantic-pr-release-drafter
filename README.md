@@ -101,6 +101,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -143,6 +144,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -294,6 +296,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -321,7 +324,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-The [`demo-project`](demo-project/) directory contains a complete example with one existing unprefixed project and two prefixed packages. CI runs dry-run integration tests against it to prove that unrelated package changes are filtered out and each package resolves its next version from its own tag family.
+The [`demo-project`](demo-project/) directory contains inert fixture configs for one existing unprefixed project and two prefixed packages. Real GitHub Actions workflows and release-drafter config files must live under the repository root `.github` directory; CI copies these fixture configs into a temporary root `.github` directory before running dry-run E2E smoke tests.
 
 #### How `include-paths` works
 

@@ -410,7 +410,7 @@ jobs:
 
               * Patch package a bug (#603)
             config-name: 'release-drafter-package-a.yml'
-            demo-config-source: 'demo-project/.github/release-drafter-package-a.yml'
+            demo-config-source: 'demo-project/release-drafter-package-a.yml'
 
           - test-name: 'monorepo-package-b-release'
             test-start-version-string: 'package-b/v2.7.3'
@@ -426,7 +426,7 @@ jobs:
 
               * Fix package b bug (#602)
             config-name: 'release-drafter-package-b.yml'
-            demo-config-source: 'demo-project/.github/release-drafter-package-b.yml'
+            demo-config-source: 'demo-project/release-drafter-package-b.yml'
 
           - test-name: 'monorepo-existing-project-release'
             test-start-version-string: 'v3.2.0'
@@ -446,7 +446,7 @@ jobs:
 
               * Patch existing project bug (#604)
             config-name: 'release-drafter.yml'
-            demo-config-source: 'demo-project/.github/release-drafter.yml'
+            demo-config-source: 'demo-project/release-drafter.yml'
 
     name: ${{ matrix.test-name }}
     steps:

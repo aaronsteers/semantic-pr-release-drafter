@@ -22,4 +22,3 @@ categories:
 include-paths:
   - demo-project/package-a
   - demo-project/shared
-  - demo-project/.github/release-drafter-package-a.yml

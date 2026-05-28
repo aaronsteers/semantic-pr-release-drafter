@@ -5,6 +5,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      config-name:
+        description: 'Release drafter config file under .github/'
+        required: false
+        default: 'release-drafter.yml'
 
 permissions:
   contents: write
@@ -14,7 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Use local action (dogfooding)
-      - uses: aaronsteers/semantic-pr-release-drafter@main
+      - uses: ./
+        with:
+          config-name: ${{ inputs.config-name || 'release-drafter.yml' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # The following config is commented out because it now matches the defaults.

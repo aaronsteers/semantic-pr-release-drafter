@@ -21,4 +21,3 @@ categories:
 include-paths:
   - demo-project/existing-project
   - demo-project/shared
-  - demo-project/.github/release-drafter.yml

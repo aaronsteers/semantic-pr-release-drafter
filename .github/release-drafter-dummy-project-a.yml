@@ -1,6 +1,7 @@
 name-template: dummy-project-a v$RESOLVED_VERSION
 tag-template: dummy-project-a/v$RESOLVED_VERSION
 tag-prefix: dummy-project-a/v
+latest: 'false'
 template: |
   $CHANGES
 change-template: '* $TITLE (#$NUMBER)'

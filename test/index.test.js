@@ -417,6 +417,46 @@ describe('release-drafter', () => {
         expect.assertions(1)
       })
 
+      it('creates a draft without marking it as latest when configured', async () => {
+        getConfigMock('config-with-latest-false.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [release2Payload, releasePayload, release3Payload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body).toMatchObject({
+                draft: true,
+                make_latest: 'false',
+                name: 'v2.1.0',
+                prerelease: false,
+                tag_name: 'v2.1.0',
+                target_commitish: 'refs/heads/master',
+              })
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
+      })
+
       it('creates a new draft when run as a GitHub Action', async () => {
         getConfigMock()
 

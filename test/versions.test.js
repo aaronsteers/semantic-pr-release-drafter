@@ -211,4 +211,19 @@ describe('versions', () => {
       expect(versionInfo.$RESOLVED_VERSION.version).toEqual(expected)
     }
   )
+
+  it('uses draft version as the base when no last release exists', () => {
+    const versionInfo = getVersionInfo(
+      undefined,
+      '$MAJOR.$MINOR.$PATCH',
+      undefined,
+      'patch',
+      'dummy-project-a/v',
+      undefined,
+      '0.1.0'
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('0.1.0')
+    expect(versionInfo.$NEXT_PATCH_VERSION.version).toEqual('0.1.1')
+  })
 })

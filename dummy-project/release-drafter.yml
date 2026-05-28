@@ -19,5 +19,5 @@ categories:
     commit-scopes:
       - existing-project
 include-paths:
-  - demo-project/existing-project
-  - demo-project/shared
+  - dummy-project/existing-project
+  - dummy-project/shared

@@ -148618,63 +148618,75 @@ var require_versions = __commonJS({
       }
     };
     var getTemplatableVersion = (input) => {
+      const version2 = input.version || input.inputVersion;
       const templatableVersion = {
-        $NEXT_MAJOR_VERSION: splitSemVersion({ ...input, inc: "major" }),
+        $NEXT_MAJOR_VERSION: splitSemVersion({ ...input, version: version2, inc: "major" }),
         $NEXT_MAJOR_VERSION_MAJOR: splitSemVersion({
           ...input,
+          version: version2,
           inc: "major",
           template: "$MAJOR"
         }),
         $NEXT_MAJOR_VERSION_MINOR: splitSemVersion({
           ...input,
+          version: version2,
           inc: "major",
           template: "$MINOR"
         }),
         $NEXT_MAJOR_VERSION_PATCH: splitSemVersion({
           ...input,
+          version: version2,
           inc: "major",
           template: "$PATCH"
         }),
-        $NEXT_MINOR_VERSION: splitSemVersion({ ...input, inc: "minor" }),
+        $NEXT_MINOR_VERSION: splitSemVersion({ ...input, version: version2, inc: "minor" }),
         $NEXT_MINOR_VERSION_MAJOR: splitSemVersion({
           ...input,
+          version: version2,
           inc: "minor",
           template: "$MAJOR"
         }),
         $NEXT_MINOR_VERSION_MINOR: splitSemVersion({
           ...input,
+          version: version2,
           inc: "minor",
           template: "$MINOR"
         }),
         $NEXT_MINOR_VERSION_PATCH: splitSemVersion({
           ...input,
+          version: version2,
           inc: "minor",
           template: "$PATCH"
         }),
-        $NEXT_PATCH_VERSION: splitSemVersion({ ...input, inc: "patch" }),
+        $NEXT_PATCH_VERSION: splitSemVersion({ ...input, version: version2, inc: "patch" }),
         $NEXT_PATCH_VERSION_MAJOR: splitSemVersion({
           ...input,
+          version: version2,
           inc: "patch",
           template: "$MAJOR"
         }),
         $NEXT_PATCH_VERSION_MINOR: splitSemVersion({
           ...input,
+          version: version2,
           inc: "patch",
           template: "$MINOR"
         }),
         $NEXT_PATCH_VERSION_PATCH: splitSemVersion({
           ...input,
+          version: version2,
           inc: "patch",
           template: "$PATCH"
         }),
         $NEXT_PRERELEASE_VERSION: splitSemVersion({
           ...input,
+          version: version2,
           inc: "prerelease",
           template: "$PRERELEASE"
         }),
         $INPUT_VERSION: splitSemVersion(input, "inputVersion"),
         $RESOLVED_VERSION: splitSemVersion({
           ...input,
+          version: version2,
           inc: input.versionKeyIncrement || "patch"
         })
       };
@@ -148779,7 +148791,7 @@ var require_versions = __commonJS({
       const templatableVersion = getTemplatableVersion({
         version: version2,
         template,
-        inputVersion,
+        inputVersion: inputVersion || draftVersion,
         versionKeyIncrement,
         preReleaseIdentifier
       });

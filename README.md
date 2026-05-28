@@ -332,13 +332,13 @@ The [`dummy-project`](dummy-project/) directory contains fixture configs for one
 GitHub's Releases UI does not automatically group releases by tag namespace. To filter to one package's releases, type a tag query that exactly matches the package's tag prefix and includes at least the major-version precision you want to see:
 
 ```text
-tag:"dummy-project-a/v0"
+tag:dummy-project-a/v0
 ```
 
 You can also give maintainers and users a pre-filtered URL:
 
 ```text
-https://github.com/aaronsteers/semantic-pr-release-drafter/releases?q=tag:%22dummy-project-a/v0%22&expanded=true
+https://github.com/aaronsteers/semantic-pr-release-drafter/releases?q=tag%3Adummy-project-a%2Fv0
 ```
 
 #### How `include-paths` works

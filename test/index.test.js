@@ -936,6 +936,74 @@ describe('release-drafter', () => {
       })
     })
 
+    describe('with multiple existing draft releases', () => {
+      it('updates the latest matching prefixed draft', async () => {
+        getConfigMock('config-with-tag-prefix.yml')
+
+        const publishedPrefixedRelease = {
+          ...releasePayload,
+          id: 1,
+          tag_name: 'static-tag-prefix-v2.1.0',
+          name: 'static-tag-prefix-v2.1.0',
+        }
+        const unprefixedDraft = {
+          ...releaseDrafterFixture,
+          id: 2,
+          tag_name: 'v4.0.0',
+          name: 'v4.0.0',
+          draft: true,
+        }
+        const olderPrefixedDraft = {
+          ...releaseDrafterFixture,
+          id: 3,
+          tag_name: 'static-tag-prefix-v2.1.1',
+          name: 'static-tag-prefix-v2.1.1',
+          draft: true,
+        }
+        const latestPrefixedDraft = {
+          ...releaseDrafterFixture,
+          id: 4,
+          tag_name: 'static-tag-prefix-v2.1.2',
+          name: 'static-tag-prefix-v2.1.2',
+          draft: true,
+        }
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsNoPRsPayload)
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [
+            publishedPrefixedRelease,
+            unprefixedDraft,
+            olderPrefixedDraft,
+            latestPrefixedDraft,
+          ])
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/4',
+            (body) => {
+              expect(body).toMatchObject({
+                name: 'static-tag-prefix-v2.1.2 🌈',
+                tag_name: 'static-tag-prefix-v2.1.2',
+              })
+              return true
+            }
+          )
+          .reply(200, latestPrefixedDraft)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
+      })
+    })
+
     describe('with an existing draft release', () => {
       it('updates the existing release’s body', async () => {
         getConfigMock()

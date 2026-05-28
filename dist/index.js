@@ -149373,9 +149373,10 @@ var require_releases = __commonJS({
         ),
         tagPrefix
       );
-      const draftRelease = filteredReleases.find(
+      const candidateDraftReleases = filteredReleases.filter(
         (r) => r.draft && r.prerelease === includePreReleases
       );
+      const draftRelease = sortReleases(candidateDraftReleases, tagPrefix).at(-1);
       const lastRelease = sortedSelectedReleases[sortedSelectedReleases.length - 1];
       if (draftRelease) {
         log({ context, message: `Draft release: ${draftRelease.tag_name}` });

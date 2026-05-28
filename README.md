@@ -338,7 +338,7 @@ tag:dummy-project-a/v0
 You can also give maintainers and users a pre-filtered URL:
 
 ```text
-https://github.com/aaronsteers/semantic-pr-release-drafter/releases?q=tag%3Adummy-project-a%2Fv0
+https://github.com/aaronsteers/semantic-pr-release-drafter/releases?q=tag:dummy-project-a/v0
 ```
 
 #### How `include-paths` works

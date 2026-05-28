@@ -395,6 +395,7 @@ jobs:
           - test-name: 'monorepo-package-a-release'
             test-start-version-string: 'package-a/v1.4.0'
             test-commit-list: |
+              feat(existing-project): add existing project feature (#600)|demo-project/existing-project/feature.md
               feat(package-a): add package a feature (#601)|demo-project/package-a/feature.md
               fix(package-b): fix package b bug (#602)|demo-project/package-b/fix.md
               fix(package-a): patch package a bug (#603)|demo-project/package-a/fix.md
@@ -414,6 +415,7 @@ jobs:
           - test-name: 'monorepo-package-b-release'
             test-start-version-string: 'package-b/v2.7.3'
             test-commit-list: |
+              feat(existing-project): add existing project feature (#600)|demo-project/existing-project/feature.md
               feat(package-a): add package a feature (#601)|demo-project/package-a/feature.md
               fix(package-b): fix package b bug (#602)|demo-project/package-b/fix.md
               fix(package-a): patch package a bug (#603)|demo-project/package-a/fix.md
@@ -425,6 +427,26 @@ jobs:
               * Fix package b bug (#602)
             config-name: 'release-drafter-package-b.yml'
             demo-config-source: 'demo-project/.github/release-drafter-package-b.yml'
+
+          - test-name: 'monorepo-existing-project-release'
+            test-start-version-string: 'v3.2.0'
+            test-commit-list: |
+              feat(existing-project): add existing project feature (#600)|demo-project/existing-project/feature.md
+              feat(package-a): add package a feature (#601)|demo-project/package-a/feature.md
+              fix(package-b): fix package b bug (#602)|demo-project/package-b/fix.md
+              fix(existing-project): patch existing project bug (#604)|demo-project/existing-project/fix.md
+            expected-version-string: '3.3.0'
+            expected-tag-name: 'v3.3.0'
+            expected-body: |
+              ## Existing Project Features
+
+              * Add existing project feature (#600)
+
+              ## Existing Project Fixes
+
+              * Patch existing project bug (#604)
+            config-name: 'release-drafter.yml'
+            demo-config-source: 'demo-project/.github/release-drafter.yml'
 
     name: ${{ matrix.test-name }}
     steps:

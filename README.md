@@ -327,6 +327,20 @@ jobs:
 
 The [`dummy-project`](dummy-project/) directory contains fixture configs for one existing unprefixed project and two prefixed packages. Real GitHub Actions workflows and release-drafter config files must live under the repository root `.github` directory. In GitHub API mode, file-based configs must be committed to the default branch under root `.github`; branch-dispatched workflows can load configs from the selected branch. This repository keeps active copies of the dummy configs in root `.github` for the post-merge release-draft workflow, and CI copies the `dummy-project` fixture configs into a temporary root `.github` directory before running dry-run E2E smoke tests.
 
+#### Filtering package releases in GitHub
+
+GitHub's Releases UI does not automatically group releases by tag namespace. To filter to one package's releases, type a tag query that exactly matches the package's tag prefix and includes at least the major-version precision you want to see:
+
+```text
+tag:"dummy-project-a/v0"
+```
+
+You can also give maintainers and users a pre-filtered URL:
+
+```text
+https://github.com/aaronsteers/semantic-pr-release-drafter/releases?q=tag:%22dummy-project-a/v0%22&expanded=true
+```
+
 #### How `include-paths` works
 
 `include-paths` is a positive selection list. A commit is included when it modified at least one configured file or directory path. Directory entries match files under that directory. Negated paths such as `!packages/dummy-project-a` are not supported.

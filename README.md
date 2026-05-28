@@ -17,7 +17,8 @@ Besides the change from label-based to commit-based release logic, this fork add
 7. 🔒 **Version Preservation** - Respects manually-set draft release versions. If you set a draft to `v2.0.0`, the action will never bump it backwards. Prerelease identifiers (like `-beta`, `-rc.1`) are preserved exactly. See [Version Preservation](#version-preservation).
 8. 🎯 **Scope-Based Categories** - Group changes by commit scope (e.g., all `sentry` changes together) in addition to commit type. Supports AND logic when combining scopes and types. See [Scope-Based Categories](#scope-based-categories).
 9. 📊 **Display Order Control** - Decouple category evaluation order from display order. Categories are evaluated top-to-bottom but can be displayed in any order using `display-order`. See [Display Order](#display-order).
-10. 🔤 **Sentence-Case Titles** - Automatically normalizes commit titles to sentence case for consistent, professional-looking release notes.
+10. 📦 **Monorepo Release Support** - Use package-specific configs, `tag-prefix`, and `include-paths` to draft independent releases from one repository. See [Monorepo Package Releases](#monorepo-package-releases).
+11. 🔤 **Sentence-Case Titles** - Automatically normalizes commit titles to sentence case for consistent, professional-looking release notes.
 
 ### Other Changes
 
@@ -219,6 +220,79 @@ template: |
 ```
 
 Note: Version resolution and categorization are handled automatically based on semantic commit types. No labels or version-resolver configuration needed.
+
+### Monorepo Package Releases
+
+For monorepos with independently versioned packages, run one release-drafter invocation per package. The recommended pattern is:
+
+1. Use a package-specific config file for each package.
+2. Use slash-delimited tag namespaces, such as `package-a/v1.2.3` and `package-b/v4.5.6`.
+3. Set each config's `tag-prefix` to the matching namespace, such as `package-a/v`.
+4. Set each config's `include-paths` to the package directory plus any shared files that should trigger that package's release notes.
+5. Use a GitHub Actions matrix to invoke the action once per package.
+
+Example package config:
+
+```yaml
+name-template: package-a v$RESOLVED_VERSION
+tag-template: package-a/v$RESOLVED_VERSION
+tag-prefix: package-a/v
+template: |
+  $CHANGES
+change-template: '* $TITLE (#$NUMBER)'
+category-template: '## $TITLE'
+categories:
+  - title: Package A Features
+    commit-scopes:
+      - package-a
+    commit-types:
+      - feat
+  - title: Package A Fixes
+    commit-scopes:
+      - package-a
+    commit-types:
+      - fix
+include-paths:
+  - packages/package-a
+  - packages/shared
+  - .github/release-drafter-package-a.yml
+```
+
+Example matrix workflow:
+
+```yaml
+name: Release Drafter
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  draft-release:
+    name: Draft release (${{ matrix.package.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - name: package-a
+            config-name: release-drafter-package-a.yml
+          - name: package-b
+            config-name: release-drafter-package-b.yml
+
+    steps:
+      - uses: aaronsteers/semantic-pr-release-drafter@v1
+        with:
+          config-name: ${{ matrix.package.config-name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The [`demo-project`](demo-project/) directory contains a complete two-package example. CI runs dry-run integration tests against it to prove that unrelated package changes are filtered out and each package resolves its next version from its own tag family.
 
 ## Configuration Options
 

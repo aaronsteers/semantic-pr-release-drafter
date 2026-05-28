@@ -149830,6 +149830,7 @@ var require_commits = __commonJS({
 var require_local_git = __commonJS({
   "lib/local-git.js"(exports2) {
     var { execSync } = require("node:child_process");
+    var path = require("node:path");
     var { log } = require_log3();
     var { parseSemanticCommit } = require_semantic_commits();
     var getTimestampFromRef = (localGitRoot, ref) => {
@@ -149843,7 +149844,12 @@ var require_local_git = __commonJS({
         return null;
       }
     };
-    var findCommitsFromLocalGit = ({ localGitRoot, baseRef, context }) => {
+    var findCommitsFromLocalGit = ({
+      localGitRoot,
+      baseRef,
+      includePaths = [],
+      context
+    }) => {
       if (context) {
         log({
           context,
@@ -149861,6 +149867,7 @@ var require_local_git = __commonJS({
           });
         }
       }
+      const includePathSet = new Set(includePaths);
       let output;
       try {
         output = execSync(gitLogCommand, {
@@ -149890,33 +149897,63 @@ var require_local_git = __commonJS({
           baseRefName: "",
           headRefName: "",
           author: authorName,
-          // Simple string for @username mentions in release notes
           commitSha: id,
           merged: true
-          // Mark as merged so fromCommits() can find it
         };
+        const changedPaths = getChangedPaths(localGitRoot, id);
         return {
           id,
+          oid: id,
           message,
           committedDate,
+          changedPaths,
           author: {
             name: authorName,
             user: null
           },
           associatedPullRequests: {
             nodes: [mockPr]
-            // Link the mock PR to this commit
           }
         };
       });
-      const pullRequests = commits.map(
+      const filteredCommits = includePathSet.size > 0 ? commits.filter(
+        (commit) => commit.changedPaths.some(
+          (changedPath) => pathMatchesIncludePath(changedPath, includePathSet)
+        )
+      ) : commits;
+      const pullRequests = filteredCommits.map(
         (commit) => commit.associatedPullRequests.nodes[0]
       );
       if (context) {
-        log({ context, message: `Found ${commits.length} commits from local git` });
+        log({
+          context,
+          message: `Found ${filteredCommits.length} commits from local git`
+        });
       }
-      return { commits, pullRequests };
+      return { commits: filteredCommits, pullRequests };
     };
+    var getChangedPaths = (localGitRoot, commitId) => {
+      try {
+        return execSync(`git diff-tree --no-commit-id --name-only -r ${commitId}`, {
+          cwd: localGitRoot,
+          encoding: "utf8",
+          maxBuffer: 10 * 1024 * 1024
+        }).trim().split("\n").filter(Boolean);
+      } catch {
+        return [];
+      }
+    };
+    var pathMatchesIncludePath = (changedPath, includePathSet) => {
+      const normalizedChangedPath = normalizePath(changedPath);
+      for (const includePath of includePathSet) {
+        const normalizedIncludePath = normalizePath(includePath);
+        if (normalizedChangedPath === normalizedIncludePath || normalizedChangedPath.startsWith(`${normalizedIncludePath}/`)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    var normalizePath = (value) => path.normalize(value).split(path.sep).join("/");
     var createMockLastRelease = (versionString, tagPrefix = "") => {
       if (!versionString) {
         return null;
@@ -153173,6 +153210,7 @@ var require_index = __commonJS({
           const localGitResult = findCommitsFromLocalGit({
             localGitRoot,
             baseRef: baseRefOverride,
+            includePaths: config["include-paths"],
             context
           });
           commits = localGitResult.commits;

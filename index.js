@@ -89,6 +89,7 @@ module.exports = (app, { getRouter }) => {
       const localGitResult = findCommitsFromLocalGit({
         localGitRoot,
         baseRef: baseRefOverride,
+        includePaths: config['include-paths'],
         context,
       })
       commits = localGitResult.commits

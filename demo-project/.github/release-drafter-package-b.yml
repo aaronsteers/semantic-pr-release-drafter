@@ -1,0 +1,25 @@
+name-template: package-b v$RESOLVED_VERSION
+tag-template: package-b/v$RESOLVED_VERSION
+tag-prefix: package-b/v
+template: |
+  $CHANGES
+change-template: '* $TITLE (#$NUMBER)'
+category-template: '## $TITLE'
+categories:
+  - title: Package B Features
+    commit-scopes:
+      - package-b
+    commit-types:
+      - feat
+  - title: Package B Fixes
+    commit-scopes:
+      - package-b
+    commit-types:
+      - fix
+  - title: Package B Maintenance
+    commit-scopes:
+      - package-b
+include-paths:
+  - demo-project/package-b
+  - demo-project/shared
+  - demo-project/.github/release-drafter-package-b.yml

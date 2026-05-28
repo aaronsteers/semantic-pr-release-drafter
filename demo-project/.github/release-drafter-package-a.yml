@@ -1,0 +1,25 @@
+name-template: package-a v$RESOLVED_VERSION
+tag-template: package-a/v$RESOLVED_VERSION
+tag-prefix: package-a/v
+template: |
+  $CHANGES
+change-template: '* $TITLE (#$NUMBER)'
+category-template: '## $TITLE'
+categories:
+  - title: Package A Features
+    commit-scopes:
+      - package-a
+    commit-types:
+      - feat
+  - title: Package A Fixes
+    commit-scopes:
+      - package-a
+    commit-types:
+      - fix
+  - title: Package A Maintenance
+    commit-scopes:
+      - package-a
+include-paths:
+  - demo-project/package-a
+  - demo-project/shared
+  - demo-project/.github/release-drafter-package-a.yml

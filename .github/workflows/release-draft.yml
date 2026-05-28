@@ -13,8 +13,10 @@ jobs:
   update_release_draft:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       # Use local action (dogfooding)
-      - uses: aaronsteers/semantic-pr-release-drafter@main
+      - uses: ./
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # The following config is commented out because it now matches the defaults.

@@ -1,4 +1,4 @@
-name: Integration Tests
+name: E2E Smoke Tests
 
 on:
   push:
@@ -143,7 +143,7 @@ jobs:
             expected-body: |
               ## ✨ New Features
 
-              * Add new feature (https://github.com/aaronsteers/semantic-pr-release-drafter/pull/100) 
+              * Add new feature (https://github.com/aaronsteers/semantic-pr-release-drafter/pull/100)
 
               ## 🐛 Bug Fixes
 
@@ -392,6 +392,62 @@ jobs:
             # This test expects failure - no files will match
             attach-files-expect-failure: true
 
+          - test-name: 'monorepo-package-a-release'
+            test-start-version-string: 'package-a/v1.4.0'
+            test-commit-list: |
+              feat(existing-project): add existing project feature (#600)|demo-project/existing-project/feature.md
+              feat(package-a): add package a feature (#601)|demo-project/package-a/feature.md
+              fix(package-b): fix package b bug (#602)|demo-project/package-b/fix.md
+              fix(package-a): patch package a bug (#603)|demo-project/package-a/fix.md
+            expected-version-string: '1.5.0'
+            expected-tag-name: 'package-a/v1.5.0'
+            expected-body: |
+              ## Package A Features
+
+              * Add package a feature (#601)
+
+              ## Package A Fixes
+
+              * Patch package a bug (#603)
+            config-name: 'release-drafter-package-a.yml'
+            demo-config-source: 'demo-project/release-drafter-package-a.yml'
+
+          - test-name: 'monorepo-package-b-release'
+            test-start-version-string: 'package-b/v2.7.3'
+            test-commit-list: |
+              feat(existing-project): add existing project feature (#600)|demo-project/existing-project/feature.md
+              feat(package-a): add package a feature (#601)|demo-project/package-a/feature.md
+              fix(package-b): fix package b bug (#602)|demo-project/package-b/fix.md
+              fix(package-a): patch package a bug (#603)|demo-project/package-a/fix.md
+            expected-version-string: '2.7.4'
+            expected-tag-name: 'package-b/v2.7.4'
+            expected-body: |
+              ## Package B Fixes
+
+              * Fix package b bug (#602)
+            config-name: 'release-drafter-package-b.yml'
+            demo-config-source: 'demo-project/release-drafter-package-b.yml'
+
+          - test-name: 'monorepo-existing-project-release'
+            test-start-version-string: 'v3.2.0'
+            test-commit-list: |
+              feat(existing-project): add existing project feature (#600)|demo-project/existing-project/feature.md
+              feat(package-a): add package a feature (#601)|demo-project/package-a/feature.md
+              fix(package-b): fix package b bug (#602)|demo-project/package-b/fix.md
+              fix(existing-project): patch existing project bug (#604)|demo-project/existing-project/fix.md
+            expected-version-string: '3.3.0'
+            expected-tag-name: 'v3.3.0'
+            expected-body: |
+              ## Existing Project Features
+
+              * Add existing project feature (#600)
+
+              ## Existing Project Fixes
+
+              * Patch existing project bug (#604)
+            config-name: 'release-drafter.yml'
+            demo-config-source: 'demo-project/release-drafter.yml'
+
     name: ${{ matrix.test-name }}
     steps:
       - name: Checkout action code
@@ -429,13 +485,26 @@ jobs:
               continue
             fi
             COMMIT_NUM=$((COMMIT_NUM + 1))
-            echo "Change $COMMIT_NUM" >> README.md
-            git add README.md
-            git commit -m "$commit_msg"
+            commit_subject="${commit_msg%%|*}"
+            if [ "$commit_subject" = "$commit_msg" ]; then
+              changed_file="README.md"
+            else
+              changed_file="${commit_msg#*|}"
+            fi
+            mkdir -p "$(dirname "$changed_file")"
+            echo "Change $COMMIT_NUM" >> "$changed_file"
+            git add "$changed_file"
+            git commit -m "$commit_subject"
           done <<< "${{ matrix.test-commit-list }}"
 
           # Create .github directory (required for local-git-root)
           mkdir -p .github
+
+      - name: Copy demo project config
+        if: matrix.demo-config-source != ''
+        run: |
+          cd "$TEST_REPO"
+          cp "$GITHUB_WORKSPACE/${{ matrix.demo-config-source }}" ".github/${{ matrix.config-name }}"
 
       - name: Create test files for attach-files test
         if: matrix.needs-attach-files == true
@@ -467,6 +536,7 @@ jobs:
           dry-run: 'true'
           local-git-root: ${{ env.TEST_REPO }}
           base-ref-override: ${{ matrix.test-start-version-string }}
+          config-name: ${{ matrix.config-name }}
           template: ${{ matrix.template }}
           change-template: ${{ matrix.change-template }}
           scope-template: ${{ matrix.scope-template }}
@@ -488,6 +558,7 @@ jobs:
           dry-run: 'true'
           local-git-root: ${{ env.TEST_REPO }}
           base-ref-override: ${{ matrix.test-start-version-string }}
+          config-name: ${{ matrix.config-name }}
           template: ${{ matrix.template }}
           change-template: ${{ matrix.change-template }}
           category-template: ${{ matrix.category-template }}
@@ -524,6 +595,22 @@ jobs:
 
           echo "Version check passed!"
 
+      - name: Verify tag name
+        if: matrix.attach-files-expect-failure != true && matrix.expected-tag-name != ''
+        run: |
+          TAG_NAME="${{ steps.release-drafter.outputs.tag-name }}"
+          EXPECTED_TAG_NAME="${{ matrix.expected-tag-name }}"
+
+          echo "Tag name: $TAG_NAME"
+          echo "Expected tag name: $EXPECTED_TAG_NAME"
+
+          if [ "$TAG_NAME" != "$EXPECTED_TAG_NAME" ]; then
+            echo "::error::Tag mismatch! Expected $EXPECTED_TAG_NAME but got $TAG_NAME"
+            exit 1
+          fi
+
+          echo "Tag name check passed!"
+
       - name: Verify changelog body matches expected output
         if: matrix.attach-files-expect-failure != true
         run: |
@@ -532,6 +619,10 @@ jobs:
           ${{ matrix.expected-body }}
           EXPECTED_EOF
           )
+
+          # Some tests intentionally use the default change-template, which includes $SHA.
+          # Dry-run test repositories produce fresh SHAs on every run, so normalize them out.
+          BODY=$(echo "$BODY" | sed -E 's/ [0-9a-f]{7}$//')
 
           # Normalize whitespace for comparison (trim leading/trailing, normalize newlines)
           BODY_NORMALIZED=$(echo "$BODY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -s '\n')

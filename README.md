@@ -341,6 +341,18 @@ You can also give maintainers and users a pre-filtered URL:
 https://github.com/aaronsteers/semantic-pr-release-drafter/releases?q=tag:dummy-project-a/v0
 ```
 
+For discoverability, add a `## Release Notes` section to the repository README and link each monorepo subproject to the filtered Releases view for its current major version:
+
+```markdown
+## Release Notes
+
+| Project          | Release notes                                                                          |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| Existing Project | [v1 releases](https://github.com/your-org/your-repo/releases?q=tag:v1)                 |
+| Dummy Project A  | [v0 releases](https://github.com/your-org/your-repo/releases?q=tag:dummy-project-a/v0) |
+| Dummy Project B  | [v0 releases](https://github.com/your-org/your-repo/releases?q=tag:dummy-project-b/v0) |
+```
+
 #### How `include-paths` works
 
 `include-paths` is a positive selection list. A commit is included when it modified at least one configured file or directory path. Directory entries match files under that directory. Negated paths such as `!packages/dummy-project-a` are not supported.

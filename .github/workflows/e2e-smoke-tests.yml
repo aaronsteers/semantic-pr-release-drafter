@@ -151,7 +151,7 @@ jobs:
 
               ---
 
-              **Full Changelog**: https://github.com/aaronsteers/semantic-pr-release-drafter/compare/v1.0.0...v1.1.0
+              _See also: [Full Release Notes (v1.x family)](https://github.com/aaronsteers/semantic-pr-release-drafter/releases?q=tag:v1) | [Full Changelog (v1.0.0...v1.1.0)](https://github.com/aaronsteers/semantic-pr-release-drafter/compare/v1.0.0...v1.1.0)_
             # No template, change-template, category-template, or categories provided
             # This tests the zero-config path
 

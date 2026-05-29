@@ -162,8 +162,8 @@ jobs:
             $CHANGES
 
             ---
-
-            **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+          footer: |
+            _See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)_
           categories: |
             - title: 'Breaking Changes'
               commit-types:
@@ -241,6 +241,10 @@ name-template: v$RESOLVED_VERSION
 tag-template: v$RESOLVED_VERSION
 template: |
   $CHANGES
+
+  ---
+footer: |
+  _See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)_
 change-template: '* $TITLE (#$NUMBER)'
 category-template: '## $TITLE'
 categories:
@@ -269,6 +273,10 @@ tag-prefix: dummy-project-a/v
 latest: 'false'
 template: |
   $CHANGES
+
+  ---
+footer: |
+  _See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)_
 change-template: '* $TITLE (#$NUMBER)'
 category-template: '## $TITLE'
 categories:
@@ -329,7 +337,7 @@ The [`dummy-project`](dummy-project/) directory contains fixture configs for one
 
 #### Filtering package releases in GitHub
 
-GitHub's Releases UI does not automatically group releases by tag namespace. To filter to one package's releases, type a tag query that exactly matches the package's tag prefix and includes at least the major-version precision you want to see:
+GitHub's Releases UI does not automatically group releases by tag namespace. To filter to one package's releases, type a tag query that exactly matches the package's tag prefix and includes at least the major-version precision you want to see. Release templates can use `$RESOLVED_MAJOR_TAG` to generate that query automatically.
 
 ```text
 tag:dummy-project-a/v0
@@ -412,13 +420,16 @@ Release Drafter also supports [Probot Config](https://github.com/probot/probot-c
 
 You can use any of the following variables in your `template`, `header` and `footer`:
 
-| Variable        | Description                                                                                                           |
-| --------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `$CHANGES`      | The markdown list of pull requests that have been merged.                                                             |
-| `$CONTRIBUTORS` | A comma separated list of contributors to this release (pull request authors, commit authors, and commit committers). |
-| `$PREVIOUS_TAG` | The previous releases’s tag.                                                                                          |
-| `$REPOSITORY`   | Current Repository                                                                                                    |
-| `$OWNER`        | Current Repository Owner                                                                                              |
+| Variable              | Description                                                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `$CHANGES`            | The markdown list of pull requests that have been merged.                                                                 |
+| `$CONTRIBUTORS`       | A comma separated list of contributors to this release (pull request authors, commit authors, and commit committers).     |
+| `$PREVIOUS_TAG`       | The previous releases’s tag.                                                                                              |
+| `$REPOSITORY`         | Current Repository.                                                                                                       |
+| `$OWNER`              | Current Repository Owner.                                                                                                 |
+| `$TAG_PREFIX`         | The effective tag prefix from configured `tag-prefix` or derived from `tag-template`, such as `v` or `dummy-project-a/v`. |
+| `$RESOLVED_TAG`       | The resolved tag for the release after rendering `tag-template`.                                                          |
+| `$RESOLVED_MAJOR_TAG` | The effective tag prefix plus the resolved major version, such as `v1` or `dummy-project-a/v0`.                           |
 
 ## Category Template Variables
 
@@ -460,6 +471,8 @@ Version bumps are automatically determined based on semantic commit types:
 - **Breaking changes** (`feat!:`, `fix!:`, or commits with `BREAKING CHANGE:` in the body) - see below
 
 The `$RESOLVED_VERSION` variable reflects the calculated next version based on these rules.
+
+When `tag-prefix` is omitted, Release Drafter derives an effective tag prefix from the literal text before the first template variable in `tag-template`. For the default `tag-template: v$RESOLVED_VERSION`, the effective `$TAG_PREFIX` is `v`, so release selection and `$RESOLVED_MAJOR_TAG` stay scoped to unprefixed `v*` releases. Set `tag-prefix` explicitly for monorepo packages, such as `dummy-project-a/v`.
 
 ### Marketing-Aware Semver (Default Behavior)
 

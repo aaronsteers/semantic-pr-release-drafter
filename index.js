@@ -20,6 +20,7 @@ const {
   resolveFiles,
   deleteAllReleaseAssets,
 } = require('./lib/assets')
+const { getEffectiveTagPrefix } = require('./lib/tag-prefix')
 const semver = require('semver')
 
 module.exports = (app, { getRouter }) => {
@@ -56,10 +57,10 @@ module.exports = (app, { getRouter }) => {
       'filter-by-commitish': filterByCommitish,
       'include-pre-releases': includePreReleases,
       'prerelease-identifier': preReleaseIdentifier,
-      'tag-prefix': tagPrefix,
       latest,
       prerelease,
     } = config
+    const tagPrefix = getEffectiveTagPrefix(config)
 
     const shouldIncludePreReleases = Boolean(
       includePreReleases || preReleaseIdentifier

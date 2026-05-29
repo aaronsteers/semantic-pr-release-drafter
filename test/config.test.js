@@ -24,6 +24,7 @@ describe('getConfig', () => {
     expect(config).toEqual({
       ...DEFAULT_CONFIG,
       template: '$CHANGES',
+      footer: '',
       references: ['master'],
     })
   })

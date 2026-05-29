@@ -5,3 +5,4 @@ template: |
   ## Previous release
 
   $PREVIOUS_TAG
+footer: ''

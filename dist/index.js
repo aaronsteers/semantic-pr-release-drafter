@@ -146586,6 +146586,12 @@ var require_config = __commonJS({
       if (template) {
         overrides.template = template;
       }
+      const footer = core2.getInput("footer", {
+        trimWhitespace: false
+      });
+      if (footer) {
+        overrides.footer = footer;
+      }
       const scopeTemplate = core2.getInput("scope-template", {
         trimWhitespace: false
       });
@@ -146612,7 +146618,7 @@ var require_config = __commonJS({
       return overrides;
     }
     function hasInlineConfig() {
-      return core2.getInput("name-template") || core2.getInput("tag-template") || core2.getInput("change-template") || core2.getInput("template") || core2.getInput("scope-template") || core2.getInput("category-template") || core2.getInput("categories");
+      return core2.getInput("name-template") || core2.getInput("tag-template") || core2.getInput("change-template") || core2.getInput("template") || core2.getInput("footer") || core2.getInput("scope-template") || core2.getInput("category-template") || core2.getInput("categories");
     }
     async function getConfig({ context, configName, localGitRoot }) {
       try {
@@ -146676,6 +146682,9 @@ var require_config = __commonJS({
             ).join(", ")}`
           });
           repoConfig = { ...repoConfig, ...inlineOverrides };
+        }
+        if (Object.prototype.hasOwnProperty.call(repoConfig, "template") && !Object.prototype.hasOwnProperty.call(repoConfig, "footer")) {
+          repoConfig.footer = "";
         }
         const config = validateSchema(context, repoConfig);
         return config;

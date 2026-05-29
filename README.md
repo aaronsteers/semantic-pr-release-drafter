@@ -162,8 +162,8 @@ jobs:
             $CHANGES
 
             ---
-
-            See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)
+          footer: |
+            _See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)_
           categories: |
             - title: 'Breaking Changes'
               commit-types:
@@ -243,8 +243,8 @@ template: |
   $CHANGES
 
   ---
-
-  See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)
+footer: |
+  _See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)_
 change-template: '* $TITLE (#$NUMBER)'
 category-template: '## $TITLE'
 categories:
@@ -275,8 +275,8 @@ template: |
   $CHANGES
 
   ---
-
-  See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)
+footer: |
+  _See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)_
 change-template: '* $TITLE (#$NUMBER)'
 category-template: '## $TITLE'
 categories:
@@ -420,16 +420,16 @@ Release Drafter also supports [Probot Config](https://github.com/probot/probot-c
 
 You can use any of the following variables in your `template`, `header` and `footer`:
 
-| Variable              | Description                                                                                                           |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `$CHANGES`            | The markdown list of pull requests that have been merged.                                                             |
-| `$CONTRIBUTORS`       | A comma separated list of contributors to this release (pull request authors, commit authors, and commit committers). |
-| `$PREVIOUS_TAG`       | The previous releases’s tag.                                                                                          |
-| `$REPOSITORY`         | Current Repository.                                                                                                   |
-| `$OWNER`              | Current Repository Owner.                                                                                             |
-| `$TAG_PREFIX`         | The configured `tag-prefix`, such as `v` or `dummy-project-a/v`.                                                      |
-| `$RESOLVED_TAG`       | The resolved tag for the release after rendering `tag-template`.                                                      |
-| `$RESOLVED_MAJOR_TAG` | The configured `tag-prefix` plus the resolved major version, such as `v1` or `dummy-project-a/v0`.                    |
+| Variable              | Description                                                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `$CHANGES`            | The markdown list of pull requests that have been merged.                                                                 |
+| `$CONTRIBUTORS`       | A comma separated list of contributors to this release (pull request authors, commit authors, and commit committers).     |
+| `$PREVIOUS_TAG`       | The previous releases’s tag.                                                                                              |
+| `$REPOSITORY`         | Current Repository.                                                                                                       |
+| `$OWNER`              | Current Repository Owner.                                                                                                 |
+| `$TAG_PREFIX`         | The effective tag prefix from configured `tag-prefix` or derived from `tag-template`, such as `v` or `dummy-project-a/v`. |
+| `$RESOLVED_TAG`       | The resolved tag for the release after rendering `tag-template`.                                                          |
+| `$RESOLVED_MAJOR_TAG` | The effective tag prefix plus the resolved major version, such as `v1` or `dummy-project-a/v0`.                           |
 
 ## Category Template Variables
 

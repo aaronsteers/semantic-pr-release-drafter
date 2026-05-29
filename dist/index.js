@@ -146300,9 +146300,8 @@ var require_default_config = __commonJS({
     ];
     var DEFAULT_TEMPLATE = `$CHANGES
 
----
-
-See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)`;
+---`;
+    var DEFAULT_FOOTER = `_See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)_`;
     var DEFAULT_CONFIG = Object.freeze({
       "name-template": "v$RESOLVED_VERSION",
       "tag-template": "v$RESOLVED_VERSION",
@@ -146334,7 +146333,7 @@ See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com
       "scope-template": "",
       "category-template": "## $TITLE",
       header: "",
-      footer: ""
+      footer: DEFAULT_FOOTER
     });
     exports2.DEFAULT_CONFIG = DEFAULT_CONFIG;
   }

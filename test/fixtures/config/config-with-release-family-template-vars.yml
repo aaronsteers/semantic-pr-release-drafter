@@ -7,3 +7,4 @@ template: |
   Major tag: $RESOLVED_MAJOR_TAG
   Releases: https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG
   Compare: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG
+footer: ''

@@ -16,12 +16,12 @@ jobs:
       fail-fast: false
       matrix:
         release:
+          - name: semantic-pr-release-drafter
+            config-name: release-drafter.yml
           - name: dummy-project/dummy-project-a
             config-name: release-drafter-dummy-project-a.yml
           - name: dummy-project/dummy-project-b
             config-name: release-drafter-dummy-project-b.yml
-          - name: dummy-project/existing-project
-            config-name: release-drafter-dummy-project-existing-project.yml
     name: Draft release (${{ matrix.release.name }})
     steps:
       - uses: actions/checkout@v4

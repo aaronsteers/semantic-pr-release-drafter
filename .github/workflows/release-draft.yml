@@ -42,7 +42,7 @@ jobs:
         #
         #     ---
         #
-        #     **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+        #     See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)
         #   change-template: '* $TITLE ($URL) $SHA'
         #   categories: |
         #     - title: '⚠️ Breaking Changes'

@@ -1,0 +1,9 @@
+name-template: 'static-tag-prefix-v$RESOLVED_VERSION 🌈'
+tag-template: 'static-tag-prefix-v$RESOLVED_VERSION'
+tag-prefix: static-tag-prefix-v
+template: |
+  Prefix: $TAG_PREFIX
+  Resolved tag: $RESOLVED_TAG
+  Major tag: $RESOLVED_MAJOR_TAG
+  Releases: https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG
+  Compare: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG

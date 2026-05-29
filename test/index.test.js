@@ -3360,6 +3360,88 @@ describe('release-drafter', () => {
 
         expect.assertions(1)
       })
+
+      it('renders release-family template variables for prefixed tags', async () => {
+        getConfigMock('config-with-release-family-template-vars.yml')
+        const alteredReleasePayload = {
+          ...releasePayload,
+          tag_name: 'static-tag-prefix-v2.1.4',
+        }
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsNoPRsPayload)
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [alteredReleasePayload])
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body).toMatchObject({
+                body:
+                  'Prefix: static-tag-prefix-v\n' +
+                  'Resolved tag: static-tag-prefix-v2.1.5\n' +
+                  'Major tag: static-tag-prefix-v2\n' +
+                  'Releases: https://github.com/toolmantim/release-drafter-test-project/releases?q=tag:static-tag-prefix-v2\n' +
+                  'Compare: https://github.com/toolmantim/release-drafter-test-project/compare/static-tag-prefix-v2.1.4...static-tag-prefix-v2.1.5\n',
+                name: 'static-tag-prefix-v2.1.5 🌈',
+                tag_name: 'static-tag-prefix-v2.1.5',
+              })
+              return true
+            }
+          )
+          .reply(200, alteredReleasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
+      })
+
+      it('renders release-family template variables for unprefixed v tags', async () => {
+        getConfigMock('config-with-unprefixed-release-family-template-vars.yml')
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsNoPRsPayload)
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [releasePayload])
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body).toMatchObject({
+                body:
+                  'Prefix: v\n' +
+                  'Resolved tag: v2.0.1\n' +
+                  'Major tag: v2\n' +
+                  'Releases: https://github.com/toolmantim/release-drafter-test-project/releases?q=tag:v2\n' +
+                  'Compare: https://github.com/toolmantim/release-drafter-test-project/compare/v2.0.0...v2.0.1\n',
+                name: 'v2.0.1 🌈',
+                tag_name: 'v2.0.1',
+              })
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
+      })
     })
 
     describe('with custom version resolver', () => {

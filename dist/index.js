@@ -146302,7 +146302,7 @@ var require_default_config = __commonJS({
 
 ---
 
-**Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION`;
+See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)`;
     var DEFAULT_CONFIG = Object.freeze({
       "name-template": "v$RESOLVED_VERSION",
       "tag-template": "v$RESOLVED_VERSION",
@@ -148820,6 +148820,23 @@ var require_versions = __commonJS({
   }
 });
 
+// lib/tag-prefix.js
+var require_tag_prefix = __commonJS({
+  "lib/tag-prefix.js"(exports2, module2) {
+    var templateVariablePattern = /\$[A-Z][\dA-Z_]*/g;
+    var getEffectiveTagPrefix = (config) => {
+      if (config["tag-prefix"]) {
+        return config["tag-prefix"];
+      }
+      const tagTemplate = config["tag-template"] || "";
+      return tagTemplate.split(templateVariablePattern)[0];
+    };
+    module2.exports = {
+      getEffectiveTagPrefix
+    };
+  }
+});
+
 // lib/semantic-commits.js
 var require_semantic_commits = __commonJS({
   "lib/semantic-commits.js"(exports2) {
@@ -149352,6 +149369,7 @@ var require_releases = __commonJS({
     var { getVersionInfo } = require_versions();
     var { template } = require_template2();
     var { log } = require_log3();
+    var { getEffectiveTagPrefix } = require_tag_prefix();
     var {
       resolveVersionBumpFromCommits,
       ReleaseChangeLineItems
@@ -149500,6 +149518,7 @@ var require_releases = __commonJS({
       targetCommitish
     }) => {
       const { owner, repo } = context.repo();
+      const tagPrefix = getEffectiveTagPrefix(config);
       let body = config["header"] + config.template + config["footer"];
       body = template(
         body,
@@ -149530,7 +149549,7 @@ var require_releases = __commonJS({
         // Falls back to tag or name for backwards compatibility
         overrideVersion || tag || name,
         versionKeyIncrement,
-        config["tag-prefix"],
+        tagPrefix,
         config["prerelease-identifier"],
         // draftVersion: from draft release (acts as floor vs computed)
         draftVersion
@@ -149547,6 +149566,14 @@ var require_releases = __commonJS({
         tag = template(tag, versionInfo);
       }
       core2.debug("tag: " + tag);
+      if (versionInfo) {
+        const tagInfo = {
+          $TAG_PREFIX: tagPrefix,
+          $RESOLVED_TAG: tag,
+          $RESOLVED_MAJOR_TAG: `${tagPrefix}${versionInfo.$RESOLVED_VERSION.$MAJOR}`
+        };
+        body = template(body, tagInfo);
+      }
       if (name === void 0) {
         name = versionInfo ? template(config["name-template"] || "", versionInfo) : "";
       } else if (versionInfo) {
@@ -153198,6 +153225,7 @@ var require_index = __commonJS({
       resolveFiles,
       deleteAllReleaseAssets
     } = require_assets();
+    var { getEffectiveTagPrefix } = require_tag_prefix();
     var semver = require_semver4();
     module2.exports = (app, { getRouter }) => {
       if (!runnerIsActions() && typeof getRouter === "function") {
@@ -153223,10 +153251,10 @@ var require_index = __commonJS({
           "filter-by-commitish": filterByCommitish,
           "include-pre-releases": includePreReleases,
           "prerelease-identifier": preReleaseIdentifier,
-          "tag-prefix": tagPrefix,
           latest,
           prerelease
         } = config;
+        const tagPrefix = getEffectiveTagPrefix(config);
         const shouldIncludePreReleases = Boolean(
           includePreReleases || preReleaseIdentifier
         );

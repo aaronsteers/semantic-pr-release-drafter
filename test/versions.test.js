@@ -226,4 +226,66 @@ describe('versions', () => {
     expect(versionInfo.$RESOLVED_VERSION.version).toEqual('0.1.0')
     expect(versionInfo.$NEXT_PATCH_VERSION.version).toEqual('0.1.1')
   })
+
+  it('semantic minor bump is not overridden by a lower draft version', () => {
+    // Scenario: last release is v0.64.5, draft release is v0.64.6 (patch),
+    // but commits include feat → should bump minor to v0.65.0, not stay at v0.64.6
+    const versionInfo = getVersionInfo(
+      { tag_name: 'v0.64.5', name: 'v0.64.5' },
+      '$MAJOR.$MINOR.$PATCH',
+      undefined, // no explicit override
+      'minor', // semantic bump from feat commits
+      'v',
+      undefined,
+      '0.64.6' // draft release version (should NOT override)
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('0.65.0')
+    expect(versionInfo.$INPUT_VERSION).toBeUndefined()
+  })
+
+  it('semantic patch bump is not overridden by a stale draft version', () => {
+    // Draft has same version as what patch bump would produce
+    const versionInfo = getVersionInfo(
+      { tag_name: 'v1.2.3', name: 'v1.2.3' },
+      '$MAJOR.$MINOR.$PATCH',
+      undefined,
+      'patch',
+      'v',
+      undefined,
+      '1.2.4' // draft matches computed patch
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('1.2.4')
+  })
+
+  it('draft version acts as floor when higher than computed version', () => {
+    // Last release v1.0.0, semantic bump is patch → v1.0.1,
+    // but draft is at v1.2.0 (manually advanced) → should use v1.2.0 as floor
+    const versionInfo = getVersionInfo(
+      { tag_name: 'v1.0.0', name: 'v1.0.0' },
+      '$MAJOR.$MINOR.$PATCH',
+      undefined,
+      'patch',
+      'v',
+      undefined,
+      '1.2.0' // draft is higher than computed v1.0.1
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('1.2.0')
+  })
+
+  it('explicit input version overrides both computed and draft versions', () => {
+    const versionInfo = getVersionInfo(
+      { tag_name: 'v0.64.5', name: 'v0.64.5' },
+      '$MAJOR.$MINOR.$PATCH',
+      '2.0.0', // explicit override
+      'patch',
+      'v',
+      undefined,
+      '0.64.6' // draft version (should be ignored)
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('2.0.0')
+  })
 })

@@ -148801,7 +148801,7 @@ var require_versions = __commonJS({
       const templatableVersion = getTemplatableVersion({
         version: version2,
         template,
-        inputVersion: inputVersion || draftVersion,
+        inputVersion: inputVersion || (!version2 ? draftVersion : void 0),
         versionKeyIncrement,
         preReleaseIdentifier
       });

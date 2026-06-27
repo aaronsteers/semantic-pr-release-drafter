@@ -205,7 +205,7 @@ describe('release-drafter', () => {
 
                   * No changes
 
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -286,7 +286,7 @@ describe('release-drafter', () => {
 
                   * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -351,7 +351,7 @@ describe('release-drafter', () => {
 
                 Previous tag: ''
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -418,7 +418,7 @@ describe('release-drafter', () => {
 
                 * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -525,7 +525,7 @@ describe('release-drafter', () => {
 
                 * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -572,7 +572,7 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "Placeholder with example. Automatically calculated values are next major=3.0.0 (major=3, minor=0, patch=0), minor=2.1.0 (major=2, minor=1, patch=0), patch=2.0.1 (major=2, minor=0, patch=1)
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -633,7 +633,7 @@ describe('release-drafter', () => {
                   ## ⚙️ Under the Hood
 
                   * Change: #4 'Update dependencies' @TimonVS
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -695,7 +695,7 @@ describe('release-drafter', () => {
                   ## ⚙️ Under the Hood
 
                   * Change: #4 'Update dependencies'
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -757,7 +757,7 @@ describe('release-drafter', () => {
                   ## ⚙️ Under the Hood
 
                   * Change: #4 'Update dependencies' @TimonVS
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -804,7 +804,7 @@ describe('release-drafter', () => {
                 expect(body).toMatchInlineSnapshot(`
                   Object {
                     "body": "A big thanks to: @TimonVS and Ada Lovelace
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -849,7 +849,7 @@ describe('release-drafter', () => {
                 expect(body).toMatchInlineSnapshot(`
                   Object {
                     "body": "A big thanks to: Nobody
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -896,7 +896,7 @@ describe('release-drafter', () => {
                 expect(body).toMatchInlineSnapshot(`
                   Object {
                     "body": "A big thanks to: Ada Lovelace
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -950,7 +950,7 @@ describe('release-drafter', () => {
 
                 * No changes
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -995,7 +995,7 @@ describe('release-drafter', () => {
                 expect(body).toMatchInlineSnapshot(`
                   Object {
                     "body": "* No changes mmkay
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -1128,7 +1128,7 @@ describe('release-drafter', () => {
 
                 * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1183,7 +1183,7 @@ describe('release-drafter', () => {
 
                 **Full Changelog**: https://github.com/toolmantim/release-drafter-test-project/compare/v2.0.0...v2.1.0
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1236,7 +1236,7 @@ describe('release-drafter', () => {
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1287,7 +1287,7 @@ describe('release-drafter', () => {
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1338,7 +1338,7 @@ describe('release-drafter', () => {
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1389,7 +1389,7 @@ describe('release-drafter', () => {
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/19) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/18)
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1440,7 +1440,7 @@ describe('release-drafter', () => {
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/19) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/18)
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1491,7 +1491,7 @@ describe('release-drafter', () => {
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1555,7 +1555,7 @@ describe('release-drafter', () => {
 
                 * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1601,7 +1601,7 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "Placeholder with example. Automatically calculated values are next major=3.0.0 (major=3, minor=0, patch=0), minor=2.1.0 (major=2, minor=1, patch=0), patch=2.0.1 (major=2, minor=0, patch=1)
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1645,7 +1645,7 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "Placeholder with example. Automatically calculated values are next major=3.0 (major=3, minor=0, patch=0), minor=2.1 (major=2, minor=1, patch=0), patch=2.0 (major=2, minor=0, patch=1)
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1689,7 +1689,7 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "Placeholder with example. Automatically calculated values are next major=3 (major=3, minor=0, patch=0), minor=2 (major=2, minor=1, patch=0), patch=2 (major=2, minor=0, patch=1)
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1737,7 +1737,7 @@ describe('release-drafter', () => {
                   "body": "This is at top
                 This is the template in the middle
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1782,7 +1782,7 @@ describe('release-drafter', () => {
                   "body": "This is the template in the middle
                 This is at bottom
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1828,7 +1828,7 @@ describe('release-drafter', () => {
                 This is the template in the middle
                 This is at bottom
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1873,7 +1873,7 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "This is at topThis is the template in the middleThis is at bottom
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1922,7 +1922,7 @@ describe('release-drafter', () => {
                 Object {
                   "body": "I AM AWESOME_mockenv_strips_newline_and_trailing_spaces_This is the template in the middle
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1990,7 +1990,7 @@ describe('release-drafter', () => {
 
                   * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2061,7 +2061,7 @@ describe('release-drafter', () => {
                   * Update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9) 
                   * Update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9)
 
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2128,7 +2128,7 @@ describe('release-drafter', () => {
 
                   * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/14)
 
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2192,7 +2192,7 @@ describe('release-drafter', () => {
 
                   * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/14)
 
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2270,7 +2270,7 @@ describe('release-drafter', () => {
                   * Update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
                   </details>
 
-                  <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                  <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2325,7 +2325,7 @@ describe('release-drafter', () => {
 
                 * No changes
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -2392,7 +2392,7 @@ describe('release-drafter', () => {
 
                 * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -2449,7 +2449,7 @@ describe('release-drafter', () => {
 
               * No changes
 
-              <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+              <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
               ",
                 "draft": true,
                 "make_latest": "true",
@@ -2505,7 +2505,7 @@ describe('release-drafter', () => {
 
               * No changes
 
-              <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+              <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
               ",
                 "draft": true,
                 "make_latest": "true",
@@ -2575,7 +2575,7 @@ describe('release-drafter', () => {
 
               * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
-              <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+              <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
               ",
                 "draft": true,
                 "make_latest": "true",
@@ -2628,7 +2628,7 @@ describe('release-drafter', () => {
                 "body": "# What's Changed
               * No changes
 
-              <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+              <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
               ",
                 "draft": true,
                 "make_latest": "true",
@@ -2801,7 +2801,7 @@ describe('release-drafter', () => {
               Object {
                 "body": "# There's new stuff!
 
-              <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+              <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
               ",
                 "draft": true,
                 "make_latest": "true",
@@ -2932,7 +2932,7 @@ describe('release-drafter', () => {
           const expected = { ...expectedBody }
           if (expected.body) {
             expected.body +=
-              '\n<!-- Release drafted at `2024-12-31 4:00pm Pacific` -->\n'
+              '\n<!-- Release drafted at 2024-12-31 4:00pm Pacific -->\n'
           }
           expect(body).toMatchObject(expected)
           return true
@@ -3230,7 +3230,7 @@ describe('release-drafter', () => {
 
 
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3289,7 +3289,7 @@ describe('release-drafter', () => {
 
                 v2.0.0
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3346,7 +3346,7 @@ describe('release-drafter', () => {
 
 
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3401,7 +3401,7 @@ describe('release-drafter', () => {
 
                 v2.0.0
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3456,7 +3456,7 @@ describe('release-drafter', () => {
 
                 static-tag-prefix-v2.1.4-RC3
 
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3506,7 +3506,7 @@ describe('release-drafter', () => {
                   'Major tag: static-tag-prefix-v2\n' +
                   'Releases: https://github.com/toolmantim/release-drafter-test-project/releases?q=tag:static-tag-prefix-v2\n' +
                   'Compare: https://github.com/toolmantim/release-drafter-test-project/compare/static-tag-prefix-v2.1.4...static-tag-prefix-v2.1.5\n' +
-                  '\n<!-- Release drafted at `2024-12-31 4:00pm Pacific` -->\n',
+                  '\n<!-- Release drafted at 2024-12-31 4:00pm Pacific -->\n',
                 name: 'static-tag-prefix-v2.1.5 🌈',
                 tag_name: 'static-tag-prefix-v2.1.5',
               })
@@ -3546,7 +3546,7 @@ describe('release-drafter', () => {
                   'Major tag: v2\n' +
                   'Releases: https://github.com/toolmantim/release-drafter-test-project/releases?q=tag:v2\n' +
                   'Compare: https://github.com/toolmantim/release-drafter-test-project/compare/v2.0.0...v2.0.1\n' +
-                  '\n<!-- Release drafted at `2024-12-31 4:00pm Pacific` -->\n',
+                  '\n<!-- Release drafted at 2024-12-31 4:00pm Pacific -->\n',
                 name: 'v2.0.1 🌈',
                 tag_name: 'v2.0.1',
               })
@@ -3587,7 +3587,7 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "dummy
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3631,7 +3631,7 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "dummy
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3675,7 +3675,7 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "dummy
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3719,7 +3719,7 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "dummy
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3764,7 +3764,7 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "dummy
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3811,7 +3811,7 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "dummy
-                <!-- Release drafted at \`2024-12-31 4:00pm Pacific\` -->
+                <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                 ",
                   "draft": true,
                   "make_latest": "true",

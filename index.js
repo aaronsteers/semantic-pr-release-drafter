@@ -248,7 +248,7 @@ module.exports = (app, { getRouter }) => {
     const pacificTimestamp = formatPacificTimestamp(new Date())
     const commitUrl = getCommitUrl()
     releaseInfo.body +=
-      `\n<!-- Release drafted at \`${pacificTimestamp}\`` +
+      `\n<!-- Release drafted at ${pacificTimestamp}` +
       (commitUrl ? ` from ${commitUrl}` : '') +
       ` -->\n`
 

@@ -3849,16 +3849,12 @@ describe('release-drafter', () => {
           .post(
             '/repos/toolmantim/release-drafter-test-project/releases',
             (body) => {
-              expect(body.body).toMatch(/^> \[!CAUTION\]/)
-              expect(body.body).toContain(
-                '> **NOT READY FOR PUBLISHING**'
-              )
+              expect(body.body).toMatch(/^> \[!CAUTION]/)
+              expect(body.body).toContain('> **NOT READY FOR PUBLISHING**')
               expect(body.body).toContain(
                 '> This release draft is still being prepared. Do not publish until this banner is removed.'
               )
-              expect(body.body).toContain(
-                '<!-- Release draft last updated:'
-              )
+              expect(body.body).toContain('<!-- Release draft last updated:')
               return true
             }
           )
@@ -3897,9 +3893,7 @@ describe('release-drafter', () => {
           .post(
             '/repos/toolmantim/release-drafter-test-project/releases',
             (body) => {
-              expect(body.body).toContain(
-                '> **NOT READY FOR PUBLISHING**'
-              )
+              expect(body.body).toContain('> **NOT READY FOR PUBLISHING**')
               expect(body.body).toContain(
                 '> Assets are still being uploaded. Please wait.'
               )
@@ -3943,9 +3937,7 @@ describe('release-drafter', () => {
             (body) => {
               expect(body.body).not.toContain('NOT READY FOR PUBLISHING')
               expect(body.body).not.toContain('[!CAUTION]')
-              expect(body.body).toContain(
-                '<!-- Release draft last updated:'
-              )
+              expect(body.body).toContain('<!-- Release draft last updated:')
               return true
             }
           )

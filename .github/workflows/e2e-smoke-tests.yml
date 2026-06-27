@@ -624,6 +624,9 @@ jobs:
           # Dry-run test repositories produce fresh SHAs on every run, so normalize them out.
           BODY=$(echo "$BODY" | sed -E 's/ [0-9a-f]{7}$//')
 
+          # Strip the admin timestamp comment (appended by the action on every run)
+          BODY=$(echo "$BODY" | sed '/^<!-- Release draft last updated: .* -->$/d')
+
           # Normalize whitespace for comparison (trim leading/trailing, normalize newlines)
           BODY_NORMALIZED=$(echo "$BODY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -s '\n')
           EXPECTED_NORMALIZED=$(echo "$EXPECTED_BODY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -s '\n')

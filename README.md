@@ -895,7 +895,7 @@ The `not-ready` input accepts `'true'` (default banner) or a custom string (used
 Every draft release body includes a hidden HTML comment with provenance metadata:
 
 ```html
-<!-- Release draft timestamp: 2025-01-15 4:00pm Pacific | Commit used in draft: https://github.com/owner/repo/commit/abc123 -->
+<!-- Release drafted at `2025-01-15 4:00pm Pacific` from https://github.com/owner/repo/commit/abc123 -->
 ```
 
 This is invisible in the rendered release notes but visible when editing the raw markdown, helping administrators verify when the draft was last updated and which commit was used.

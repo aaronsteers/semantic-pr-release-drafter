@@ -248,8 +248,8 @@ module.exports = (app, { getRouter }) => {
     const pacificTimestamp = formatPacificTimestamp(new Date())
     const commitUrl = getCommitUrl()
     releaseInfo.body +=
-      `\n<!-- Release draft timestamp: ${pacificTimestamp}` +
-      (commitUrl ? ` | Commit used in draft: ${commitUrl}` : '') +
+      `\n<!-- Release drafted at \`${pacificTimestamp}\`` +
+      (commitUrl ? ` from ${commitUrl}` : '') +
       ` -->\n`
 
     // In dry-run mode, skip creating/updating releases but still set outputs

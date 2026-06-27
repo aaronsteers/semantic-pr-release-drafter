@@ -651,7 +651,7 @@ jobs:
           BODY=$(echo "$BODY" | sed -E 's/ [0-9a-f]{7}$//')
 
           # Strip the admin metadata comment (appended by the action on every run)
-          BODY=$(echo "$BODY" | sed '/^<!-- Release draft timestamp: .* -->$/d')
+          BODY=$(echo "$BODY" | sed '/^<!-- Release drafted at .* -->$/d')
 
           # Normalize whitespace for comparison (trim leading/trailing, normalize newlines)
           BODY_NORMALIZED=$(echo "$BODY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -s '\n')

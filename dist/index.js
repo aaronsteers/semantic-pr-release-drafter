@@ -154466,7 +154466,7 @@ var require_index = __commonJS({
         const pacificTimestamp = formatPacificTimestamp(/* @__PURE__ */ new Date());
         const commitUrl = getCommitUrl();
         releaseInfo.body += `
-<!-- Release draft timestamp: ${pacificTimestamp}` + (commitUrl ? ` | Commit used in draft: ${commitUrl}` : "") + ` -->
+<!-- Release drafted at \`${pacificTimestamp}\`` + (commitUrl ? ` from ${commitUrl}` : "") + ` -->
 `;
         if (dryRun) {
           log({

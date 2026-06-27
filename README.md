@@ -868,6 +868,7 @@ Since each run regenerates the body from scratch, calling the action without `no
 ```yaml
 # Step 1: Create draft with WIP banner
 - name: Create draft (not ready)
+  id: not-ready-draft
   uses: aaronsteers/semantic-pr-release-drafter@main
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -883,6 +884,8 @@ Since each run regenerates the body from scratch, calling the action without `no
   uses: aaronsteers/semantic-pr-release-drafter@main
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    version: ${{ steps.not-ready-draft.outputs.tag-name }}
 ```
 
 ### Pattern B: Release-drafter-managed uploads
@@ -890,7 +893,7 @@ Since each run regenerates the body from scratch, calling the action without `no
 ```yaml
 # Step 1: Create draft with WIP banner
 - name: Create draft (not ready)
-  id: draft
+  id: not-ready-draft
   uses: aaronsteers/semantic-pr-release-drafter@main
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -898,7 +901,7 @@ Since each run regenerates the body from scratch, calling the action without `no
     not-ready: true
 
 # Step 2: Build assets
-- run: build-artifacts --version=${{ steps.draft.outputs.resolved-version }}
+- run: build-artifacts --version=${{ steps.not-ready-draft.outputs.resolved-version }}
 
 # Step 3: Attach assets and finalize (no not-ready = banner removed)
 - name: Attach assets and finalize
@@ -906,6 +909,7 @@ Since each run regenerates the body from scratch, calling the action without `no
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
+    version: ${{ steps.not-ready-draft.outputs.tag-name }}
     attach-files: dist/*.whl
 ```
 

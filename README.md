@@ -857,6 +857,49 @@ In some cases, you may need to resolve the version string before building. In su
       dist/*.whl
 ```
 
+## 3-Step Immutable Release Workflow (`not-ready`)
+
+When building immutable releases that require assets to be attached before publishing, use the `not-ready` input to prevent premature publishing:
+
+```yaml
+# Step 1: Create draft with WIP banner
+- name: Create draft (not ready)
+  id: draft
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    not-ready: true # or a custom message string
+
+# Step 2: Build and attach assets (banner still visible)
+- run: build-artifacts --version=${{ steps.draft.outputs.resolved-version }}
+- name: Attach assets
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    not-ready: true
+    attach-files: dist/*.whl
+
+# Step 3: Remove WIP banner — draft is now ready to publish
+- name: Finalize draft
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The `not-ready` input accepts `'true'` (default banner) or a custom string (used as the banner message). When set, a visible `> [!CAUTION]` banner is prepended to the release body warning administrators not to publish.
+
+### Admin Timestamp
+
+Every draft release body includes a hidden HTML comment with provenance metadata:
+
+```html
+<!-- Release draft timestamp: 2025-01-15 4:00pm Pacific | Commit used in draft: https://github.com/owner/repo/commit/abc123 -->
+```
+
+This is invisible in the rendered release notes but visible when editing the raw markdown, helping administrators verify when the draft was last updated and which commit was used.
+
 ## Action Inputs
 
 See [action.yml](action.yml) for the full list of supported inputs and their descriptions.

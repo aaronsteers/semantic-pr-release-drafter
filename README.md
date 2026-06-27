@@ -857,6 +857,72 @@ In some cases, you may need to resolve the version string before building. In su
       dist/*.whl
 ```
 
+## Safe Release Workflow (`not-ready`)
+
+Use the `not-ready` input to prevent admins from prematurely publishing a draft while assets are still being prepared. The `not-ready` input accepts `'true'` (default banner) or a custom string (used as the banner message). When set, a visible `> [!CAUTION]` banner is prepended to the release body.
+
+Since each run regenerates the body from scratch, calling the action without `not-ready` automatically removes the banner.
+
+### Pattern A: Third-party asset attacher
+
+```yaml
+# Step 1: Create draft with WIP banner
+- name: Create draft (not ready)
+  id: not-ready-draft
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    not-ready: true
+
+# Step 2: Attach assets via third-party action (e.g. GoReleaser)
+- uses: goreleaser/goreleaser-action@v5
+  ...
+
+# Step 3: Regenerate draft without banner — ready to publish
+- name: Finalize draft
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    version: ${{ steps.not-ready-draft.outputs.tag-name }}
+```
+
+### Pattern B: Release-drafter-managed uploads
+
+```yaml
+# Step 1: Create draft with WIP banner
+- name: Create draft (not ready)
+  id: not-ready-draft
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    not-ready: true
+
+# Step 2: Build assets
+- run: build-artifacts --version=${{ steps.not-ready-draft.outputs.resolved-version }}
+
+# Step 3: Attach assets and finalize (no not-ready = banner removed)
+- name: Attach assets and finalize
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    version: ${{ steps.not-ready-draft.outputs.tag-name }}
+    attach-files: dist/*.whl
+```
+
+### Admin Timestamp
+
+Every draft release body includes a hidden HTML comment with provenance metadata:
+
+```html
+<!-- Release drafted at 2025-01-15 4:00pm Pacific from https://github.com/owner/repo/commit/abc123 -->
+```
+
+This is invisible in the rendered release notes but visible when editing the raw markdown, helping administrators verify when the draft was last updated and which commit was used.
+
 ## Action Inputs
 
 See [action.yml](action.yml) for the full list of supported inputs and their descriptions.

@@ -370,6 +370,31 @@ jobs:
             # Flag to indicate this test needs attach-files setup
             needs-attach-files: true
 
+          # Test not-ready input: banner is prepended to body
+          - test-name: 'not-ready-banner'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat: add new feature (#110)
+            expected-version-string: '1.1.0'
+            expected-body: |
+              > [!CAUTION]
+              > **NOT READY FOR PUBLISHING**
+              >
+              > This release draft is still being prepared. Do not publish until this banner is removed.
+
+              ## Features
+
+              * Add new feature (#110)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Features
+                commit-types:
+                  - feat
+            not-ready: 'true'
+
           # Test attach-files failure when no files match the pattern
           # Verifies that the action fails with a clear error message
           - test-name: 'attach-files-no-match-fails'
@@ -544,6 +569,7 @@ jobs:
           categories: ${{ matrix.categories }}
           attach-files: ${{ env.ATTACH_FILES_PATTERNS }}
           allow-major-bumps: ${{ matrix.allow-major-bumps }}
+          not-ready: ${{ matrix.not-ready }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -623,6 +649,9 @@ jobs:
           # Some tests intentionally use the default change-template, which includes $SHA.
           # Dry-run test repositories produce fresh SHAs on every run, so normalize them out.
           BODY=$(echo "$BODY" | sed -E 's/ [0-9a-f]{7}$//')
+
+          # Strip the admin metadata comment (appended by the action on every run)
+          BODY=$(echo "$BODY" | sed '/^<!-- Release drafted at .* -->$/d')
 
           # Normalize whitespace for comparison (trim leading/trailing, normalize newlines)
           BODY_NORMALIZED=$(echo "$BODY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -s '\n')

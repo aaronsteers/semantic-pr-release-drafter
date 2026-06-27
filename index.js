@@ -140,8 +140,16 @@ module.exports = (app, { getRouter }) => {
       message: `Processing ${sortedMergedPullRequests.length} merged pull requests`,
     })
 
-    const { shouldDraft, version, tag, name, dryRun, attachFiles, resetFiles } =
-      input
+    const {
+      shouldDraft,
+      version,
+      tag,
+      name,
+      dryRun,
+      attachFiles,
+      resetFiles,
+      notReady,
+    } = input
 
     let shouldResetFiles
     if (resetFiles === 'true') {
@@ -221,6 +229,28 @@ module.exports = (app, { getRouter }) => {
       shouldDraft,
       targetCommitish,
     })
+
+    // Apply not-ready banner when truthy
+    if (notReady) {
+      const bannerMessage =
+        typeof notReady === 'string'
+          ? notReady
+          : 'This release draft is still being prepared. Do not publish until this banner is removed.'
+      releaseInfo.body =
+        `> [!CAUTION]\n` +
+        `> **NOT READY FOR PUBLISHING**\n` +
+        `>\n` +
+        `> ${bannerMessage}\n\n` +
+        releaseInfo.body
+    }
+
+    // Append hidden admin metadata comment (Pacific time + commit link)
+    const pacificTimestamp = formatPacificTimestamp(new Date())
+    const commitUrl = getCommitUrl()
+    releaseInfo.body +=
+      `\n<!-- Release drafted at ${pacificTimestamp}` +
+      (commitUrl ? ` from ${commitUrl}` : '') +
+      ` -->\n`
 
     // In dry-run mode, skip creating/updating releases but still set outputs
     if (dryRun) {
@@ -335,6 +365,7 @@ function getInput() {
     latest: core.getInput('latest')?.toLowerCase() || undefined,
     attachFiles: core.getInput('attach-files') || undefined,
     resetFiles: core.getInput('reset-files').toLowerCase() || 'auto',
+    notReady: parseNotReadyInput(core.getInput('not-ready')),
     allowMajorBumps:
       core.getInput('allow-major-bumps') !== ''
         ? core.getInput('allow-major-bumps').toLowerCase() === 'true'
@@ -424,4 +455,56 @@ function setDryRunOutput({
   if (tag) core.setOutput('tag-name', tag)
   if (name) core.setOutput('name', name)
   core.setOutput('body', body)
+}
+
+/**
+ * Parses the `not-ready` action input into a normalized value.
+ *
+ * Returns:
+ * - `false` when the input is empty, undefined, or the string "false"
+ * - `true` when the input is the string "true" (use default banner message)
+ * - the original string for any other truthy value (custom banner message)
+ */
+function parseNotReadyInput(raw) {
+  if (!raw) return false
+  const lower = raw.toLowerCase()
+  if (lower === 'false') return false
+  if (lower === 'true') return true
+  return raw
+}
+
+/**
+ * Formats a Date as "YYYY-MM-DD h:mmam/pm Pacific" in America/Los_Angeles.
+ */
+function formatPacificTimestamp(date) {
+  const options = {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }
+  const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(date)
+  const get = (type) => parts.find((p) => p.type === type)?.value || ''
+  const year = get('year')
+  const month = get('month')
+  const day = get('day')
+  const hour = get('hour')
+  const minute = get('minute')
+  const dayPeriod = get('dayPeriod').toLowerCase()
+  return `${year}-${month}-${day} ${hour}:${minute}${dayPeriod} Pacific`
+}
+
+/**
+ * Builds the commit URL from GitHub Actions environment variables.
+ * Returns null when not running in GitHub Actions.
+ */
+function getCommitUrl() {
+  const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com'
+  const repository = process.env.GITHUB_REPOSITORY
+  const sha = process.env.GITHUB_SHA
+  if (!repository || !sha) return null
+  return `${serverUrl}/${repository}/commit/${sha}`
 }

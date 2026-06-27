@@ -192,10 +192,17 @@ inputs:
       will be shown as the banner message.
       Set to 'false' (or omit) to remove the banner.
 
-      Typical 3-step workflow for immutable releases:
-        1. Run with `not-ready: true` to create the draft with a WIP banner.
-        2. Run with `not-ready: true` and `attach-files` to upload assets.
-        3. Run with `not-ready: false` (or omitted) to finalize the draft (banner removed).
+      Usage patterns:
+
+        A. Third-party asset attacher (e.g. GoReleaser):
+          1. Run with `not-ready: true` to create/update the draft with a WIP banner.
+          2. (Attach assets via third-party action.)
+          3. Run without `not-ready` to regenerate the draft (banner removed).
+
+        B. Release-drafter-managed uploads:
+          1. Run with `not-ready: true` to create the draft with a WIP banner.
+          2. (Build assets via custom steps.)
+          3. Run with `attach-files` (without `not-ready`) to attach assets and finalize.
     required: false
     default: ''
 outputs:

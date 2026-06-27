@@ -857,9 +857,35 @@ In some cases, you may need to resolve the version string before building. In su
       dist/*.whl
 ```
 
-## 3-Step Immutable Release Workflow (`not-ready`)
+## Safe Release Workflow (`not-ready`)
 
-When building immutable releases that require assets to be attached before publishing, use the `not-ready` input to prevent premature publishing:
+Use the `not-ready` input to prevent admins from prematurely publishing a draft while assets are still being prepared. The `not-ready` input accepts `'true'` (default banner) or a custom string (used as the banner message). When set, a visible `> [!CAUTION]` banner is prepended to the release body.
+
+Since each run regenerates the body from scratch, calling the action without `not-ready` automatically removes the banner.
+
+### Pattern A: Third-party asset attacher
+
+```yaml
+# Step 1: Create draft with WIP banner
+- name: Create draft (not ready)
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    not-ready: true
+
+# Step 2: Attach assets via third-party action (e.g. GoReleaser)
+- uses: goreleaser/goreleaser-action@v5
+  ...
+
+# Step 3: Regenerate draft without banner — ready to publish
+- name: Finalize draft
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Pattern B: Release-drafter-managed uploads
 
 ```yaml
 # Step 1: Create draft with WIP banner
@@ -869,26 +895,19 @@ When building immutable releases that require assets to be attached before publi
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    not-ready: true # or a custom message string
+    not-ready: true
 
-# Step 2: Build and attach assets (banner still visible)
+# Step 2: Build assets
 - run: build-artifacts --version=${{ steps.draft.outputs.resolved-version }}
-- name: Attach assets
+
+# Step 3: Attach assets and finalize (no not-ready = banner removed)
+- name: Attach assets and finalize
   uses: aaronsteers/semantic-pr-release-drafter@main
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    not-ready: true
     attach-files: dist/*.whl
-
-# Step 3: Remove WIP banner — draft is now ready to publish
-- name: Finalize draft
-  uses: aaronsteers/semantic-pr-release-drafter@main
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
-
-The `not-ready` input accepts `'true'` (default banner) or a custom string (used as the banner message). When set, a visible `> [!CAUTION]` banner is prepended to the release body warning administrators not to publish.
 
 ### Admin Timestamp
 

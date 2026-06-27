@@ -244,9 +244,13 @@ module.exports = (app, { getRouter }) => {
         releaseInfo.body
     }
 
-    // Append hidden admin timestamp comment
-    const updatedAt = new Date().toISOString()
-    releaseInfo.body += `\n<!-- Release draft last updated: ${updatedAt} -->\n`
+    // Append hidden admin metadata comment (Pacific time + commit link)
+    const pacificTimestamp = formatPacificTimestamp(new Date())
+    const commitUrl = getCommitUrl()
+    releaseInfo.body +=
+      `\n<!-- Release draft timestamp: ${pacificTimestamp}` +
+      (commitUrl ? ` | Commit used in draft: ${commitUrl}` : '') +
+      ` -->\n`
 
     // In dry-run mode, skip creating/updating releases but still set outputs
     if (dryRun) {
@@ -467,4 +471,40 @@ function parseNotReadyInput(raw) {
   if (lower === 'false') return false
   if (lower === 'true') return true
   return raw
+}
+
+/**
+ * Formats a Date as "YYYY-MM-DD h:mmam/pm Pacific" in America/Los_Angeles.
+ */
+function formatPacificTimestamp(date) {
+  const options = {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }
+  const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(date)
+  const get = (type) => parts.find((p) => p.type === type)?.value || ''
+  const year = get('year')
+  const month = get('month')
+  const day = get('day')
+  const hour = get('hour')
+  const minute = get('minute')
+  const dayPeriod = get('dayPeriod').toLowerCase()
+  return `${year}-${month}-${day} ${hour}:${minute}${dayPeriod} Pacific`
+}
+
+/**
+ * Builds the commit URL from GitHub Actions environment variables.
+ * Returns null when not running in GitHub Actions.
+ */
+function getCommitUrl() {
+  const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com'
+  const repository = process.env.GITHUB_REPOSITORY
+  const sha = process.env.GITHUB_SHA
+  if (!repository || !sha) return null
+  return `${serverUrl}/${repository}/commit/${sha}`
 }

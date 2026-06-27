@@ -195,7 +195,7 @@ inputs:
       Typical 3-step workflow for immutable releases:
         1. Run with `not-ready: true` to create the draft with a WIP banner.
         2. Run with `not-ready: true` and `attach-files` to upload assets.
-        3. Run with `not-ready: false` to finalize the draft (banner removed).
+        3. Run with `not-ready: false` (or omitted) to finalize the draft (banner removed).
     required: false
     default: ''
 outputs:

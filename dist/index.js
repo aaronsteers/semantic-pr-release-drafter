@@ -154463,9 +154463,10 @@ var require_index = __commonJS({
 
 ` + releaseInfo.body;
         }
-        const updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+        const pacificTimestamp = formatPacificTimestamp(/* @__PURE__ */ new Date());
+        const commitUrl = getCommitUrl();
         releaseInfo.body += `
-<!-- Release draft last updated: ${updatedAt} -->
+<!-- Release draft timestamp: ${pacificTimestamp}` + (commitUrl ? ` | Commit used in draft: ${commitUrl}` : "") + ` -->
 `;
         if (dryRun) {
           log({
@@ -154635,6 +154636,33 @@ var require_index = __commonJS({
       if (lower === "false") return false;
       if (lower === "true") return true;
       return raw;
+    }
+    function formatPacificTimestamp(date) {
+      const options2 = {
+        timeZone: "America/Los_Angeles",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+      };
+      const parts = new Intl.DateTimeFormat("en-US", options2).formatToParts(date);
+      const get = (type) => parts.find((p) => p.type === type)?.value || "";
+      const year = get("year");
+      const month = get("month");
+      const day = get("day");
+      const hour = get("hour");
+      const minute = get("minute");
+      const dayPeriod = get("dayPeriod").toLowerCase();
+      return `${year}-${month}-${day} ${hour}:${minute}${dayPeriod} Pacific`;
+    }
+    function getCommitUrl() {
+      const serverUrl = process.env.GITHUB_SERVER_URL || "https://github.com";
+      const repository = process.env.GITHUB_REPOSITORY;
+      const sha = process.env.GITHUB_SHA;
+      if (!repository || !sha) return null;
+      return `${serverUrl}/${repository}/commit/${sha}`;
     }
   }
 });

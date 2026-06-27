@@ -70,6 +70,11 @@ describe('release-drafter', () => {
   beforeEach(() => {
     logger = []
 
+    // Fix Date.toISOString so the admin timestamp comment is deterministic
+    jest
+      .spyOn(Date.prototype, 'toISOString')
+      .mockReturnValue('2025-01-01T00:00:00.000Z')
+
     nock('https://api.github.com')
       .post('/app/installations/179208/access_tokens')
       .reply(200, { token: 'test' })
@@ -92,6 +97,7 @@ describe('release-drafter', () => {
   afterAll(nock.restore)
 
   afterEach(() => {
+    jest.restoreAllMocks()
     nock.cleanAll()
     restoreEnvironment()
   })
@@ -188,6 +194,8 @@ describe('release-drafter', () => {
                     "body": "# What's Changed
 
                   * No changes
+
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -267,6 +275,8 @@ describe('release-drafter', () => {
                   ## ⚙️ Under the Hood
 
                   * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -330,6 +340,8 @@ describe('release-drafter', () => {
                 * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
                 Previous tag: ''
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -395,6 +407,8 @@ describe('release-drafter', () => {
                 ## ⚙️ Under the Hood
 
                 * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -500,6 +514,8 @@ describe('release-drafter', () => {
                 ## ⚙️ Under the Hood
 
                 * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -545,7 +561,9 @@ describe('release-drafter', () => {
             (body) => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
-                  "body": "Placeholder with example. Automatically calculated values are next major=3.0.0 (major=3, minor=0, patch=0), minor=2.1.0 (major=2, minor=1, patch=0), patch=2.0.1 (major=2, minor=0, patch=1)",
+                  "body": "Placeholder with example. Automatically calculated values are next major=3.0.0 (major=3, minor=0, patch=0), minor=2.1.0 (major=2, minor=1, patch=0), patch=2.0.1 (major=2, minor=0, patch=1)
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                ",
                   "draft": true,
                   "make_latest": "true",
                   "name": "v2.0.1 (Code name: Placeholder)",
@@ -604,7 +622,9 @@ describe('release-drafter', () => {
 
                   ## ⚙️ Under the Hood
 
-                  * Change: #4 'Update dependencies' @TimonVS",
+                  * Change: #4 'Update dependencies' @TimonVS
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                  ",
                     "draft": true,
                     "make_latest": "true",
                     "name": "v2.1.0",
@@ -664,7 +684,9 @@ describe('release-drafter', () => {
 
                   ## ⚙️ Under the Hood
 
-                  * Change: #4 'Update dependencies'",
+                  * Change: #4 'Update dependencies'
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                  ",
                     "draft": true,
                     "make_latest": "true",
                     "name": "v2.1.0",
@@ -724,7 +746,9 @@ describe('release-drafter', () => {
 
                   ## ⚙️ Under the Hood
 
-                  * Change: #4 'Update dependencies' @TimonVS",
+                  * Change: #4 'Update dependencies' @TimonVS
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                  ",
                     "draft": true,
                     "make_latest": "true",
                     "name": "v2.1.0",
@@ -769,7 +793,9 @@ describe('release-drafter', () => {
               (body) => {
                 expect(body).toMatchInlineSnapshot(`
                   Object {
-                    "body": "A big thanks to: @TimonVS and Ada Lovelace",
+                    "body": "A big thanks to: @TimonVS and Ada Lovelace
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                  ",
                     "draft": true,
                     "make_latest": "true",
                     "name": "v2.1.0",
@@ -812,7 +838,9 @@ describe('release-drafter', () => {
               (body) => {
                 expect(body).toMatchInlineSnapshot(`
                   Object {
-                    "body": "A big thanks to: Nobody",
+                    "body": "A big thanks to: Nobody
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                  ",
                     "draft": true,
                     "make_latest": "true",
                     "name": "v2.0.1",
@@ -857,7 +885,9 @@ describe('release-drafter', () => {
               (body) => {
                 expect(body).toMatchInlineSnapshot(`
                   Object {
-                    "body": "A big thanks to: Ada Lovelace",
+                    "body": "A big thanks to: Ada Lovelace
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                  ",
                     "draft": true,
                     "make_latest": "true",
                     "name": "v2.1.0",
@@ -909,6 +939,8 @@ describe('release-drafter', () => {
                   "body": "# What's Changed
 
                 * No changes
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -952,7 +984,9 @@ describe('release-drafter', () => {
               (body) => {
                 expect(body).toMatchInlineSnapshot(`
                   Object {
-                    "body": "* No changes mmkay",
+                    "body": "* No changes mmkay
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                  ",
                     "draft": true,
                     "make_latest": "true",
                     "name": "v0.1.0",
@@ -1083,6 +1117,8 @@ describe('release-drafter', () => {
                 ## ⚙️ Under the Hood
 
                 * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1136,6 +1172,8 @@ describe('release-drafter', () => {
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
 
                 **Full Changelog**: https://github.com/toolmantim/release-drafter-test-project/compare/v2.0.0...v2.1.0
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1187,6 +1225,8 @@ describe('release-drafter', () => {
                 * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1236,6 +1276,8 @@ describe('release-drafter', () => {
                 * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1285,6 +1327,8 @@ describe('release-drafter', () => {
                 * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1334,6 +1378,8 @@ describe('release-drafter', () => {
                 * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/20) 
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/19) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/18)
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1383,6 +1429,8 @@ describe('release-drafter', () => {
                 * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/20) 
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/19) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/18)
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1432,6 +1480,8 @@ describe('release-drafter', () => {
                 * Bug fixes (https://github.com/toolmantim/release-drafter-test-project/pull/3) 
                 * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/2) 
                 * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1)
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1494,6 +1544,8 @@ describe('release-drafter', () => {
                 ## ⚙️ Under the Hood
 
                 * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1538,7 +1590,9 @@ describe('release-drafter', () => {
             (body) => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
-                  "body": "Placeholder with example. Automatically calculated values are next major=3.0.0 (major=3, minor=0, patch=0), minor=2.1.0 (major=2, minor=1, patch=0), patch=2.0.1 (major=2, minor=0, patch=1)",
+                  "body": "Placeholder with example. Automatically calculated values are next major=3.0.0 (major=3, minor=0, patch=0), minor=2.1.0 (major=2, minor=1, patch=0), patch=2.0.1 (major=2, minor=0, patch=1)
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                ",
                   "draft": true,
                   "make_latest": "true",
                   "name": "v2.0.1 (Code name: Placeholder)",
@@ -1580,7 +1634,9 @@ describe('release-drafter', () => {
             (body) => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
-                  "body": "Placeholder with example. Automatically calculated values are next major=3.0 (major=3, minor=0, patch=0), minor=2.1 (major=2, minor=1, patch=0), patch=2.0 (major=2, minor=0, patch=1)",
+                  "body": "Placeholder with example. Automatically calculated values are next major=3.0 (major=3, minor=0, patch=0), minor=2.1 (major=2, minor=1, patch=0), patch=2.0 (major=2, minor=0, patch=1)
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                ",
                   "draft": true,
                   "make_latest": "true",
                   "name": "v2.1 (Code name: Placeholder)",
@@ -1622,7 +1678,9 @@ describe('release-drafter', () => {
             (body) => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
-                  "body": "Placeholder with example. Automatically calculated values are next major=3 (major=3, minor=0, patch=0), minor=2 (major=2, minor=1, patch=0), patch=2 (major=2, minor=0, patch=1)",
+                  "body": "Placeholder with example. Automatically calculated values are next major=3 (major=3, minor=0, patch=0), minor=2 (major=2, minor=1, patch=0), patch=2 (major=2, minor=0, patch=1)
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                ",
                   "draft": true,
                   "make_latest": "true",
                   "name": "v3 (Code name: Placeholder)",
@@ -1668,6 +1726,8 @@ describe('release-drafter', () => {
                 Object {
                   "body": "This is at top
                 This is the template in the middle
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1711,6 +1771,8 @@ describe('release-drafter', () => {
                 Object {
                   "body": "This is the template in the middle
                 This is at bottom
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1755,6 +1817,8 @@ describe('release-drafter', () => {
                   "body": "This is at top
                 This is the template in the middle
                 This is at bottom
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1798,7 +1862,9 @@ describe('release-drafter', () => {
             (body) => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
-                  "body": "This is at topThis is the template in the middleThis is at bottom",
+                  "body": "This is at topThis is the template in the middleThis is at bottom
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                ",
                   "draft": true,
                   "make_latest": "true",
                   "name": "v2.1.0",
@@ -1845,6 +1911,8 @@ describe('release-drafter', () => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
                   "body": "I AM AWESOME_mockenv_strips_newline_and_trailing_spaces_This is the template in the middle
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -1911,6 +1979,8 @@ describe('release-drafter', () => {
                   ## ⚙️ Under the Hood
 
                   * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -1980,6 +2050,8 @@ describe('release-drafter', () => {
 
                   * Update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9) 
                   * Update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9)
+
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2045,6 +2117,8 @@ describe('release-drafter', () => {
                   ## ⚙️ Under the Hood
 
                   * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/14)
+
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2107,6 +2181,8 @@ describe('release-drafter', () => {
                   ## ⚙️ Under the Hood
 
                   * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/14)
+
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2183,6 +2259,8 @@ describe('release-drafter', () => {
                   * Update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
                   * Update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
                   </details>
+
+                  <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                   ",
                     "draft": true,
                     "make_latest": "true",
@@ -2236,6 +2314,8 @@ describe('release-drafter', () => {
                   "body": "# What's Changed
 
                 * No changes
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -2301,6 +2381,8 @@ describe('release-drafter', () => {
                 ## ⚙️ Under the Hood
 
                 * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -2356,6 +2438,8 @@ describe('release-drafter', () => {
                 "body": "# What's Changed
 
               * No changes
+
+              <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
               ",
                 "draft": true,
                 "make_latest": "true",
@@ -2410,6 +2494,8 @@ describe('release-drafter', () => {
                 "body": "# What's Changed
 
               * No changes
+
+              <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
               ",
                 "draft": true,
                 "make_latest": "true",
@@ -2478,6 +2564,8 @@ describe('release-drafter', () => {
               ## ⚙️ Under the Hood
 
               * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/4)
+
+              <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
               ",
                 "draft": true,
                 "make_latest": "true",
@@ -2529,6 +2617,8 @@ describe('release-drafter', () => {
               Object {
                 "body": "# What's Changed
               * No changes
+
+              <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
               ",
                 "draft": true,
                 "make_latest": "true",
@@ -2700,6 +2790,8 @@ describe('release-drafter', () => {
             expect(body).toMatchInlineSnapshot(`
               Object {
                 "body": "# There's new stuff!
+
+              <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
               ",
                 "draft": true,
                 "make_latest": "true",
@@ -2826,7 +2918,13 @@ describe('release-drafter', () => {
       .post(
         '/repos/toolmantim/release-drafter-test-project/releases',
         (body) => {
-          expect(body).toMatchObject(expectedBody)
+          // Append the deterministic admin timestamp to the expected body
+          const expected = { ...expectedBody }
+          if (expected.body) {
+            expected.body +=
+              '\n<!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->\n'
+          }
+          expect(body).toMatchObject(expected)
           return true
         }
       )
@@ -3121,6 +3219,8 @@ describe('release-drafter', () => {
                 ## Previous release
 
 
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3178,6 +3278,8 @@ describe('release-drafter', () => {
                 ## Previous release
 
                 v2.0.0
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3233,6 +3335,8 @@ describe('release-drafter', () => {
                 ## Previous release
 
 
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3286,6 +3390,8 @@ describe('release-drafter', () => {
                 ## Previous release
 
                 v2.0.0
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3339,6 +3445,8 @@ describe('release-drafter', () => {
                   "body": "## Previous release
 
                 static-tag-prefix-v2.1.4-RC3
+
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
                 ",
                   "draft": true,
                   "make_latest": "true",
@@ -3387,7 +3495,8 @@ describe('release-drafter', () => {
                   'Resolved tag: static-tag-prefix-v2.1.5\n' +
                   'Major tag: static-tag-prefix-v2\n' +
                   'Releases: https://github.com/toolmantim/release-drafter-test-project/releases?q=tag:static-tag-prefix-v2\n' +
-                  'Compare: https://github.com/toolmantim/release-drafter-test-project/compare/static-tag-prefix-v2.1.4...static-tag-prefix-v2.1.5\n',
+                  'Compare: https://github.com/toolmantim/release-drafter-test-project/compare/static-tag-prefix-v2.1.4...static-tag-prefix-v2.1.5\n' +
+                  '\n<!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->\n',
                 name: 'static-tag-prefix-v2.1.5 🌈',
                 tag_name: 'static-tag-prefix-v2.1.5',
               })
@@ -3426,7 +3535,8 @@ describe('release-drafter', () => {
                   'Resolved tag: v2.0.1\n' +
                   'Major tag: v2\n' +
                   'Releases: https://github.com/toolmantim/release-drafter-test-project/releases?q=tag:v2\n' +
-                  'Compare: https://github.com/toolmantim/release-drafter-test-project/compare/v2.0.0...v2.0.1\n',
+                  'Compare: https://github.com/toolmantim/release-drafter-test-project/compare/v2.0.0...v2.0.1\n' +
+                  '\n<!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->\n',
                 name: 'v2.0.1 🌈',
                 tag_name: 'v2.0.1',
               })
@@ -3466,7 +3576,9 @@ describe('release-drafter', () => {
             (body) => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
-                  "body": "dummy",
+                  "body": "dummy
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                ",
                   "draft": true,
                   "make_latest": "true",
                   "name": "v2.1.0",
@@ -3508,7 +3620,9 @@ describe('release-drafter', () => {
             (body) => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
-                  "body": "dummy",
+                  "body": "dummy
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                ",
                   "draft": true,
                   "make_latest": "true",
                   "name": "v2.1.0",
@@ -3550,7 +3664,9 @@ describe('release-drafter', () => {
             (body) => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
-                  "body": "dummy",
+                  "body": "dummy
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                ",
                   "draft": true,
                   "make_latest": "true",
                   "name": "v2.1.0",
@@ -3592,7 +3708,9 @@ describe('release-drafter', () => {
             (body) => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
-                  "body": "dummy",
+                  "body": "dummy
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                ",
                   "draft": true,
                   "make_latest": "true",
                   "name": "v2.1.0",
@@ -3635,7 +3753,9 @@ describe('release-drafter', () => {
             (body) => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
-                  "body": "dummy",
+                  "body": "dummy
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                ",
                   "draft": true,
                   "make_latest": "true",
                   "name": "v2.1.0",
@@ -3680,7 +3800,9 @@ describe('release-drafter', () => {
             (body) => {
               expect(body).toMatchInlineSnapshot(`
                 Object {
-                  "body": "dummy",
+                  "body": "dummy
+                <!-- Release draft last updated: 2025-01-01T00:00:00.000Z -->
+                ",
                   "draft": true,
                   "make_latest": "true",
                   "name": "v2.1.0",
@@ -3689,6 +3811,176 @@ describe('release-drafter', () => {
                   "target_commitish": "staging",
                 }
               `)
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
+      })
+    })
+
+    describe('with not-ready input', () => {
+      it('prepends default banner when not-ready is true', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_NOT-READY': 'true',
+        })
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.body).toMatch(/^> \[!CAUTION\]/)
+              expect(body.body).toContain(
+                '> **NOT READY FOR PUBLISHING**'
+              )
+              expect(body.body).toContain(
+                '> This release draft is still being prepared. Do not publish until this banner is removed.'
+              )
+              expect(body.body).toContain(
+                '<!-- Release draft last updated:'
+              )
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(4)
+
+        restoreEnvironment()
+      })
+
+      it('prepends custom banner when not-ready is a custom string', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_NOT-READY': 'Assets are still being uploaded. Please wait.',
+        })
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.body).toContain(
+                '> **NOT READY FOR PUBLISHING**'
+              )
+              expect(body.body).toContain(
+                '> Assets are still being uploaded. Please wait.'
+              )
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(2)
+
+        restoreEnvironment()
+      })
+
+      it('does not add banner when not-ready is false', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_NOT-READY': 'false',
+        })
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.body).not.toContain('NOT READY FOR PUBLISHING')
+              expect(body.body).not.toContain('[!CAUTION]')
+              expect(body.body).toContain(
+                '<!-- Release draft last updated:'
+              )
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(3)
+
+        restoreEnvironment()
+      })
+
+      it('does not add banner when not-ready is empty', async () => {
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.body).not.toContain('NOT READY FOR PUBLISHING')
               return true
             }
           )

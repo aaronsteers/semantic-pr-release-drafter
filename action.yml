@@ -184,6 +184,20 @@ inputs:
           otherwise keep them.
     required: false
     default: 'auto'
+  not-ready:
+    description: |
+      When truthy, prepends a visible "NOT READY" banner to the release body,
+      signaling to administrators that the draft should not be published yet.
+      Accepts 'true' for a default warning message, or a custom string that
+      will be shown as the banner message.
+      Set to 'false' (or omit) to remove the banner.
+
+      Typical 3-step workflow for immutable releases:
+        1. Run with `not-ready: true` to create the draft with a WIP banner.
+        2. Run with `not-ready: true` and `attach-files` to upload assets.
+        3. Run with `not-ready: false` to finalize the draft (banner removed).
+    required: false
+    default: ''
 outputs:
   id:
     description: The ID of the release that was created or updated.

@@ -150459,12 +150459,13 @@ var require_releases = __commonJS({
     };
     var RELEASE_COUNT_LIMIT = 1e3;
     var getReleaseById = async ({ context, releaseId }) => {
-      const id = Number.parseInt(releaseId, 10);
-      if (!Number.isInteger(id)) {
+      const raw = String(releaseId).trim();
+      if (!/^\d+$/.test(raw)) {
         throw new TypeError(
-          `Invalid release-id "${releaseId}": expected a numeric ID.`
+          `Invalid release-id "${releaseId}": expected a positive integer ID.`
         );
       }
+      const id = Number.parseInt(raw, 10);
       try {
         const { data } = await context.octokit.repos.getRelease(
           context.repo({ release_id: id })

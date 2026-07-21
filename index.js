@@ -112,8 +112,8 @@ module.exports = (app, { getRouter }) => {
         // Durable finalize path: when a `release-id` is supplied (e.g. captured
         // from the `id` output of an earlier `not-ready` invocation), resolve
         // the target release by ID via a strongly consistent point-read. This
-        // bypasses list-releases discovery, which is eventually consistent and
-        // can miss a just-created draft — causing a duplicate release.
+        // bypasses list-based draft discovery, which is eventually consistent
+        // and can miss a just-created draft — causing a duplicate release.
         const targetedRelease = await getReleaseById({
           context,
           releaseId: input.releaseId,

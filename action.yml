@@ -181,11 +181,12 @@ inputs:
       output of a previous invocation.
 
       When set, the action fetches that release directly by ID (a strongly
-      consistent point-read) and updates it in place, bypassing the
-      list-releases discovery entirely. This is the durable way to finalize a
-      draft created by an earlier step: it is immune to the eventual
-      consistency of the list-releases endpoint, which can otherwise cause a
-      just-created draft to be missed and a duplicate release to be created.
+      consistent point-read) and updates it in place, bypassing list-based
+      draft discovery. This is the durable way to finalize a draft created by
+      an earlier step: it is immune to the eventual consistency of the
+      list-releases endpoint, which can otherwise cause a just-created draft to
+      be missed and a duplicate release to be created. (The list endpoint is
+      still consulted to compute the previous release for the changelog.)
 
       Recommended for the two-step (not-ready -> finalize) pattern: capture
       `id` from the first invocation and pass it here on the finalize call.

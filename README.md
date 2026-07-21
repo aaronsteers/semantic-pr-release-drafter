@@ -863,6 +863,26 @@ Use the `not-ready` input to prevent admins from prematurely publishing a draft 
 
 Since each run regenerates the body from scratch, calling the action without `not-ready` automatically removes the banner.
 
+> [!IMPORTANT]
+> When splitting the work across two invocations (create the draft, build, then
+> finalize), pass just one output from the first call to the finalize call:
+>
+> `prepared-release-id: ${{ steps.<id>.outputs.id }}` — targets that exact
+> release via a strongly consistent point-read and updates it in place. Do
+> **not** rely on the finalize call re-discovering the draft from `version`/`tag`
+> alone: the list-releases API is eventually consistent, so a draft created
+> seconds earlier can be missing from the list read by the next step, causing
+> the action to create a **duplicate** draft.
+>
+> That is all you need. The prepared release is the source of truth, so the
+> finalize reuses the version, tag, prerelease state, and pinned target commit
+> that the first call froze — nothing can drift if another release is published
+> between the two steps. Because those values come from the release, the inputs
+> that would recompute them (`version`, `tag`, `commitish`, `base-ref-override`,
+> `base-version-override`, `prerelease`, `prerelease-identifier`,
+> `allow-major-bumps`) are **incompatible** with `prepared-release-id` and cause
+> the action to fail if set alongside it.
+
 ### Pattern A: Third-party asset attacher
 
 ```yaml
@@ -885,7 +905,9 @@ Since each run regenerates the body from scratch, calling the action without `no
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    version: ${{ steps.not-ready-draft.outputs.tag-name }}
+    # Target the exact release from step 1 (point-read by ID). The release is
+    # the source of truth, so version/tag/prerelease/commit all come from it.
+    prepared-release-id: ${{ steps.not-ready-draft.outputs.id }}
 ```
 
 ### Pattern B: Release-drafter-managed uploads
@@ -909,7 +931,9 @@ Since each run regenerates the body from scratch, calling the action without `no
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    version: ${{ steps.not-ready-draft.outputs.tag-name }}
+    # Target the exact release from step 1 (point-read by ID). The release is
+    # the source of truth, so version/tag/prerelease/commit all come from it.
+    prepared-release-id: ${{ steps.not-ready-draft.outputs.id }}
     attach-files: dist/*.whl
 ```
 
@@ -943,6 +967,46 @@ The action sets the following outputs which can be used in subsequent workflow s
 | `major_version`    | Major part of resolved version by [Version Resolver](#version-resolver), e.g. `6`. |
 | `minor_version`    | Minor part of resolved version by [Version Resolver](#version-resolver), e.g. `3`. |
 | `patch_version`    | Patch part of resolved version by [Version Resolver](#version-resolver), e.g. `1`. |
+| `resolved-sha`     | The exact commit SHA this run evaluated and pinned the release to (see below).     |
+
+### `resolved-sha` — the point-in-time commit pin
+
+By default, every pass emits `resolved-sha`: the concrete commit SHA it
+evaluated and pinned the release's `target_commitish` to. It's the tip of the
+target branch at run time, frozen so it can't drift. The only exceptions —
+where the release deliberately keeps its branch ref instead — are when you
+explicitly override the ref with a branch `commitish`, when `filter-by-commitish`
+is enabled (that feature matches releases by branch name, so a SHA would break
+it), or in local-git mode.
+
+This closes a race in multi-step release flows. A run can take minutes, and
+`main` may move in between — so a naive second invocation could walk a different
+commit range, compute a different version/changelog, and finalize a release that
+no longer matches the artifacts built from the first pass. Because the release is
+pinned to a SHA (and a `prepared-release-id` finalize reuses that same SHA),
+every pass stays locked to one snapshot.
+
+Downstream build/packaging/inspection steps should consume it to stay in
+lockstep with the release:
+
+```yaml
+- uses: aaronsteers/semantic-pr-release-drafter@v2
+  id: draft
+  with:
+    not-ready: true
+- uses: actions/checkout@v4
+  with:
+    # Build against the exact commit the draft was evaluated at.
+    ref: ${{ steps.draft.outputs.resolved-sha }}
+```
+
+> [!NOTE]
+> Pinning means a published release's `target_commitish` REST field reads as a
+> SHA rather than a branch name. This is provenance only — the tag name, release
+> page, assets, and the frozen tag→commit that consumers actually use are all
+> unchanged. To opt out and keep branch behavior, pass an explicit `commitish`
+> (e.g. `commitish: main`); pinning is also skipped automatically when
+> `filter-by-commitish` is enabled.
 
 ## Developing
 

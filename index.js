@@ -2,6 +2,7 @@ const { getConfig } = require('./lib/config')
 const { isTriggerableReference } = require('./lib/triggerable-reference')
 const {
   findReleases,
+  getReleaseById,
   generateReleaseInfo,
   createRelease,
   updateRelease,
@@ -33,6 +34,12 @@ module.exports = (app, { getRouter }) => {
   const drafter = async (context) => {
     const input = getInput()
 
+    const preparedReleaseConflict = getPreparedReleaseConflict(input)
+    if (preparedReleaseConflict) {
+      core.setFailed(preparedReleaseConflict)
+      return
+    }
+
     const config = await getConfig({
       context,
       configName: input.configName,
@@ -51,7 +58,8 @@ module.exports = (app, { getRouter }) => {
       return
     }
 
-    const targetCommitish = config.commitish || ref
+    let targetCommitish = config.commitish || ref
+    const hasExplicitCommitish = Boolean(config.commitish)
 
     const {
       'filter-by-commitish': filterByCommitish,
@@ -66,10 +74,20 @@ module.exports = (app, { getRouter }) => {
       includePreReleases || preReleaseIdentifier
     )
 
-    const { localGitRoot, baseRefOverride, baseVersionOverride } = input
+    const {
+      localGitRoot,
+      baseRefOverride,
+      baseVersionOverride,
+      preparedReleaseId,
+    } = input
 
     // Local git mode: use git log instead of GitHub API
     let draftRelease, lastRelease, commits, mergedPullRequests
+    // The already-prepared release resolved via `prepared-release-id`, when the
+    // finalize pass targets an earlier `not-ready` draft by its id.
+    let preparedRelease = null
+    // The concrete, point-in-time commit SHA this run evaluated/pinned to.
+    let resolvedSha
 
     if (localGitRoot) {
       log({
@@ -106,6 +124,42 @@ module.exports = (app, { getRouter }) => {
       })
       draftRelease = releasesResult.draftRelease
       lastRelease = releasesResult.lastRelease
+
+      if (preparedReleaseId) {
+        // Durable finalize path: when a `prepared-release-id` is supplied (the
+        // `id` output of an earlier `not-ready` invocation), resolve the target
+        // release by ID via a strongly consistent point-read. This bypasses
+        // list-based draft discovery, which is eventually consistent and can
+        // miss a just-created draft — causing a duplicate release.
+        const targetedRelease = await getReleaseById({
+          context,
+          releaseId: preparedReleaseId,
+        })
+        if (targetedRelease) {
+          draftRelease = targetedRelease
+          preparedRelease = targetedRelease
+        } else {
+          core.warning(
+            `prepared-release-id "${preparedReleaseId}" did not resolve to an existing release; ` +
+              `falling back to list-based discovery.`
+          )
+        }
+      }
+
+      // Resolve a fixed, point-in-time commit SHA and pin the release to it, so
+      // the commit set, version, changelog, and eventual tag all correspond to
+      // exactly what this run evaluated — immune to the default branch moving
+      // between invocations (e.g. between a `not-ready` pass and its finalize).
+      const pinnedSha = resolveTargetSha({
+        targetCommitish,
+        hasExplicitCommitish,
+        filterByCommitish,
+        finalizeRelease: preparedRelease,
+      })
+      if (pinnedSha) {
+        resolvedSha = pinnedSha
+        targetCommitish = pinnedSha
+      }
 
       const commitsResult = await findCommitsWithAssociatedPullRequests({
         context,
@@ -163,7 +217,7 @@ module.exports = (app, { getRouter }) => {
     // Separate explicit user input from draft release version:
     // - overrideVersion: explicit user input via action arg (always wins, skips calculations)
     // - draftVersion: extracted from draft release (acts as floor vs computed version)
-    const overrideVersion = version
+    let overrideVersion = version
     let draftVersion
 
     if (draftRelease) {
@@ -214,6 +268,23 @@ module.exports = (app, { getRouter }) => {
       }
     }
 
+    // On a `prepared-release-id` finalize the targeted release is the source of
+    // truth: reuse the version, tag, and prerelease state frozen by the earlier
+    // pass rather than recomputing them (recomputing could drift if a release
+    // landed in between). Inputs that would recompute these are rejected up
+    // front (see getPreparedReleaseConflict), so nothing here is overridden.
+    let effectiveTag = tag
+    let effectiveIsPreRelease = prerelease
+    if (preparedRelease) {
+      if (draftVersion) {
+        overrideVersion = draftVersion
+      }
+      if (preparedRelease.tag_name) {
+        effectiveTag = preparedRelease.tag_name
+      }
+      effectiveIsPreRelease = Boolean(preparedRelease.prerelease)
+    }
+
     const releaseInfo = generateReleaseInfo({
       context,
       commits,
@@ -222,9 +293,9 @@ module.exports = (app, { getRouter }) => {
       mergedPullRequests: sortedMergedPullRequests,
       overrideVersion,
       draftVersion,
-      tag,
+      tag: effectiveTag,
       name,
-      isPreRelease: prerelease,
+      isPreRelease: effectiveIsPreRelease,
       latest,
       shouldDraft,
       targetCommitish,
@@ -288,7 +359,7 @@ module.exports = (app, { getRouter }) => {
       }
 
       if (runnerIsActions()) {
-        setDryRunOutput(releaseInfo)
+        setDryRunOutput(releaseInfo, resolvedSha)
       }
       return
     }
@@ -332,7 +403,7 @@ module.exports = (app, { getRouter }) => {
     }
 
     if (runnerIsActions()) {
-      setActionOutput(createOrUpdateReleaseResponse, releaseInfo)
+      setActionOutput(createOrUpdateReleaseResponse, releaseInfo, resolvedSha)
     }
   }
 
@@ -349,6 +420,7 @@ function getInput() {
     shouldDraft: core.getInput('publish').toLowerCase() !== 'true',
     version: core.getInput('version') || undefined,
     tag: core.getInput('tag') || undefined,
+    preparedReleaseId: core.getInput('prepared-release-id') || undefined,
     name: core.getInput('name') || undefined,
     dryRun: core.getInput('dry-run').toLowerCase() === 'true',
     localGitRoot: core.getInput('local-git-root') || undefined,
@@ -371,6 +443,40 @@ function getInput() {
         ? core.getInput('allow-major-bumps').toLowerCase() === 'true'
         : undefined,
   }
+}
+
+/**
+ * `prepared-release-id` finalizes an already-prepared release: its version,
+ * tag, prerelease state, and target commit are the frozen source of truth. Any
+ * input that would recompute or re-select those values is therefore
+ * incompatible — passing it would either be silently ignored or reintroduce the
+ * cross-invocation drift this path exists to prevent. Reject the combination up
+ * front with a clear error rather than resolving the contradiction quietly.
+ * (`filter-by-commitish` is a repo config-file option, not an action input, so
+ * it is a silent no-op here instead — handled where the release is targeted.)
+ * Returns an error message describing the conflict, or `undefined` when clear.
+ */
+function getPreparedReleaseConflict(input) {
+  if (!input.preparedReleaseId) return
+  const incompatible = [
+    ['version', input.version],
+    ['tag', input.tag],
+    ['commitish', input.commitish],
+    ['base-ref-override', input.baseRefOverride],
+    ['base-version-override', input.baseVersionOverride],
+    ['prerelease', input.prerelease],
+    ['prerelease-identifier', input.preReleaseIdentifier],
+    ['allow-major-bumps', input.allowMajorBumps],
+  ]
+    .filter(([, value]) => value !== undefined)
+    .map(([name]) => name)
+  if (incompatible.length === 0) return
+  return (
+    `prepared-release-id targets an already-prepared release as the source of ` +
+    `truth, so the following input(s) are incompatible and must not be set ` +
+    `alongside it: ${incompatible.join(', ')}. Remove them; their values are ` +
+    `taken from the prepared release.`
+  )
 }
 
 /**
@@ -412,7 +518,8 @@ function updateConfigFromInput(config, input) {
 
 function setActionOutput(
   releaseResponse,
-  { body, resolvedVersion, majorVersion, minorVersion, patchVersion }
+  { body, resolvedVersion, majorVersion, minorVersion, patchVersion },
+  resolvedSha
 ) {
   const {
     data: {
@@ -433,28 +540,82 @@ function setActionOutput(
   if (majorVersion) core.setOutput('major-version', majorVersion)
   if (minorVersion) core.setOutput('minor-version', minorVersion)
   if (patchVersion) core.setOutput('patch-version', patchVersion)
+  if (resolvedSha) core.setOutput('resolved-sha', resolvedSha)
   core.setOutput('body', body)
 }
 
 /**
  * Set outputs for dry-run mode (no release created/updated)
  */
-function setDryRunOutput({
-  body,
-  resolvedVersion,
-  majorVersion,
-  minorVersion,
-  patchVersion,
-  tag,
-  name,
-}) {
+function setDryRunOutput(
+  {
+    body,
+    resolvedVersion,
+    majorVersion,
+    minorVersion,
+    patchVersion,
+    tag,
+    name,
+  },
+  resolvedSha
+) {
   if (resolvedVersion) core.setOutput('resolved-version', resolvedVersion)
   if (majorVersion) core.setOutput('major-version', majorVersion)
   if (minorVersion) core.setOutput('minor-version', minorVersion)
   if (patchVersion) core.setOutput('patch-version', patchVersion)
   if (tag) core.setOutput('tag-name', tag)
   if (name) core.setOutput('name', name)
+  if (resolvedSha) core.setOutput('resolved-sha', resolvedSha)
   core.setOutput('body', body)
+}
+
+// A full-length (40 hex) commit SHA.
+const FULL_SHA_REGEX = /^[\da-f]{40}$/i
+
+/**
+ * Resolves the release target to a fixed, point-in-time commit SHA so the
+ * release can be pinned to exactly what this run evaluated (immune to the
+ * branch moving between invocations). Resolution order, highest priority first:
+ *   1. The finalize target's own `target_commitish`, when a `prepared-release-id`
+ *      pass resolved a release already pinned to a SHA — reuses the commit
+ *      frozen by the earlier invocation so the finalize re-evaluates the same
+ *      snapshot.
+ *   2. `targetCommitish`, when it is itself a SHA (an explicit `commitish` SHA).
+ *   3. `GITHUB_SHA` — the exact commit that triggered this run, when it is a
+ *      valid 40-hex SHA (i.e. running in GitHub Actions) — but only on the
+ *      default path, where it is the tip of the target ref.
+ * Returns `undefined` when none apply, leaving the existing ref behavior
+ * intact. The auto-pin (case 3) is deliberately skipped when an explicit branch
+ * `commitish` is set (opt-out) or when `filter-by-commitish` is enabled — that
+ * feature matches releases by branch name, so writing a SHA into
+ * `target_commitish` would break selection on later runs. That opt-out is
+ * itself skipped on a `prepared-release-id` finalize (`finalizeRelease`
+ * present): the release is targeted by a deterministic point-read, so
+ * `filter-by-commitish` (a list-selection heuristic) is moot for it and must
+ * not suppress the pin.
+ */
+function resolveTargetSha({
+  targetCommitish,
+  hasExplicitCommitish,
+  filterByCommitish,
+  finalizeRelease,
+}) {
+  const finalizeSha = finalizeRelease && finalizeRelease.target_commitish
+  if (finalizeSha && FULL_SHA_REGEX.test(finalizeSha)) {
+    return finalizeSha
+  }
+  if (FULL_SHA_REGEX.test(targetCommitish)) {
+    return targetCommitish
+  }
+  const isReleaseIdFinalize = Boolean(finalizeRelease)
+  if (
+    !hasExplicitCommitish &&
+    (!filterByCommitish || isReleaseIdFinalize) &&
+    FULL_SHA_REGEX.test(process.env.GITHUB_SHA || '')
+  ) {
+    return process.env.GITHUB_SHA
+  }
+  return
 }
 
 /**

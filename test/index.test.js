@@ -2,6 +2,7 @@ const nock = require('nock')
 const { Probot, ProbotOctokit } = require('probot')
 const { configFixture, getConfigMock } = require('./helpers/config-mock')
 const releaseDrafter = require('../index')
+const core = require('@actions/core')
 const mockedEnv = require('mocked-env')
 const pino = require('pino')
 const Stream = require('node:stream')
@@ -3994,6 +3995,342 @@ describe('release-drafter', () => {
         })
 
         expect.assertions(1)
+      })
+    })
+
+    describe('with prepared-release-id input', () => {
+      it('finalizes by fetching the release directly by id and updating it, bypassing list discovery', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
+        })
+
+        getConfigMock()
+
+        // The list read is used only for `lastRelease`; it contains NO draft
+        // (and a different id), proving finalize does not depend on it.
+        const publishedRelease = {
+          ...releasePayload,
+          id: 999,
+          draft: false,
+        }
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [publishedRelease])
+
+        // Strongly consistent point-read resolves the just-created draft.
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(body.draft).toBe(true)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
+
+        restoreEnvironment()
+      })
+
+      it('falls back to list-based discovery when prepared-release-id does not resolve', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '424242',
+        })
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [releaseDrafterFixture])
+
+        // Point-read 404s -> action warns and keeps the draft found via the list.
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases/424242')
+          .reply(404, {})
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(body.draft).toBe(true)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
+
+        restoreEnvironment()
+      })
+
+      it('fails when an incompatible input is set alongside prepared-release-id', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
+          INPUT_VERSION: '3.0.0',
+        })
+        const setFailedSpy = jest
+          .spyOn(core, 'setFailed')
+          .mockImplementation(() => {})
+
+        // No API is mocked: the conflict is caught before any release lookup,
+        // so the run must short-circuit without touching the GitHub API.
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setFailedSpy).toHaveBeenCalledWith(
+          expect.stringContaining('version')
+        )
+        expect(setFailedSpy).toHaveBeenCalledWith(
+          expect.stringContaining('prepared-release-id')
+        )
+        expect.assertions(2)
+
+        setFailedSpy.mockRestore()
+        restoreEnvironment()
+      })
+    })
+
+    describe('with resolved SHA pinning', () => {
+      it('pins the release target_commitish to GITHUB_SHA and outputs resolved-sha', async () => {
+        const sha = '1496a1f82f32f240f7cbe1a42eb0b0c7a06a5093'
+        let restoreEnvironment = mockedEnv({
+          GITHUB_ACTIONS: 'true',
+          GITHUB_SHA: sha,
+        })
+        const setOutputSpy = jest
+          .spyOn(core, 'setOutput')
+          .mockImplementation(() => {})
+
+        getConfigMock()
+
+        // Existing draft discovered via the list; it will be updated in place.
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [releaseDrafterFixture])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        // The release is pinned to the exact commit that triggered the run.
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(body.target_commitish).toBe(sha)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutputSpy).toHaveBeenCalledWith('resolved-sha', sha)
+        expect.assertions(2)
+
+        restoreEnvironment()
+      })
+
+      it('reuses the finalize target release\u2019s frozen SHA over GITHUB_SHA', async () => {
+        const frozenSha = 'ca068ecaa5373b170c571b3da6155b30b78ef481'
+        const headSha = '1496a1f82f32f240f7cbe1a42eb0b0c7a06a5093'
+        let restoreEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
+          GITHUB_ACTIONS: 'true',
+          GITHUB_SHA: headSha,
+        })
+        const setOutputSpy = jest
+          .spyOn(core, 'setOutput')
+          .mockImplementation(() => {})
+
+        getConfigMock()
+
+        // List is consulted only for `lastRelease`.
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [releasePayload])
+
+        // Point-read returns the release the earlier pass froze to `frozenSha`.
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, {
+            ...releaseDrafterFixture,
+            target_commitish: frozenSha,
+          })
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        // Finalize re-pins to the frozen SHA, not the run's HEAD SHA.
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(body.target_commitish).toBe(frozenSha)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutputSpy).toHaveBeenCalledWith('resolved-sha', frozenSha)
+        expect.assertions(2)
+
+        restoreEnvironment()
+      })
+
+      it('does not pin (or output resolved-sha) when filter-by-commitish is enabled', async () => {
+        const sha = '1496a1f82f32f240f7cbe1a42eb0b0c7a06a5093'
+        let restoreEnvironment = mockedEnv({
+          GITHUB_ACTIONS: 'true',
+          GITHUB_SHA: sha,
+        })
+        const setOutputSpy = jest
+          .spyOn(core, 'setOutput')
+          .mockImplementation(() => {})
+
+        getConfigMock('config-filter-by-commitish.yml')
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [releaseDrafterFixture])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        // The release keeps its branch ref — pinning a SHA would break
+        // branch-name matching on later `filter-by-commitish` runs.
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(/^[\da-f]{40}$/i.test(body.target_commitish)).toBe(false)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutputSpy).not.toHaveBeenCalledWith(
+          'resolved-sha',
+          expect.anything()
+        )
+        expect.assertions(2)
+
+        restoreEnvironment()
+      })
+
+      it('still pins on a prepared-release-id finalize even when filter-by-commitish is enabled', async () => {
+        const sha = '1496a1f82f32f240f7cbe1a42eb0b0c7a06a5093'
+        let restoreEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
+          GITHUB_ACTIONS: 'true',
+          GITHUB_SHA: sha,
+        })
+        const setOutputSpy = jest
+          .spyOn(core, 'setOutput')
+          .mockImplementation(() => {})
+
+        getConfigMock('config-filter-by-commitish.yml')
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [releaseDrafterFixture])
+
+        // Point-read target is still on its branch ref (an earlier
+        // filter-by-commitish pass didn't freeze it).
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        // prepared-release-id targets the release deterministically, so filter-by-commitish
+        // is moot for it — the pin is applied rather than suppressed.
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(body.target_commitish).toBe(sha)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutputSpy).toHaveBeenCalledWith('resolved-sha', sha)
+        expect.assertions(2)
+
+        restoreEnvironment()
       })
     })
   })

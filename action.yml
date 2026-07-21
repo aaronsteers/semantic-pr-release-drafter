@@ -175,10 +175,10 @@ inputs:
       Requires GITHUB_TOKEN with contents: write permission.
     required: false
     default: ''
-  release-id:
+  prepared-release-id:
     description: |
-      The numeric ID of an existing release to update, as emitted by the `id`
-      output of a previous invocation.
+      The numeric ID of an already-prepared release to finalize, as emitted by
+      the `id` output of a previous (`not-ready`) invocation.
 
       When set, the action fetches that release directly by ID (a strongly
       consistent point-read) and updates it in place, bypassing list-based
@@ -188,10 +188,19 @@ inputs:
       be missed and a duplicate release to be created. (The list endpoint is
       still consulted to compute the previous release for the changelog.)
 
+      The prepared release is the source of truth: its version, tag, prerelease
+      state, and pinned target commit are reused as-is rather than recomputed,
+      so the finalize can't drift if another release is published between the
+      steps. Because of this, inputs that would recompute or re-select those
+      values are incompatible and cause the action to fail if set alongside
+      `prepared-release-id`: `version`, `tag`, `commitish`, `base-ref-override`,
+      `base-version-override`, `prerelease`, `prerelease-identifier`, and
+      `allow-major-bumps`. (The `filter-by-commitish` config option is likewise
+      ignored on this path.)
+
       Recommended for the two-step (not-ready -> finalize) pattern: capture
-      `id` from the first invocation and pass it here on the finalize call.
-      Pass the first call's `resolved-version` as `version` too, so the pinned
-      version can't drift if another release is published between the steps.
+      `id` from the first invocation and pass it here on the finalize call —
+      that is all you need; the release carries everything else.
     required: false
     default: ''
   reset-files:
@@ -254,7 +263,7 @@ outputs:
       finalize), so downstream build, packaging, and inspection steps can check
       out this exact commit and stay in lockstep with the release even if the
       branch moves afterwards. The resolved SHA is, in priority order: the SHA
-      frozen by an earlier pass (on a `release-id` finalize), an explicit
+      frozen by an earlier pass (on a `prepared-release-id` finalize), an explicit
       `commitish` when it is itself a SHA, or `GITHUB_SHA` (the triggering
       commit) on the default path.
 
@@ -262,7 +271,7 @@ outputs:
       instead — are when you explicitly override the ref with a branch
       `commitish`, when `filter-by-commitish` is enabled (that feature matches
       releases by branch name, so a SHA would break it), or in local-git mode.
-      The `filter-by-commitish` exception does not apply on a `release-id`
+      The `filter-by-commitish` exception does not apply on a `prepared-release-id`
       finalize: that release is targeted by a deterministic point-read, so
       commitish-based selection is moot and the pin is still applied. Outputs
       are only emitted when running in GitHub Actions.

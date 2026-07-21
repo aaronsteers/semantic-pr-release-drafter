@@ -150463,7 +150463,7 @@ var require_releases = __commonJS({
       const id = Number.parseInt(raw, 10);
       if (!/^\d+$/.test(raw) || id <= 0) {
         throw new TypeError(
-          `Invalid release-id "${releaseId}": expected a positive integer ID.`
+          `Invalid prepared-release-id "${releaseId}": expected a positive integer ID.`
         );
       }
       try {
@@ -150477,7 +150477,10 @@ var require_releases = __commonJS({
         return data;
       } catch (error) {
         if (error.status === 404) {
-          log({ context, message: `No release found for release-id ${id}` });
+          log({
+            context,
+            message: `No release found for prepared-release-id ${id}`
+          });
           return null;
         }
         throw error;
@@ -154340,6 +154343,11 @@ var require_index = __commonJS({
       }
       const drafter = async (context) => {
         const input = getInput();
+        const preparedReleaseConflict = getPreparedReleaseConflict(input);
+        if (preparedReleaseConflict) {
+          core2.setFailed(preparedReleaseConflict);
+          return;
+        }
         const config = await getConfig({
           context,
           configName: input.configName,
@@ -154364,8 +154372,14 @@ var require_index = __commonJS({
         const shouldIncludePreReleases = Boolean(
           includePreReleases || preReleaseIdentifier
         );
-        const { localGitRoot, baseRefOverride, baseVersionOverride } = input;
+        const {
+          localGitRoot,
+          baseRefOverride,
+          baseVersionOverride,
+          preparedReleaseId
+        } = input;
         let draftRelease, lastRelease, commits, mergedPullRequests;
+        let preparedRelease = null;
         let resolvedSha;
         if (localGitRoot) {
           log({
@@ -154393,16 +154407,17 @@ var require_index = __commonJS({
           });
           draftRelease = releasesResult.draftRelease;
           lastRelease = releasesResult.lastRelease;
-          if (input.releaseId) {
+          if (preparedReleaseId) {
             const targetedRelease = await getReleaseById({
               context,
-              releaseId: input.releaseId
+              releaseId: preparedReleaseId
             });
             if (targetedRelease) {
               draftRelease = targetedRelease;
+              preparedRelease = targetedRelease;
             } else {
               core2.warning(
-                `release-id "${input.releaseId}" did not resolve to an existing release; falling back to list-based discovery.`
+                `prepared-release-id "${preparedReleaseId}" did not resolve to an existing release; falling back to list-based discovery.`
               );
             }
           }
@@ -154410,7 +154425,7 @@ var require_index = __commonJS({
             targetCommitish,
             hasExplicitCommitish,
             filterByCommitish,
-            finalizeRelease: input.releaseId ? draftRelease : null
+            finalizeRelease: preparedRelease
           });
           if (pinnedSha) {
             resolvedSha = pinnedSha;
@@ -154459,7 +154474,7 @@ var require_index = __commonJS({
         } else {
           shouldResetFiles = !!attachFiles;
         }
-        const overrideVersion = version2;
+        let overrideVersion = version2;
         let draftVersion;
         if (draftRelease) {
           const draftVersionStr = draftRelease.tag_name || draftRelease.name;
@@ -154491,6 +154506,17 @@ var require_index = __commonJS({
             }
           }
         }
+        let effectiveTag = tag;
+        let effectiveIsPreRelease = prerelease;
+        if (preparedRelease) {
+          if (draftVersion) {
+            overrideVersion = draftVersion;
+          }
+          if (preparedRelease.tag_name) {
+            effectiveTag = preparedRelease.tag_name;
+          }
+          effectiveIsPreRelease = Boolean(preparedRelease.prerelease);
+        }
         const releaseInfo = generateReleaseInfo({
           context,
           commits,
@@ -154499,9 +154525,9 @@ var require_index = __commonJS({
           mergedPullRequests: sortedMergedPullRequests,
           overrideVersion,
           draftVersion,
-          tag,
+          tag: effectiveTag,
           name,
-          isPreRelease: prerelease,
+          isPreRelease: effectiveIsPreRelease,
           latest,
           shouldDraft,
           targetCommitish
@@ -154602,7 +154628,7 @@ var require_index = __commonJS({
         shouldDraft: core2.getInput("publish").toLowerCase() !== "true",
         version: core2.getInput("version") || void 0,
         tag: core2.getInput("tag") || void 0,
-        releaseId: core2.getInput("release-id") || void 0,
+        preparedReleaseId: core2.getInput("prepared-release-id") || void 0,
         name: core2.getInput("name") || void 0,
         dryRun: core2.getInput("dry-run").toLowerCase() === "true",
         localGitRoot: core2.getInput("local-git-root") || void 0,
@@ -154619,6 +154645,21 @@ var require_index = __commonJS({
         notReady: parseNotReadyInput(core2.getInput("not-ready")),
         allowMajorBumps: core2.getInput("allow-major-bumps") !== "" ? core2.getInput("allow-major-bumps").toLowerCase() === "true" : void 0
       };
+    }
+    function getPreparedReleaseConflict(input) {
+      if (!input.preparedReleaseId) return;
+      const incompatible = [
+        ["version", input.version],
+        ["tag", input.tag],
+        ["commitish", input.commitish],
+        ["base-ref-override", input.baseRefOverride],
+        ["base-version-override", input.baseVersionOverride],
+        ["prerelease", input.prerelease],
+        ["prerelease-identifier", input.preReleaseIdentifier],
+        ["allow-major-bumps", input.allowMajorBumps]
+      ].filter(([, value]) => value !== void 0).map(([name]) => name);
+      if (incompatible.length === 0) return;
+      return `prepared-release-id targets an already-prepared release as the source of truth, so the following input(s) are incompatible and must not be set alongside it: ${incompatible.join(", ")}. Remove them; their values are taken from the prepared release.`;
     }
     function updateConfigFromInput(config, input) {
       if (input.commitish) {

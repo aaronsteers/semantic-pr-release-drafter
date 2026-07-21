@@ -3998,11 +3998,10 @@ describe('release-drafter', () => {
       })
     })
 
-    describe('with release-id input', () => {
+    describe('with prepared-release-id input', () => {
       it('finalizes by fetching the release directly by id and updating it, bypassing list discovery', async () => {
         let restoreEnvironment = mockedEnv({
-          'INPUT_RELEASE-ID': '11691725',
-          INPUT_VERSION: '3.0.0',
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
         })
 
         getConfigMock()
@@ -4053,10 +4052,9 @@ describe('release-drafter', () => {
         restoreEnvironment()
       })
 
-      it('falls back to list-based discovery when release-id does not resolve', async () => {
+      it('falls back to list-based discovery when prepared-release-id does not resolve', async () => {
         let restoreEnvironment = mockedEnv({
-          'INPUT_RELEASE-ID': '424242',
-          INPUT_VERSION: '3.0.0',
+          'INPUT_PREPARED-RELEASE-ID': '424242',
         })
 
         getConfigMock()
@@ -4094,6 +4092,34 @@ describe('release-drafter', () => {
 
         expect.assertions(1)
 
+        restoreEnvironment()
+      })
+
+      it('fails when an incompatible input is set alongside prepared-release-id', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
+          INPUT_VERSION: '3.0.0',
+        })
+        const setFailedSpy = jest
+          .spyOn(core, 'setFailed')
+          .mockImplementation(() => {})
+
+        // No API is mocked: the conflict is caught before any release lookup,
+        // so the run must short-circuit without touching the GitHub API.
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setFailedSpy).toHaveBeenCalledWith(
+          expect.stringContaining('version')
+        )
+        expect(setFailedSpy).toHaveBeenCalledWith(
+          expect.stringContaining('prepared-release-id')
+        )
+        expect.assertions(2)
+
+        setFailedSpy.mockRestore()
         restoreEnvironment()
       })
     })
@@ -4149,8 +4175,7 @@ describe('release-drafter', () => {
         const frozenSha = 'ca068ecaa5373b170c571b3da6155b30b78ef481'
         const headSha = '1496a1f82f32f240f7cbe1a42eb0b0c7a06a5093'
         let restoreEnvironment = mockedEnv({
-          'INPUT_RELEASE-ID': '11691725',
-          INPUT_VERSION: '3.0.0',
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
           GITHUB_ACTIONS: 'true',
           GITHUB_SHA: headSha,
         })
@@ -4253,10 +4278,10 @@ describe('release-drafter', () => {
         restoreEnvironment()
       })
 
-      it('still pins on a release-id finalize even when filter-by-commitish is enabled', async () => {
+      it('still pins on a prepared-release-id finalize even when filter-by-commitish is enabled', async () => {
         const sha = '1496a1f82f32f240f7cbe1a42eb0b0c7a06a5093'
         let restoreEnvironment = mockedEnv({
-          'INPUT_RELEASE-ID': '11691725',
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
           GITHUB_ACTIONS: 'true',
           GITHUB_SHA: sha,
         })
@@ -4285,7 +4310,7 @@ describe('release-drafter', () => {
           )
           .reply(200, graphqlCommitsMergeCommit)
 
-        // release-id targets the release deterministically, so filter-by-commitish
+        // prepared-release-id targets the release deterministically, so filter-by-commitish
         // is moot for it — the pin is applied rather than suppressed.
         nock('https://api.github.com')
           .patch(

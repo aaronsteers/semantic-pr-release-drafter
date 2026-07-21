@@ -865,21 +865,23 @@ Since each run regenerates the body from scratch, calling the action without `no
 
 > [!IMPORTANT]
 > When splitting the work across two invocations (create the draft, build, then
-> finalize), pass **both** of these outputs from the first call to the finalize
-> call:
+> finalize), pass just one output from the first call to the finalize call:
 >
-> 1. `release-id: ${{ steps.<id>.outputs.id }}` — targets that exact release via
->    a strongly consistent point-read and updates it in place. Do **not** rely on
->    the finalize call re-discovering the draft from `version`/`tag` alone: the
->    list-releases API is eventually consistent, so a draft created seconds
->    earlier can be missing from the list read by the next step, causing the
->    action to create a **duplicate** draft.
-> 2. `version: ${{ steps.<id>.outputs.resolved-version }}` — pins the version/tag
->    to exactly what the first call resolved (and what you built artifacts
->    against). Without this pin, the finalize call recomputes the version from
->    the latest release plus commits, so a release published by someone else
->    between the two steps could bump the version and retag the release,
->    desyncing it from the built artifacts.
+> `prepared-release-id: ${{ steps.<id>.outputs.id }}` — targets that exact
+> release via a strongly consistent point-read and updates it in place. Do
+> **not** rely on the finalize call re-discovering the draft from `version`/`tag`
+> alone: the list-releases API is eventually consistent, so a draft created
+> seconds earlier can be missing from the list read by the next step, causing
+> the action to create a **duplicate** draft.
+>
+> That is all you need. The prepared release is the source of truth, so the
+> finalize reuses the version, tag, prerelease state, and pinned target commit
+> that the first call froze — nothing can drift if another release is published
+> between the two steps. Because those values come from the release, the inputs
+> that would recompute them (`version`, `tag`, `commitish`, `base-ref-override`,
+> `base-version-override`, `prerelease`, `prerelease-identifier`,
+> `allow-major-bumps`) are **incompatible** with `prepared-release-id` and cause
+> the action to fail if set alongside it.
 
 ### Pattern A: Third-party asset attacher
 
@@ -903,10 +905,9 @@ Since each run regenerates the body from scratch, calling the action without `no
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    # Target the exact release from step 1 (point-read by ID)...
-    release-id: ${{ steps.not-ready-draft.outputs.id }}
-    # ...and pin the version so it can't drift if another release is published.
-    version: ${{ steps.not-ready-draft.outputs.resolved-version }}
+    # Target the exact release from step 1 (point-read by ID). The release is
+    # the source of truth, so version/tag/prerelease/commit all come from it.
+    prepared-release-id: ${{ steps.not-ready-draft.outputs.id }}
 ```
 
 ### Pattern B: Release-drafter-managed uploads
@@ -930,10 +931,9 @@ Since each run regenerates the body from scratch, calling the action without `no
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    # Target the exact release from step 1 (point-read by ID)...
-    release-id: ${{ steps.not-ready-draft.outputs.id }}
-    # ...and pin the version so it can't drift if another release is published.
-    version: ${{ steps.not-ready-draft.outputs.resolved-version }}
+    # Target the exact release from step 1 (point-read by ID). The release is
+    # the source of truth, so version/tag/prerelease/commit all come from it.
+    prepared-release-id: ${{ steps.not-ready-draft.outputs.id }}
     attach-files: dist/*.whl
 ```
 
@@ -983,8 +983,8 @@ This closes a race in multi-step release flows. A run can take minutes, and
 `main` may move in between — so a naive second invocation could walk a different
 commit range, compute a different version/changelog, and finalize a release that
 no longer matches the artifacts built from the first pass. Because the release is
-pinned to a SHA (and a `release-id` finalize reuses that same SHA), every pass
-stays locked to one snapshot.
+pinned to a SHA (and a `prepared-release-id` finalize reuses that same SHA),
+every pass stays locked to one snapshot.
 
 Downstream build/packaging/inspection steps should consume it to stay in
 lockstep with the release:

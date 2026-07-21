@@ -971,11 +971,13 @@ The action sets the following outputs which can be used in subsequent workflow s
 
 ### `resolved-sha` — the point-in-time commit pin
 
-Whenever SHA pinning applies, the run emits `resolved-sha`: the concrete commit
-SHA it evaluated and pinned the release's `target_commitish` to. It's the tip of
-the target branch at run time, frozen so it can't drift. (It's omitted when you
-opt out — an explicit branch `commitish` or `filter-by-commitish` — or in
-local-git mode.)
+By default, every pass emits `resolved-sha`: the concrete commit SHA it
+evaluated and pinned the release's `target_commitish` to. It's the tip of the
+target branch at run time, frozen so it can't drift. The only exceptions —
+where the release deliberately keeps its branch ref instead — are when you
+explicitly override the ref with a branch `commitish`, when `filter-by-commitish`
+is enabled (that feature matches releases by branch name, so a SHA would break
+it), or in local-git mode.
 
 This closes a race in multi-step release flows. A run can take minutes, and
 `main` may move in between — so a naive second invocation could walk a different

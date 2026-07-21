@@ -190,6 +190,8 @@ inputs:
 
       Recommended for the two-step (not-ready -> finalize) pattern: capture
       `id` from the first invocation and pass it here on the finalize call.
+      Pass the first call's `resolved-version` as `version` too, so the pinned
+      version can't drift if another release is published between the steps.
     required: false
     default: ''
   reset-files:

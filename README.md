@@ -865,15 +865,21 @@ Since each run regenerates the body from scratch, calling the action without `no
 
 > [!IMPORTANT]
 > When splitting the work across two invocations (create the draft, build, then
-> finalize), capture the `id` output from the first call and pass it to the
-> finalize call via `release-id`. The finalize call then fetches that exact
-> release by ID (a strongly consistent point-read) and updates it in place.
+> finalize), pass **both** of these outputs from the first call to the finalize
+> call:
 >
-> Do **not** rely on the finalize call re-discovering the draft from
-> `version`/`tag` alone: the list-releases API is eventually consistent, so a
-> draft created seconds earlier can be missing from the list read by the next
-> step, causing the action to create a **duplicate** draft instead of updating
-> the existing one.
+> 1. `release-id: ${{ steps.<id>.outputs.id }}` — targets that exact release via
+>    a strongly consistent point-read and updates it in place. Do **not** rely on
+>    the finalize call re-discovering the draft from `version`/`tag` alone: the
+>    list-releases API is eventually consistent, so a draft created seconds
+>    earlier can be missing from the list read by the next step, causing the
+>    action to create a **duplicate** draft.
+> 2. `version: ${{ steps.<id>.outputs.resolved-version }}` — pins the version/tag
+>    to exactly what the first call resolved (and what you built artifacts
+>    against). Without this pin, the finalize call recomputes the version from
+>    the latest release plus commits, so a release published by someone else
+>    between the two steps could bump the version and retag the release,
+>    desyncing it from the built artifacts.
 
 ### Pattern A: Third-party asset attacher
 
@@ -897,8 +903,10 @@ Since each run regenerates the body from scratch, calling the action without `no
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    # Update the exact release created in step 1, via a point-read by ID.
+    # Target the exact release from step 1 (point-read by ID)...
     release-id: ${{ steps.not-ready-draft.outputs.id }}
+    # ...and pin the version so it can't drift if another release is published.
+    version: ${{ steps.not-ready-draft.outputs.resolved-version }}
 ```
 
 ### Pattern B: Release-drafter-managed uploads
@@ -922,8 +930,10 @@ Since each run regenerates the body from scratch, calling the action without `no
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    # Update the exact release created in step 1, via a point-read by ID.
+    # Target the exact release from step 1 (point-read by ID)...
     release-id: ${{ steps.not-ready-draft.outputs.id }}
+    # ...and pin the version so it can't drift if another release is published.
+    version: ${{ steps.not-ready-draft.outputs.resolved-version }}
     attach-files: dist/*.whl
 ```
 

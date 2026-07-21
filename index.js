@@ -2,6 +2,7 @@ const { getConfig } = require('./lib/config')
 const { isTriggerableReference } = require('./lib/triggerable-reference')
 const {
   findReleases,
+  getReleaseById,
   generateReleaseInfo,
   createRelease,
   updateRelease,
@@ -106,6 +107,26 @@ module.exports = (app, { getRouter }) => {
       })
       draftRelease = releasesResult.draftRelease
       lastRelease = releasesResult.lastRelease
+
+      if (input.releaseId) {
+        // Durable finalize path: when a `release-id` is supplied (e.g. captured
+        // from the `id` output of an earlier `not-ready` invocation), resolve
+        // the target release by ID via a strongly consistent point-read. This
+        // bypasses list-releases discovery, which is eventually consistent and
+        // can miss a just-created draft — causing a duplicate release.
+        const targetedRelease = await getReleaseById({
+          context,
+          releaseId: input.releaseId,
+        })
+        if (targetedRelease) {
+          draftRelease = targetedRelease
+        } else {
+          core.warning(
+            `release-id "${input.releaseId}" did not resolve to an existing release; ` +
+              `falling back to list-based discovery.`
+          )
+        }
+      }
 
       const commitsResult = await findCommitsWithAssociatedPullRequests({
         context,
@@ -349,6 +370,7 @@ function getInput() {
     shouldDraft: core.getInput('publish').toLowerCase() !== 'true',
     version: core.getInput('version') || undefined,
     tag: core.getInput('tag') || undefined,
+    releaseId: core.getInput('release-id') || undefined,
     name: core.getInput('name') || undefined,
     dryRun: core.getInput('dry-run').toLowerCase() === 'true',
     localGitRoot: core.getInput('local-git-root') || undefined,

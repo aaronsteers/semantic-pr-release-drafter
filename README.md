@@ -863,6 +863,18 @@ Use the `not-ready` input to prevent admins from prematurely publishing a draft 
 
 Since each run regenerates the body from scratch, calling the action without `not-ready` automatically removes the banner.
 
+> [!IMPORTANT]
+> When splitting the work across two invocations (create the draft, build, then
+> finalize), capture the `id` output from the first call and pass it to the
+> finalize call via `release-id`. The finalize call then fetches that exact
+> release by ID (a strongly consistent point-read) and updates it in place.
+>
+> Do **not** rely on the finalize call re-discovering the draft from
+> `version`/`tag` alone: the list-releases API is eventually consistent, so a
+> draft created seconds earlier can be missing from the list read by the next
+> step, causing the action to create a **duplicate** draft instead of updating
+> the existing one.
+
 ### Pattern A: Third-party asset attacher
 
 ```yaml
@@ -885,7 +897,8 @@ Since each run regenerates the body from scratch, calling the action without `no
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    version: ${{ steps.not-ready-draft.outputs.tag-name }}
+    # Update the exact release created in step 1, via a point-read by ID.
+    release-id: ${{ steps.not-ready-draft.outputs.id }}
 ```
 
 ### Pattern B: Release-drafter-managed uploads
@@ -909,7 +922,8 @@ Since each run regenerates the body from scratch, calling the action without `no
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    version: ${{ steps.not-ready-draft.outputs.tag-name }}
+    # Update the exact release created in step 1, via a point-read by ID.
+    release-id: ${{ steps.not-ready-draft.outputs.id }}
     attach-files: dist/*.whl
 ```
 

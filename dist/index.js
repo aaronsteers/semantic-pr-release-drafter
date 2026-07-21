@@ -150458,6 +150458,30 @@ var require_releases = __commonJS({
       });
     };
     var RELEASE_COUNT_LIMIT = 1e3;
+    var getReleaseById = async ({ context, releaseId }) => {
+      const id = Number.parseInt(releaseId, 10);
+      if (!Number.isInteger(id)) {
+        throw new TypeError(
+          `Invalid release-id "${releaseId}": expected a numeric ID.`
+        );
+      }
+      try {
+        const { data } = await context.octokit.repos.getRelease(
+          context.repo({ release_id: id })
+        );
+        log({
+          context,
+          message: `Fetched release by id ${id}: ${data.tag_name || data.name}`
+        });
+        return data;
+      } catch (error) {
+        if (error.status === 404) {
+          log({ context, message: `No release found for release-id ${id}` });
+          return null;
+        }
+        throw error;
+      }
+    };
     var findReleases = async ({
       context,
       targetCommitish,
@@ -150726,6 +150750,7 @@ var require_releases = __commonJS({
       return updateReleaseParameters;
     }
     exports2.findReleases = findReleases;
+    exports2.getReleaseById = getReleaseById;
     exports2.generateChangeLog = generateChangeLog;
     exports2.generateReleaseInfo = generateReleaseInfo;
     exports2.createRelease = createRelease;
@@ -154285,6 +154310,7 @@ var require_index = __commonJS({
     var { isTriggerableReference } = require_triggerable_reference();
     var {
       findReleases,
+      getReleaseById,
       generateReleaseInfo,
       createRelease,
       updateRelease
@@ -154364,6 +154390,19 @@ var require_index = __commonJS({
           });
           draftRelease = releasesResult.draftRelease;
           lastRelease = releasesResult.lastRelease;
+          if (input.releaseId) {
+            const targetedRelease = await getReleaseById({
+              context,
+              releaseId: input.releaseId
+            });
+            if (targetedRelease) {
+              draftRelease = targetedRelease;
+            } else {
+              core2.warning(
+                `release-id "${input.releaseId}" did not resolve to an existing release; falling back to list-based discovery.`
+              );
+            }
+          }
           const commitsResult = await findCommitsWithAssociatedPullRequests({
             context,
             targetCommitish,
@@ -154550,6 +154589,7 @@ var require_index = __commonJS({
         shouldDraft: core2.getInput("publish").toLowerCase() !== "true",
         version: core2.getInput("version") || void 0,
         tag: core2.getInput("tag") || void 0,
+        releaseId: core2.getInput("release-id") || void 0,
         name: core2.getInput("name") || void 0,
         dryRun: core2.getInput("dry-run").toLowerCase() === "true",
         localGitRoot: core2.getInput("local-git-root") || void 0,

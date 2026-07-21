@@ -175,6 +175,22 @@ inputs:
       Requires GITHUB_TOKEN with contents: write permission.
     required: false
     default: ''
+  release-id:
+    description: |
+      The numeric ID of an existing release to update, as emitted by the `id`
+      output of a previous invocation.
+
+      When set, the action fetches that release directly by ID (a strongly
+      consistent point-read) and updates it in place, bypassing the
+      list-releases discovery entirely. This is the durable way to finalize a
+      draft created by an earlier step: it is immune to the eventual
+      consistency of the list-releases endpoint, which can otherwise cause a
+      just-created draft to be missed and a duplicate release to be created.
+
+      Recommended for the two-step (not-ready -> finalize) pattern: capture
+      `id` from the first invocation and pass it here on the finalize call.
+    required: false
+    default: ''
   reset-files:
     description: |
       Controls whether existing release assets are deleted before uploading new ones.

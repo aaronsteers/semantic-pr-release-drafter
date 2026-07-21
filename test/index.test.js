@@ -3996,5 +3996,105 @@ describe('release-drafter', () => {
         expect.assertions(1)
       })
     })
+
+    describe('with release-id input', () => {
+      it('finalizes by fetching the release directly by id and updating it, bypassing list discovery', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_RELEASE-ID': '11691725',
+          INPUT_VERSION: '3.0.0',
+        })
+
+        getConfigMock()
+
+        // The list read is used only for `lastRelease`; it contains NO draft
+        // (and a different id), proving finalize does not depend on it.
+        const publishedRelease = {
+          ...releasePayload,
+          id: 999,
+          draft: false,
+        }
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [publishedRelease])
+
+        // Strongly consistent point-read resolves the just-created draft.
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(body.draft).toBe(true)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
+
+        restoreEnvironment()
+      })
+
+      it('falls back to list-based discovery when release-id does not resolve', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_RELEASE-ID': '424242',
+          INPUT_VERSION: '3.0.0',
+        })
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [releaseDrafterFixture])
+
+        // Point-read 404s -> action warns and keeps the draft found via the list.
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases/424242')
+          .reply(404, {})
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(body.draft).toBe(true)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
+
+        restoreEnvironment()
+      })
+    })
   })
 })

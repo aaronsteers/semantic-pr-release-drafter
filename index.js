@@ -52,7 +52,8 @@ module.exports = (app, { getRouter }) => {
       return
     }
 
-    const targetCommitish = config.commitish || ref
+    let targetCommitish = config.commitish || ref
+    const hasExplicitCommitish = Boolean(config.commitish)
 
     const {
       'filter-by-commitish': filterByCommitish,
@@ -71,6 +72,8 @@ module.exports = (app, { getRouter }) => {
 
     // Local git mode: use git log instead of GitHub API
     let draftRelease, lastRelease, commits, mergedPullRequests
+    // The concrete, point-in-time commit SHA this run evaluated/pinned to.
+    let resolvedSha
 
     if (localGitRoot) {
       log({
@@ -126,6 +129,20 @@ module.exports = (app, { getRouter }) => {
               `falling back to list-based discovery.`
           )
         }
+      }
+
+      // Resolve a fixed, point-in-time commit SHA and pin the release to it, so
+      // the commit set, version, changelog, and eventual tag all correspond to
+      // exactly what this run evaluated — immune to the default branch moving
+      // between invocations (e.g. between a `not-ready` pass and its finalize).
+      const pinnedSha = resolveTargetSha({
+        targetCommitish,
+        hasExplicitCommitish,
+        finalizeRelease: input.releaseId ? draftRelease : null,
+      })
+      if (pinnedSha) {
+        resolvedSha = pinnedSha
+        targetCommitish = pinnedSha
       }
 
       const commitsResult = await findCommitsWithAssociatedPullRequests({
@@ -309,7 +326,7 @@ module.exports = (app, { getRouter }) => {
       }
 
       if (runnerIsActions()) {
-        setDryRunOutput(releaseInfo)
+        setDryRunOutput(releaseInfo, resolvedSha)
       }
       return
     }
@@ -353,7 +370,7 @@ module.exports = (app, { getRouter }) => {
     }
 
     if (runnerIsActions()) {
-      setActionOutput(createOrUpdateReleaseResponse, releaseInfo)
+      setActionOutput(createOrUpdateReleaseResponse, releaseInfo, resolvedSha)
     }
   }
 
@@ -434,7 +451,8 @@ function updateConfigFromInput(config, input) {
 
 function setActionOutput(
   releaseResponse,
-  { body, resolvedVersion, majorVersion, minorVersion, patchVersion }
+  { body, resolvedVersion, majorVersion, minorVersion, patchVersion },
+  resolvedSha
 ) {
   const {
     data: {
@@ -455,28 +473,68 @@ function setActionOutput(
   if (majorVersion) core.setOutput('major-version', majorVersion)
   if (minorVersion) core.setOutput('minor-version', minorVersion)
   if (patchVersion) core.setOutput('patch-version', patchVersion)
+  if (resolvedSha) core.setOutput('resolved-sha', resolvedSha)
   core.setOutput('body', body)
 }
 
 /**
  * Set outputs for dry-run mode (no release created/updated)
  */
-function setDryRunOutput({
-  body,
-  resolvedVersion,
-  majorVersion,
-  minorVersion,
-  patchVersion,
-  tag,
-  name,
-}) {
+function setDryRunOutput(
+  {
+    body,
+    resolvedVersion,
+    majorVersion,
+    minorVersion,
+    patchVersion,
+    tag,
+    name,
+  },
+  resolvedSha
+) {
   if (resolvedVersion) core.setOutput('resolved-version', resolvedVersion)
   if (majorVersion) core.setOutput('major-version', majorVersion)
   if (minorVersion) core.setOutput('minor-version', minorVersion)
   if (patchVersion) core.setOutput('patch-version', patchVersion)
   if (tag) core.setOutput('tag-name', tag)
   if (name) core.setOutput('name', name)
+  if (resolvedSha) core.setOutput('resolved-sha', resolvedSha)
   core.setOutput('body', body)
+}
+
+// A full-length (40 hex) commit SHA.
+const FULL_SHA_REGEX = /^[\da-f]{40}$/i
+
+/**
+ * Resolves the release target to a fixed, point-in-time commit SHA so the
+ * release can be pinned to exactly what this run evaluated (immune to the
+ * branch moving between invocations). Resolution order, highest priority first:
+ *   1. The finalize target's own `target_commitish`, when a `release-id` pass
+ *      resolved a release already pinned to a SHA — reuses the commit frozen by
+ *      the earlier invocation so the finalize re-evaluates the same snapshot.
+ *   2. `targetCommitish`, when it is itself a SHA (an explicit `commitish` SHA).
+ *   3. `GITHUB_SHA` — the exact commit that triggered this run — but only on
+ *      the default path (no explicit `commitish`), where it is the tip of the
+ *      target ref.
+ * Returns `undefined` when none apply (an explicit branch `commitish`, or when
+ * running outside GitHub Actions), leaving the existing ref behavior intact.
+ */
+function resolveTargetSha({
+  targetCommitish,
+  hasExplicitCommitish,
+  finalizeRelease,
+}) {
+  const finalizeSha = finalizeRelease && finalizeRelease.target_commitish
+  if (finalizeSha && FULL_SHA_REGEX.test(finalizeSha)) {
+    return finalizeSha
+  }
+  if (FULL_SHA_REGEX.test(targetCommitish)) {
+    return targetCommitish
+  }
+  if (!hasExplicitCommitish && process.env.GITHUB_SHA) {
+    return process.env.GITHUB_SHA
+  }
+  return
 }
 
 /**

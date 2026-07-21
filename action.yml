@@ -245,3 +245,16 @@ outputs:
     description: The next patch version number, with 'v' prefix removed (if applicable).
   resolved-version:
     description: The next resolved version number, based on semantic commit types, with 'v' prefix removed (if applicable).
+  resolved-sha:
+    description: |
+      The exact commit SHA this run evaluated and pinned the release to — a
+      fixed, point-in-time reference to the target branch's tip at run time.
+
+      Emitted on every pass (dry-run/calculate, create draft, and finalize), so
+      downstream build, packaging, and inspection steps can check out this exact
+      commit and stay in lockstep with the release, even if the branch moves
+      afterwards. On a finalize call targeting a `release-id`, this echoes the
+      SHA frozen by the earlier invocation, so both passes share one snapshot.
+
+      Only set in standard GitHub API mode when the commit can be resolved
+      (i.e. running in GitHub Actions, or when `commitish` is itself a SHA).

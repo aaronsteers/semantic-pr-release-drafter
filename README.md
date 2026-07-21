@@ -967,6 +967,41 @@ The action sets the following outputs which can be used in subsequent workflow s
 | `major_version`    | Major part of resolved version by [Version Resolver](#version-resolver), e.g. `6`. |
 | `minor_version`    | Minor part of resolved version by [Version Resolver](#version-resolver), e.g. `3`. |
 | `patch_version`    | Patch part of resolved version by [Version Resolver](#version-resolver), e.g. `1`. |
+| `resolved-sha`     | The exact commit SHA this run evaluated and pinned the release to (see below).     |
+
+### `resolved-sha` — the point-in-time commit pin
+
+Every pass emits `resolved-sha`: the concrete commit SHA the run evaluated and
+pinned the release's `target_commitish` to. It's the tip of the target branch at
+run time, frozen so it can't drift.
+
+This closes a race in multi-step release flows. A run can take minutes, and
+`main` may move in between — so a naive second invocation could walk a different
+commit range, compute a different version/changelog, and finalize a release that
+no longer matches the artifacts built from the first pass. Because the release is
+pinned to a SHA (and a `release-id` finalize reuses that same SHA), every pass
+stays locked to one snapshot.
+
+Downstream build/packaging/inspection steps should consume it to stay in
+lockstep with the release:
+
+```yaml
+- uses: aaronsteers/semantic-pr-release-drafter@v2
+  id: draft
+  with:
+    not-ready: true
+- uses: actions/checkout@v4
+  with:
+    # Build against the exact commit the draft was evaluated at.
+    ref: ${{ steps.draft.outputs.resolved-sha }}
+```
+
+> [!NOTE]
+> Pinning means a published release's `target_commitish` REST field reads as a
+> SHA rather than a branch name. This is provenance only — the tag name, release
+> page, assets, and the frozen tag→commit that consumers actually use are all
+> unchanged. To opt out and keep branch behavior, pass an explicit `commitish`
+> (e.g. `commitish: main`).
 
 ## Developing
 

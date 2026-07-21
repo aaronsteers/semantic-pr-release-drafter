@@ -154351,7 +154351,8 @@ var require_index = __commonJS({
         if (!isTriggerableReference({ ref, context, config })) {
           return;
         }
-        const targetCommitish = config.commitish || ref;
+        let targetCommitish = config.commitish || ref;
+        const hasExplicitCommitish = Boolean(config.commitish);
         const {
           "filter-by-commitish": filterByCommitish,
           "include-pre-releases": includePreReleases,
@@ -154365,6 +154366,7 @@ var require_index = __commonJS({
         );
         const { localGitRoot, baseRefOverride, baseVersionOverride } = input;
         let draftRelease, lastRelease, commits, mergedPullRequests;
+        let resolvedSha;
         if (localGitRoot) {
           log({
             context,
@@ -154403,6 +154405,15 @@ var require_index = __commonJS({
                 `release-id "${input.releaseId}" did not resolve to an existing release; falling back to list-based discovery.`
               );
             }
+          }
+          const pinnedSha = resolveTargetSha({
+            targetCommitish,
+            hasExplicitCommitish,
+            finalizeRelease: input.releaseId ? draftRelease : null
+          });
+          if (pinnedSha) {
+            resolvedSha = pinnedSha;
+            targetCommitish = pinnedSha;
           }
           const commitsResult = await findCommitsWithAssociatedPullRequests({
             context,
@@ -154536,7 +154547,7 @@ var require_index = __commonJS({
             }
           }
           if (runnerIsActions()) {
-            setDryRunOutput(releaseInfo);
+            setDryRunOutput(releaseInfo, resolvedSha);
           }
           return;
         }
@@ -154575,7 +154586,7 @@ var require_index = __commonJS({
           });
         }
         if (runnerIsActions()) {
-          setActionOutput(createOrUpdateReleaseResponse, releaseInfo);
+          setActionOutput(createOrUpdateReleaseResponse, releaseInfo, resolvedSha);
         }
       };
       if (runnerIsActions()) {
@@ -154632,7 +154643,7 @@ var require_index = __commonJS({
       }
       config.latest = config.prerelease ? "false" : input.latest || config.latest || void 0;
     }
-    function setActionOutput(releaseResponse, { body, resolvedVersion, majorVersion, minorVersion, patchVersion }) {
+    function setActionOutput(releaseResponse, { body, resolvedVersion, majorVersion, minorVersion, patchVersion }, resolvedSha) {
       const {
         data: {
           id: releaseId,
@@ -154652,6 +154663,7 @@ var require_index = __commonJS({
       if (majorVersion) core2.setOutput("major-version", majorVersion);
       if (minorVersion) core2.setOutput("minor-version", minorVersion);
       if (patchVersion) core2.setOutput("patch-version", patchVersion);
+      if (resolvedSha) core2.setOutput("resolved-sha", resolvedSha);
       core2.setOutput("body", body);
     }
     function setDryRunOutput({
@@ -154662,14 +154674,33 @@ var require_index = __commonJS({
       patchVersion,
       tag,
       name
-    }) {
+    }, resolvedSha) {
       if (resolvedVersion) core2.setOutput("resolved-version", resolvedVersion);
       if (majorVersion) core2.setOutput("major-version", majorVersion);
       if (minorVersion) core2.setOutput("minor-version", minorVersion);
       if (patchVersion) core2.setOutput("patch-version", patchVersion);
       if (tag) core2.setOutput("tag-name", tag);
       if (name) core2.setOutput("name", name);
+      if (resolvedSha) core2.setOutput("resolved-sha", resolvedSha);
       core2.setOutput("body", body);
+    }
+    var FULL_SHA_REGEX = /^[\da-f]{40}$/i;
+    function resolveTargetSha({
+      targetCommitish,
+      hasExplicitCommitish,
+      finalizeRelease
+    }) {
+      const finalizeSha = finalizeRelease && finalizeRelease.target_commitish;
+      if (finalizeSha && FULL_SHA_REGEX.test(finalizeSha)) {
+        return finalizeSha;
+      }
+      if (FULL_SHA_REGEX.test(targetCommitish)) {
+        return targetCommitish;
+      }
+      if (!hasExplicitCommitish && process.env.GITHUB_SHA) {
+        return process.env.GITHUB_SHA;
+      }
+      return;
     }
     function parseNotReadyInput(raw) {
       if (!raw) return false;

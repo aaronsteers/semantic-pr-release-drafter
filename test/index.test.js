@@ -4203,6 +4203,55 @@ describe('release-drafter', () => {
 
         restoreEnvironment()
       })
+
+      it('does not pin (or output resolved-sha) when filter-by-commitish is enabled', async () => {
+        const sha = '1496a1f82f32f240f7cbe1a42eb0b0c7a06a5093'
+        let restoreEnvironment = mockedEnv({
+          GITHUB_ACTIONS: 'true',
+          GITHUB_SHA: sha,
+        })
+        const setOutputSpy = jest
+          .spyOn(core, 'setOutput')
+          .mockImplementation(() => {})
+
+        getConfigMock('config-filter-by-commitish.yml')
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [releaseDrafterFixture])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        // The release keeps its branch ref — pinning a SHA would break
+        // branch-name matching on later `filter-by-commitish` runs.
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(/^[\da-f]{40}$/i.test(body.target_commitish)).toBe(false)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutputSpy).not.toHaveBeenCalledWith(
+          'resolved-sha',
+          expect.anything()
+        )
+        expect.assertions(2)
+
+        restoreEnvironment()
+      })
     })
   })
 })

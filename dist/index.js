@@ -154409,6 +154409,7 @@ var require_index = __commonJS({
           const pinnedSha = resolveTargetSha({
             targetCommitish,
             hasExplicitCommitish,
+            filterByCommitish,
             finalizeRelease: input.releaseId ? draftRelease : null
           });
           if (pinnedSha) {
@@ -154688,6 +154689,7 @@ var require_index = __commonJS({
     function resolveTargetSha({
       targetCommitish,
       hasExplicitCommitish,
+      filterByCommitish,
       finalizeRelease
     }) {
       const finalizeSha = finalizeRelease && finalizeRelease.target_commitish;
@@ -154697,7 +154699,7 @@ var require_index = __commonJS({
       if (FULL_SHA_REGEX.test(targetCommitish)) {
         return targetCommitish;
       }
-      if (!hasExplicitCommitish && process.env.GITHUB_SHA) {
+      if (!hasExplicitCommitish && !filterByCommitish && FULL_SHA_REGEX.test(process.env.GITHUB_SHA || "")) {
         return process.env.GITHUB_SHA;
       }
       return;

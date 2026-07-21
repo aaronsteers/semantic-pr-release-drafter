@@ -138,6 +138,7 @@ module.exports = (app, { getRouter }) => {
       const pinnedSha = resolveTargetSha({
         targetCommitish,
         hasExplicitCommitish,
+        filterByCommitish,
         finalizeRelease: input.releaseId ? draftRelease : null,
       })
       if (pinnedSha) {
@@ -513,15 +514,19 @@ const FULL_SHA_REGEX = /^[\da-f]{40}$/i
  *      resolved a release already pinned to a SHA — reuses the commit frozen by
  *      the earlier invocation so the finalize re-evaluates the same snapshot.
  *   2. `targetCommitish`, when it is itself a SHA (an explicit `commitish` SHA).
- *   3. `GITHUB_SHA` — the exact commit that triggered this run — but only on
- *      the default path (no explicit `commitish`), where it is the tip of the
- *      target ref.
- * Returns `undefined` when none apply (an explicit branch `commitish`, or when
- * running outside GitHub Actions), leaving the existing ref behavior intact.
+ *   3. `GITHUB_SHA` — the exact commit that triggered this run, when it is a
+ *      valid 40-hex SHA (i.e. running in GitHub Actions) — but only on the
+ *      default path, where it is the tip of the target ref.
+ * Returns `undefined` when none apply, leaving the existing ref behavior
+ * intact. The auto-pin (case 3) is deliberately skipped when an explicit branch
+ * `commitish` is set (opt-out) or when `filter-by-commitish` is enabled — that
+ * feature matches releases by branch name, so writing a SHA into
+ * `target_commitish` would break selection on later runs.
  */
 function resolveTargetSha({
   targetCommitish,
   hasExplicitCommitish,
+  filterByCommitish,
   finalizeRelease,
 }) {
   const finalizeSha = finalizeRelease && finalizeRelease.target_commitish
@@ -531,7 +536,11 @@ function resolveTargetSha({
   if (FULL_SHA_REGEX.test(targetCommitish)) {
     return targetCommitish
   }
-  if (!hasExplicitCommitish && process.env.GITHUB_SHA) {
+  if (
+    !hasExplicitCommitish &&
+    !filterByCommitish &&
+    FULL_SHA_REGEX.test(process.env.GITHUB_SHA || '')
+  ) {
     return process.env.GITHUB_SHA
   }
   return

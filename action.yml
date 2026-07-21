@@ -250,11 +250,15 @@ outputs:
       The exact commit SHA this run evaluated and pinned the release to — a
       fixed, point-in-time reference to the target branch's tip at run time.
 
-      Emitted on every pass (dry-run/calculate, create draft, and finalize), so
-      downstream build, packaging, and inspection steps can check out this exact
-      commit and stay in lockstep with the release, even if the branch moves
-      afterwards. On a finalize call targeting a `release-id`, this echoes the
-      SHA frozen by the earlier invocation, so both passes share one snapshot.
+      Set whenever SHA pinning applies, across every pass (dry-run/calculate,
+      create draft, and finalize), so downstream build, packaging, and
+      inspection steps can check out this exact commit and stay in lockstep with
+      the release even if the branch moves afterwards. The resolved SHA is, in
+      priority order: the SHA frozen by an earlier pass (on a `release-id`
+      finalize), an explicit `commitish` when it is itself a SHA, or `GITHUB_SHA`
+      (the triggering commit) on the default path.
 
-      Only set in standard GitHub API mode when the commit can be resolved
-      (i.e. running in GitHub Actions, or when `commitish` is itself a SHA).
+      NOT set — leaving the release on its branch ref — when you opt out via an
+      explicit branch `commitish`, when `filter-by-commitish` is enabled (that
+      feature matches releases by branch name), or in local-git mode. Outputs
+      are only emitted when running in GitHub Actions.

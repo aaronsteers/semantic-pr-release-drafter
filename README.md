@@ -971,9 +971,11 @@ The action sets the following outputs which can be used in subsequent workflow s
 
 ### `resolved-sha` — the point-in-time commit pin
 
-Every pass emits `resolved-sha`: the concrete commit SHA the run evaluated and
-pinned the release's `target_commitish` to. It's the tip of the target branch at
-run time, frozen so it can't drift.
+Whenever SHA pinning applies, the run emits `resolved-sha`: the concrete commit
+SHA it evaluated and pinned the release's `target_commitish` to. It's the tip of
+the target branch at run time, frozen so it can't drift. (It's omitted when you
+opt out — an explicit branch `commitish` or `filter-by-commitish` — or in
+local-git mode.)
 
 This closes a race in multi-step release flows. A run can take minutes, and
 `main` may move in between — so a naive second invocation could walk a different
@@ -1001,7 +1003,8 @@ lockstep with the release:
 > SHA rather than a branch name. This is provenance only — the tag name, release
 > page, assets, and the frozen tag→commit that consumers actually use are all
 > unchanged. To opt out and keep branch behavior, pass an explicit `commitish`
-> (e.g. `commitish: main`).
+> (e.g. `commitish: main`); pinning is also skipped automatically when
+> `filter-by-commitish` is enabled.
 
 ## Developing
 

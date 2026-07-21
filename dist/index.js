@@ -154699,7 +154699,8 @@ var require_index = __commonJS({
       if (FULL_SHA_REGEX.test(targetCommitish)) {
         return targetCommitish;
       }
-      if (!hasExplicitCommitish && !filterByCommitish && FULL_SHA_REGEX.test(process.env.GITHUB_SHA || "")) {
+      const isReleaseIdFinalize = Boolean(finalizeRelease);
+      if (!hasExplicitCommitish && (!filterByCommitish || isReleaseIdFinalize) && FULL_SHA_REGEX.test(process.env.GITHUB_SHA || "")) {
         return process.env.GITHUB_SHA;
       }
       return;

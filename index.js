@@ -521,7 +521,10 @@ const FULL_SHA_REGEX = /^[\da-f]{40}$/i
  * intact. The auto-pin (case 3) is deliberately skipped when an explicit branch
  * `commitish` is set (opt-out) or when `filter-by-commitish` is enabled — that
  * feature matches releases by branch name, so writing a SHA into
- * `target_commitish` would break selection on later runs.
+ * `target_commitish` would break selection on later runs. That opt-out is
+ * itself skipped on a `release-id` finalize (`finalizeRelease` present): the
+ * release is targeted by a deterministic point-read, so `filter-by-commitish`
+ * (a list-selection heuristic) is moot for it and must not suppress the pin.
  */
 function resolveTargetSha({
   targetCommitish,
@@ -536,9 +539,10 @@ function resolveTargetSha({
   if (FULL_SHA_REGEX.test(targetCommitish)) {
     return targetCommitish
   }
+  const isReleaseIdFinalize = Boolean(finalizeRelease)
   if (
     !hasExplicitCommitish &&
-    !filterByCommitish &&
+    (!filterByCommitish || isReleaseIdFinalize) &&
     FULL_SHA_REGEX.test(process.env.GITHUB_SHA || '')
   ) {
     return process.env.GITHUB_SHA

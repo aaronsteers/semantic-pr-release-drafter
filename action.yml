@@ -262,4 +262,7 @@ outputs:
       instead — are when you explicitly override the ref with a branch
       `commitish`, when `filter-by-commitish` is enabled (that feature matches
       releases by branch name, so a SHA would break it), or in local-git mode.
-      Outputs are only emitted when running in GitHub Actions.
+      The `filter-by-commitish` exception does not apply on a `release-id`
+      finalize: that release is targeted by a deterministic point-read, so
+      commitish-based selection is moot and the pin is still applied. Outputs
+      are only emitted when running in GitHub Actions.

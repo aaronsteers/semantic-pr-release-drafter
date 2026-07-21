@@ -4252,6 +4252,61 @@ describe('release-drafter', () => {
 
         restoreEnvironment()
       })
+
+      it('still pins on a release-id finalize even when filter-by-commitish is enabled', async () => {
+        const sha = '1496a1f82f32f240f7cbe1a42eb0b0c7a06a5093'
+        let restoreEnvironment = mockedEnv({
+          'INPUT_RELEASE-ID': '11691725',
+          GITHUB_ACTIONS: 'true',
+          GITHUB_SHA: sha,
+        })
+        const setOutputSpy = jest
+          .spyOn(core, 'setOutput')
+          .mockImplementation(() => {})
+
+        getConfigMock('config-filter-by-commitish.yml')
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [releaseDrafterFixture])
+
+        // Point-read target is still on its branch ref (an earlier
+        // filter-by-commitish pass didn't freeze it).
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        // release-id targets the release deterministically, so filter-by-commitish
+        // is moot for it — the pin is applied rather than suppressed.
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(body.target_commitish).toBe(sha)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutputSpy).toHaveBeenCalledWith('resolved-sha', sha)
+        expect.assertions(2)
+
+        restoreEnvironment()
+      })
     })
   })
 })

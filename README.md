@@ -882,8 +882,9 @@ Since each run regenerates the body from scratch, calling the action without `no
 > between the two steps. Because those values come from the release, the inputs
 > that would recompute them (`version`, `tag`, `commitish`, `base-ref-override`,
 > `base-version-override`, `prerelease`, `prerelease-identifier`,
-> `allow-major-bumps`) are **incompatible** with `prepared-release-id` and cause
-> the action to fail if set alongside it.
+> `allow-major-bumps`) are **ignored** when set alongside `prepared-release-id` —
+> the action emits a warning naming them and continues, taking their values from
+> the prepared release.
 
 ### Pattern A: Third-party asset attacher
 

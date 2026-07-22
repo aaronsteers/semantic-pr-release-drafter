@@ -154343,10 +154343,13 @@ var require_index = __commonJS({
       }
       const drafter = async (context) => {
         const input = getInput();
-        const preparedReleaseConflict = getPreparedReleaseConflict(input);
-        if (preparedReleaseConflict) {
-          core2.setFailed(preparedReleaseConflict);
-          return;
+        const ignoredPreparedReleaseInputs = getIgnoredPreparedReleaseInputs(input);
+        if (ignoredPreparedReleaseInputs.length > 0) {
+          core2.warning(
+            `prepared-release-id targets an already-prepared release as the source of truth, so the following input(s) are ignored: ${ignoredPreparedReleaseInputs.join(
+              ", "
+            )}. Their values are taken from the prepared release.`
+          );
         }
         const config = await getConfig({
           context,
@@ -154650,9 +154653,9 @@ var require_index = __commonJS({
         allowMajorBumps: core2.getInput("allow-major-bumps") !== "" ? core2.getInput("allow-major-bumps").toLowerCase() === "true" : void 0
       };
     }
-    function getPreparedReleaseConflict(input) {
-      if (!input.preparedReleaseId) return;
-      const incompatible = [
+    function getIgnoredPreparedReleaseInputs(input) {
+      if (!input.preparedReleaseId) return [];
+      return [
         ["version", input.version],
         ["tag", input.tag],
         ["commitish", input.commitish],
@@ -154660,15 +154663,8 @@ var require_index = __commonJS({
         ["base-version-override", input.baseVersionOverride],
         ["prerelease", input.prerelease],
         ["prerelease-identifier", input.preReleaseIdentifier],
-        // `allow-major-bumps` has a non-empty default ('false') in action.yml, so it
-        // always arrives via getInput and can't be distinguished from an explicit
-        // `false`. Only an explicit `true` expresses intent to influence the (now
-        // frozen) version resolution, so treat only that as a conflict — otherwise
-        // the default would make every prepared-release-id finalize fail.
-        ["allow-major-bumps", input.allowMajorBumps === true ? true : void 0]
+        ["allow-major-bumps", input.allowMajorBumps]
       ].filter(([, value]) => value !== void 0).map(([name]) => name);
-      if (incompatible.length === 0) return;
-      return `prepared-release-id targets an already-prepared release as the source of truth, so the following input(s) are incompatible and must not be set alongside it: ${incompatible.join(", ")}. Remove them; their values are taken from the prepared release.`;
     }
     function updateConfigFromInput(config, input) {
       if (input.commitish) {

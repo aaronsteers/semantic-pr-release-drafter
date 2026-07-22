@@ -4182,7 +4182,7 @@ describe('release-drafter', () => {
         restoreEnvironment()
       })
 
-      it('fails when an incompatible input is set alongside prepared-release-id', async () => {
+      it('warns but still finalizes when an ignored input is set alongside prepared-release-id', async () => {
         let restoreEnvironment = mockedEnv({
           'INPUT_PREPARED-RELEASE-ID': '11691725',
           INPUT_VERSION: '3.0.0',
@@ -4190,36 +4190,64 @@ describe('release-drafter', () => {
         const setFailedSpy = jest
           .spyOn(core, 'setFailed')
           .mockImplementation(() => {})
+        const warningSpy = jest
+          .spyOn(core, 'warning')
+          .mockImplementation(() => {})
 
-        // No API is mocked: the conflict is caught before any release lookup,
-        // so the run must short-circuit without touching the GitHub API.
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [{ ...releasePayload, id: 999, draft: false }])
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
         await probot.receive({
           name: 'push',
           payload: pushPayload,
         })
 
-        expect(setFailedSpy).toHaveBeenCalledWith(
+        // The ignored input is warned about, naming it, but the run does not fail.
+        expect(warningSpy).toHaveBeenCalledWith(
           expect.stringContaining('version')
         )
-        expect(setFailedSpy).toHaveBeenCalledWith(
-          expect.stringContaining('prepared-release-id')
-        )
+        expect(setFailedSpy).not.toHaveBeenCalled()
         expect.assertions(2)
 
+        warningSpy.mockRestore()
         setFailedSpy.mockRestore()
         restoreEnvironment()
       })
 
-      it('does not treat allow-major-bumps=false (the action default) as a conflict', async () => {
-        // `allow-major-bumps` has a non-empty default ('false') in action.yml,
-        // so real Actions runs always pass it. It must NOT be flagged as an
-        // incompatible input, otherwise every prepared-release-id finalize fails.
+      it('does not warn when allow-major-bumps is unset (action has no default)', async () => {
+        // `allow-major-bumps` has no default in action.yml, so an unset input
+        // arrives as undefined and must not be reported as ignored — otherwise
+        // every real prepared-release-id finalize would warn spuriously.
         let restoreEnvironment = mockedEnv({
           'INPUT_PREPARED-RELEASE-ID': '11691725',
-          'INPUT_ALLOW-MAJOR-BUMPS': 'false',
         })
         const setFailedSpy = jest
           .spyOn(core, 'setFailed')
+          .mockImplementation(() => {})
+        const warningSpy = jest
+          .spyOn(core, 'warning')
           .mockImplementation(() => {})
 
         getConfigMock()
@@ -4256,14 +4284,16 @@ describe('release-drafter', () => {
           payload: pushPayload,
         })
 
+        expect(warningSpy).not.toHaveBeenCalled()
         expect(setFailedSpy).not.toHaveBeenCalled()
-        expect.assertions(2)
+        expect.assertions(3)
 
+        warningSpy.mockRestore()
         setFailedSpy.mockRestore()
         restoreEnvironment()
       })
 
-      it('fails when allow-major-bumps=true is set alongside prepared-release-id', async () => {
+      it('warns but still finalizes when allow-major-bumps=true is set alongside prepared-release-id', async () => {
         let restoreEnvironment = mockedEnv({
           'INPUT_PREPARED-RELEASE-ID': '11691725',
           'INPUT_ALLOW-MAJOR-BUMPS': 'true',
@@ -4271,21 +4301,47 @@ describe('release-drafter', () => {
         const setFailedSpy = jest
           .spyOn(core, 'setFailed')
           .mockImplementation(() => {})
+        const warningSpy = jest
+          .spyOn(core, 'warning')
+          .mockImplementation(() => {})
 
-        // No API is mocked: the conflict is caught before any release lookup.
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [{ ...releasePayload, id: 999, draft: false }])
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
         await probot.receive({
           name: 'push',
           payload: pushPayload,
         })
 
-        expect(setFailedSpy).toHaveBeenCalledWith(
+        expect(warningSpy).toHaveBeenCalledWith(
           expect.stringContaining('allow-major-bumps')
         )
-        expect(setFailedSpy).toHaveBeenCalledWith(
-          expect.stringContaining('prepared-release-id')
-        )
+        expect(setFailedSpy).not.toHaveBeenCalled()
         expect.assertions(2)
 
+        warningSpy.mockRestore()
         setFailedSpy.mockRestore()
         restoreEnvironment()
       })

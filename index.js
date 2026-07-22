@@ -34,10 +34,16 @@ module.exports = (app, { getRouter }) => {
   const drafter = async (context) => {
     const input = getInput()
 
-    const preparedReleaseConflict = getPreparedReleaseConflict(input)
-    if (preparedReleaseConflict) {
-      core.setFailed(preparedReleaseConflict)
-      return
+    const ignoredPreparedReleaseInputs = getIgnoredPreparedReleaseInputs(input)
+    if (ignoredPreparedReleaseInputs.length > 0) {
+      core.warning(
+        `prepared-release-id targets an already-prepared release as the ` +
+          `source of truth, so the following input(s) are ignored: ` +
+          `${ignoredPreparedReleaseInputs.join(
+            ', '
+          )}. Their values are taken ` +
+          `from the prepared release.`
+      )
     }
 
     const config = await getConfig({
@@ -271,8 +277,8 @@ module.exports = (app, { getRouter }) => {
     // On a `prepared-release-id` finalize the targeted release is the source of
     // truth: reuse the version, tag, and prerelease state frozen by the earlier
     // pass rather than recomputing them (recomputing could drift if a release
-    // landed in between). Inputs that would recompute these are rejected up
-    // front (see getPreparedReleaseConflict), so nothing here is overridden.
+    // landed in between). Inputs that would recompute these are ignored with a
+    // warning (see getIgnoredPreparedReleaseInputs), so nothing here is overridden.
     let effectiveTag = tag
     let effectiveIsPreRelease = prerelease
     if (preparedRelease) {
@@ -454,17 +460,17 @@ function getInput() {
 /**
  * `prepared-release-id` finalizes an already-prepared release: its version,
  * tag, prerelease state, and target commit are the frozen source of truth. Any
- * input that would recompute or re-select those values is therefore
- * incompatible — passing it would either be silently ignored or reintroduce the
- * cross-invocation drift this path exists to prevent. Reject the combination up
- * front with a clear error rather than resolving the contradiction quietly.
+ * input that would recompute or re-select those values is therefore a no-op on
+ * this path — its value comes from the prepared release regardless. Rather than
+ * failing (which would force callers to reason about which inputs are set by
+ * default vs. explicitly), collect them so the caller can warn and continue.
  * (`filter-by-commitish` is a repo config-file option, not an action input, so
  * it is a silent no-op here instead — handled where the release is targeted.)
- * Returns an error message describing the conflict, or `undefined` when clear.
+ * Returns the names of the ignored inputs (empty when none apply).
  */
-function getPreparedReleaseConflict(input) {
-  if (!input.preparedReleaseId) return
-  const incompatible = [
+function getIgnoredPreparedReleaseInputs(input) {
+  if (!input.preparedReleaseId) return []
+  return [
     ['version', input.version],
     ['tag', input.tag],
     ['commitish', input.commitish],
@@ -472,22 +478,10 @@ function getPreparedReleaseConflict(input) {
     ['base-version-override', input.baseVersionOverride],
     ['prerelease', input.prerelease],
     ['prerelease-identifier', input.preReleaseIdentifier],
-    // `allow-major-bumps` has a non-empty default ('false') in action.yml, so it
-    // always arrives via getInput and can't be distinguished from an explicit
-    // `false`. Only an explicit `true` expresses intent to influence the (now
-    // frozen) version resolution, so treat only that as a conflict — otherwise
-    // the default would make every prepared-release-id finalize fail.
-    ['allow-major-bumps', input.allowMajorBumps === true ? true : undefined],
+    ['allow-major-bumps', input.allowMajorBumps],
   ]
     .filter(([, value]) => value !== undefined)
     .map(([name]) => name)
-  if (incompatible.length === 0) return
-  return (
-    `prepared-release-id targets an already-prepared release as the source of ` +
-    `truth, so the following input(s) are incompatible and must not be set ` +
-    `alongside it: ${incompatible.join(', ')}. Remove them; their values are ` +
-    `taken from the prepared release.`
-  )
 }
 
 /**

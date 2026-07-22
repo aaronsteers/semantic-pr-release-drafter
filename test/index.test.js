@@ -4182,30 +4182,182 @@ describe('release-drafter', () => {
         restoreEnvironment()
       })
 
-      it('fails when an incompatible input is set alongside prepared-release-id', async () => {
+      it('warns but still finalizes when an ignored input (commitish) is set alongside prepared-release-id', async () => {
+        // `commitish` is the subtle case: it flows through updateConfigFromInput
+        // and would otherwise shift the commit range used to regenerate the
+        // changelog. Neutralizing it keeps the prepared release authoritative.
         let restoreEnvironment = mockedEnv({
           'INPUT_PREPARED-RELEASE-ID': '11691725',
-          INPUT_VERSION: '3.0.0',
+          INPUT_COMMITISH: 'refs/heads/some-other-branch',
         })
         const setFailedSpy = jest
           .spyOn(core, 'setFailed')
           .mockImplementation(() => {})
+        const warningSpy = jest
+          .spyOn(core, 'warning')
+          .mockImplementation(() => {})
 
-        // No API is mocked: the conflict is caught before any release lookup,
-        // so the run must short-circuit without touching the GitHub API.
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [{ ...releasePayload, id: 999, draft: false }])
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            if (
+              !body.query.includes(
+                'query findCommitsWithAssociatedPullRequests'
+              )
+            ) {
+              return false
+            }
+            // Proves neutralization: the injected commitish must NOT drive the
+            // commit range used to regenerate the changelog. If it leaked
+            // through updateConfigFromInput, targetCommitish would be it.
+            expect(body.variables.targetCommitish).not.toBe(
+              'refs/heads/some-other-branch'
+            )
+            return true
+          })
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
         await probot.receive({
           name: 'push',
           payload: pushPayload,
         })
 
-        expect(setFailedSpy).toHaveBeenCalledWith(
-          expect.stringContaining('version')
+        // The ignored input is warned about, naming it, but the run does not fail.
+        expect(warningSpy).toHaveBeenCalledWith(
+          expect.stringContaining('commitish')
         )
-        expect(setFailedSpy).toHaveBeenCalledWith(
-          expect.stringContaining('prepared-release-id')
+        expect(setFailedSpy).not.toHaveBeenCalled()
+        expect.assertions(3)
+
+        warningSpy.mockRestore()
+        setFailedSpy.mockRestore()
+        restoreEnvironment()
+      })
+
+      it('does not warn when allow-major-bumps is unset (action has no default)', async () => {
+        // `allow-major-bumps` has no default in action.yml, so an unset input
+        // arrives as undefined and must not be reported as ignored — otherwise
+        // every real prepared-release-id finalize would warn spuriously.
+        let restoreEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
+        })
+        const setFailedSpy = jest
+          .spyOn(core, 'setFailed')
+          .mockImplementation(() => {})
+        const warningSpy = jest
+          .spyOn(core, 'warning')
+          .mockImplementation(() => {})
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [{ ...releasePayload, id: 999, draft: false }])
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(body.draft).toBe(true)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(warningSpy).not.toHaveBeenCalled()
+        expect(setFailedSpy).not.toHaveBeenCalled()
+        expect.assertions(3)
+
+        warningSpy.mockRestore()
+        setFailedSpy.mockRestore()
+        restoreEnvironment()
+      })
+
+      it('warns but still finalizes when allow-major-bumps=true is set alongside prepared-release-id', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
+          'INPUT_ALLOW-MAJOR-BUMPS': 'true',
+        })
+        const setFailedSpy = jest
+          .spyOn(core, 'setFailed')
+          .mockImplementation(() => {})
+        const warningSpy = jest
+          .spyOn(core, 'warning')
+          .mockImplementation(() => {})
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [{ ...releasePayload, id: 999, draft: false }])
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(warningSpy).toHaveBeenCalledWith(
+          expect.stringContaining('allow-major-bumps')
         )
+        expect(setFailedSpy).not.toHaveBeenCalled()
         expect.assertions(2)
 
+        warningSpy.mockRestore()
         setFailedSpy.mockRestore()
         restoreEnvironment()
       })

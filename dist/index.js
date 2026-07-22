@@ -154343,10 +154343,11 @@ var require_index = __commonJS({
       }
       const drafter = async (context) => {
         const input = getInput();
-        const preparedReleaseConflict = getPreparedReleaseConflict(input);
-        if (preparedReleaseConflict) {
-          core2.setFailed(preparedReleaseConflict);
-          return;
+        const ignoredPreparedReleaseInputs = neutralizeIgnoredPreparedReleaseInputs(input);
+        if (ignoredPreparedReleaseInputs.length > 0) {
+          core2.warning(
+            `prepared-release-id is set, so the following input(s) are ignored (no-op) and will not affect this run: ${ignoredPreparedReleaseInputs.join(", ")}.`
+          );
         }
         const config = await getConfig({
           context,
@@ -154650,20 +154651,22 @@ var require_index = __commonJS({
         allowMajorBumps: core2.getInput("allow-major-bumps") !== "" ? core2.getInput("allow-major-bumps").toLowerCase() === "true" : void 0
       };
     }
-    function getPreparedReleaseConflict(input) {
-      if (!input.preparedReleaseId) return;
-      const incompatible = [
-        ["version", input.version],
-        ["tag", input.tag],
-        ["commitish", input.commitish],
-        ["base-ref-override", input.baseRefOverride],
-        ["base-version-override", input.baseVersionOverride],
-        ["prerelease", input.prerelease],
-        ["prerelease-identifier", input.preReleaseIdentifier],
-        ["allow-major-bumps", input.allowMajorBumps]
-      ].filter(([, value]) => value !== void 0).map(([name]) => name);
-      if (incompatible.length === 0) return;
-      return `prepared-release-id targets an already-prepared release as the source of truth, so the following input(s) are incompatible and must not be set alongside it: ${incompatible.join(", ")}. Remove them; their values are taken from the prepared release.`;
+    function neutralizeIgnoredPreparedReleaseInputs(input) {
+      if (!input.preparedReleaseId) return [];
+      const ignored = [
+        ["version", "version"],
+        ["tag", "tag"],
+        ["commitish", "commitish"],
+        ["base-ref-override", "baseRefOverride"],
+        ["base-version-override", "baseVersionOverride"],
+        ["prerelease", "prerelease"],
+        ["prerelease-identifier", "preReleaseIdentifier"],
+        ["allow-major-bumps", "allowMajorBumps"]
+      ].filter(([, key]) => input[key] !== void 0);
+      for (const [, key] of ignored) {
+        input[key] = void 0;
+      }
+      return ignored.map(([name]) => name);
     }
     function updateConfigFromInput(config, input) {
       if (input.commitish) {

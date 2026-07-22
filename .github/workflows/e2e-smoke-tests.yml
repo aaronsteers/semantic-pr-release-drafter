@@ -656,7 +656,8 @@ jobs:
           BODY=$(echo "$BODY" | sed '/^<!-- Release drafted at .* -->$/d')
 
           # Normalize the dynamic workflow run URL in the not-ready banner
-          BODY=$(echo "$BODY" | sed -E 's#\(https://[^)]*/actions/runs/[0-9]+\)#(RUN_URL)#')
+          # (matches http/https so custom GITHUB_SERVER_URL values, e.g. GHES, are handled)
+          BODY=$(echo "$BODY" | sed -E 's#\(https?://[^)]*/actions/runs/[0-9]+\)#(RUN_URL)#')
 
           # Normalize whitespace for comparison (trim leading/trailing, normalize newlines)
           BODY_NORMALIZED=$(echo "$BODY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -s '\n')

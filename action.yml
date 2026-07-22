@@ -154,12 +154,14 @@ inputs:
   allow-major-bumps:
     description: |
       A boolean indicating whether to allow automatic major version bumps.
-      When false (default), breaking changes will only bump the minor version,
-      following "marketing-aware" semver semantics. When true, breaking changes
-      will trigger a major version bump according to standard semver rules.
+      When false, breaking changes will only bump the minor version, following
+      "marketing-aware" semver semantics. When true, breaking changes will
+      trigger a major version bump according to standard semver rules. When left
+      unset, the behavior defers to the repo config's
+      `version-resolver.no-auto-major`, which itself defaults to the
+      marketing-aware (minor-only) behavior.
       Note: Pre-1.0 versions always bump minor for breaking changes regardless of this setting.
     required: false
-    default: 'false'
   attach-files:
     description: |
       Files to attach to the draft release as assets. Accepts a single file path,
@@ -192,11 +194,11 @@ inputs:
       state, and pinned target commit are reused as-is rather than recomputed,
       so the finalize can't drift if another release is published between the
       steps. Because of this, inputs that would recompute or re-select those
-      values are incompatible and cause the action to fail if set alongside
-      `prepared-release-id`: `version`, `tag`, `commitish`, `base-ref-override`,
-      `base-version-override`, `prerelease`, `prerelease-identifier`, and
-      `allow-major-bumps`. (The `filter-by-commitish` config option is likewise
-      ignored on this path.)
+      values are ignored (a no-op) when set alongside `prepared-release-id`, and
+      the action emits a warning naming them: `version`, `tag`, `commitish`,
+      `base-ref-override`, `base-version-override`, `prerelease`,
+      `prerelease-identifier`, and `allow-major-bumps`. (The `filter-by-commitish`
+      config option is likewise ignored on this path.)
 
       Recommended for the two-step (not-ready -> finalize) pattern: capture
       `id` from the first invocation and pass it here on the finalize call —

@@ -307,11 +307,17 @@ module.exports = (app, { getRouter }) => {
         typeof notReady === 'string'
           ? notReady
           : 'This release draft is still being prepared. Do not publish until this banner is removed.'
+      const runUrl = getWorkflowRunUrl()
+      const runUrlLine = runUrl
+        ? `>\n> [View the workflow run preparing this release](${runUrl})\n`
+        : ''
       releaseInfo.body =
         `> [!CAUTION]\n` +
         `> **NOT READY FOR PUBLISHING**\n` +
         `>\n` +
-        `> ${bannerMessage}\n\n` +
+        `> ${bannerMessage}\n` +
+        runUrlLine +
+        `\n` +
         releaseInfo.body
     }
 
@@ -668,4 +674,16 @@ function getCommitUrl() {
   const sha = process.env.GITHUB_SHA
   if (!repository || !sha) return null
   return `${serverUrl}/${repository}/commit/${sha}`
+}
+
+/**
+ * Builds the active workflow run URL from GitHub Actions environment variables.
+ * Returns `null` when not running in GitHub Actions.
+ */
+function getWorkflowRunUrl() {
+  const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com'
+  const repository = process.env.GITHUB_REPOSITORY
+  const runId = process.env.GITHUB_RUN_ID
+  if (!repository || !runId) return null
+  return `${serverUrl}/${repository}/actions/runs/${runId}`
 }

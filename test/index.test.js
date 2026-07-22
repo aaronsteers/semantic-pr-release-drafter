@@ -3881,6 +3881,93 @@ describe('release-drafter', () => {
         restoreEnvironment()
       })
 
+      it('renders the active workflow run URL in the banner when running in GitHub Actions', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_NOT-READY': 'true',
+          GITHUB_SERVER_URL: 'https://github.com',
+          GITHUB_REPOSITORY: 'toolmantim/release-drafter-test-project',
+          GITHUB_RUN_ID: '123456789',
+        })
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.body).toContain('> **NOT READY FOR PUBLISHING**')
+              expect(body.body).toContain(
+                '> [View the workflow run preparing this release](https://github.com/toolmantim/release-drafter-test-project/actions/runs/123456789)'
+              )
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(2)
+
+        restoreEnvironment()
+      })
+
+      it('omits the run URL line when not running in GitHub Actions', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_NOT-READY': 'true',
+        })
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.body).toContain('> **NOT READY FOR PUBLISHING**')
+              expect(body.body).not.toContain(
+                'View the workflow run preparing this release'
+              )
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(2)
+
+        restoreEnvironment()
+      })
+
       it('prepends custom banner when not-ready is a custom string', async () => {
         let restoreEnvironment = mockedEnv({
           'INPUT_NOT-READY': 'Assets are still being uploaded. Please wait.',

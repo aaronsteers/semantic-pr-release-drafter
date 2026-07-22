@@ -4182,10 +4182,13 @@ describe('release-drafter', () => {
         restoreEnvironment()
       })
 
-      it('warns but still finalizes when an ignored input is set alongside prepared-release-id', async () => {
+      it('warns but still finalizes when an ignored input (commitish) is set alongside prepared-release-id', async () => {
+        // `commitish` is the subtle case: it flows through updateConfigFromInput
+        // and would otherwise shift the commit range used to regenerate the
+        // changelog. Neutralizing it keeps the prepared release authoritative.
         let restoreEnvironment = mockedEnv({
           'INPUT_PREPARED-RELEASE-ID': '11691725',
-          INPUT_VERSION: '3.0.0',
+          INPUT_COMMITISH: 'refs/heads/some-other-branch',
         })
         const setFailedSpy = jest
           .spyOn(core, 'setFailed')
@@ -4226,7 +4229,7 @@ describe('release-drafter', () => {
 
         // The ignored input is warned about, naming it, but the run does not fail.
         expect(warningSpy).toHaveBeenCalledWith(
-          expect.stringContaining('version')
+          expect.stringContaining('commitish')
         )
         expect(setFailedSpy).not.toHaveBeenCalled()
         expect.assertions(2)

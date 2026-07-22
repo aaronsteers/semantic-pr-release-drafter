@@ -34,15 +34,13 @@ module.exports = (app, { getRouter }) => {
   const drafter = async (context) => {
     const input = getInput()
 
-    const ignoredPreparedReleaseInputs = getIgnoredPreparedReleaseInputs(input)
+    const ignoredPreparedReleaseInputs =
+      neutralizeIgnoredPreparedReleaseInputs(input)
     if (ignoredPreparedReleaseInputs.length > 0) {
       core.warning(
-        `prepared-release-id targets an already-prepared release as the ` +
-          `source of truth, so the following input(s) are ignored: ` +
-          `${ignoredPreparedReleaseInputs.join(
-            ', '
-          )}. Their values are taken ` +
-          `from the prepared release.`
+        `prepared-release-id is set, so the following input(s) are ignored ` +
+          `(no-op): ${ignoredPreparedReleaseInputs.join(', ')}. Their values ` +
+          `come from the targeted release.`
       )
     }
 
@@ -277,8 +275,9 @@ module.exports = (app, { getRouter }) => {
     // On a `prepared-release-id` finalize the targeted release is the source of
     // truth: reuse the version, tag, and prerelease state frozen by the earlier
     // pass rather than recomputing them (recomputing could drift if a release
-    // landed in between). Inputs that would recompute these are ignored with a
-    // warning (see getIgnoredPreparedReleaseInputs), so nothing here is overridden.
+    // landed in between). Inputs that would recompute these are neutralized with
+    // a warning (see neutralizeIgnoredPreparedReleaseInputs), so nothing here is
+    // overridden.
     let effectiveTag = tag
     let effectiveIsPreRelease = prerelease
     if (preparedRelease) {
@@ -460,28 +459,34 @@ function getInput() {
 /**
  * `prepared-release-id` finalizes an already-prepared release: its version,
  * tag, prerelease state, and target commit are the frozen source of truth. Any
- * input that would recompute or re-select those values is therefore a no-op on
- * this path — its value comes from the prepared release regardless. Rather than
- * failing (which would force callers to reason about which inputs are set by
- * default vs. explicitly), collect them so the caller can warn and continue.
- * (`filter-by-commitish` is a repo config-file option, not an action input, so
- * it is a silent no-op here instead — handled where the release is targeted.)
- * Returns the names of the ignored inputs (empty when none apply).
+ * input that would recompute or re-select those values (or shift the commit
+ * range used to regenerate the changelog, e.g. `commitish`) must be a no-op on
+ * this path. Rather than failing (which would force callers to reason about
+ * which inputs are set by default vs. explicitly), this *neutralizes* those
+ * inputs in place so they genuinely can't affect config merging or downstream
+ * resolution, and returns their names so the caller can warn. Clearing them
+ * (rather than only warning) is what makes the no-op real — otherwise they
+ * would still flow through `updateConfigFromInput`. (`filter-by-commitish` is a
+ * repo config-file option, not an action input, so it is handled where the
+ * release is targeted.) Returns the names of the neutralized inputs, or `[]`
+ * when `prepared-release-id` is not set.
  */
-function getIgnoredPreparedReleaseInputs(input) {
+function neutralizeIgnoredPreparedReleaseInputs(input) {
   if (!input.preparedReleaseId) return []
-  return [
-    ['version', input.version],
-    ['tag', input.tag],
-    ['commitish', input.commitish],
-    ['base-ref-override', input.baseRefOverride],
-    ['base-version-override', input.baseVersionOverride],
-    ['prerelease', input.prerelease],
-    ['prerelease-identifier', input.preReleaseIdentifier],
-    ['allow-major-bumps', input.allowMajorBumps],
-  ]
-    .filter(([, value]) => value !== undefined)
-    .map(([name]) => name)
+  const ignored = [
+    ['version', 'version'],
+    ['tag', 'tag'],
+    ['commitish', 'commitish'],
+    ['base-ref-override', 'baseRefOverride'],
+    ['base-version-override', 'baseVersionOverride'],
+    ['prerelease', 'prerelease'],
+    ['prerelease-identifier', 'preReleaseIdentifier'],
+    ['allow-major-bumps', 'allowMajorBumps'],
+  ].filter(([, key]) => input[key] !== undefined)
+  for (const [, key] of ignored) {
+    input[key] = undefined
+  }
+  return ignored.map(([name]) => name)
 }
 
 /**

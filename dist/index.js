@@ -154343,12 +154343,10 @@ var require_index = __commonJS({
       }
       const drafter = async (context) => {
         const input = getInput();
-        const ignoredPreparedReleaseInputs = getIgnoredPreparedReleaseInputs(input);
+        const ignoredPreparedReleaseInputs = neutralizeIgnoredPreparedReleaseInputs(input);
         if (ignoredPreparedReleaseInputs.length > 0) {
           core2.warning(
-            `prepared-release-id targets an already-prepared release as the source of truth, so the following input(s) are ignored: ${ignoredPreparedReleaseInputs.join(
-              ", "
-            )}. Their values are taken from the prepared release.`
+            `prepared-release-id is set, so the following input(s) are ignored (no-op): ${ignoredPreparedReleaseInputs.join(", ")}. Their values come from the targeted release.`
           );
         }
         const config = await getConfig({
@@ -154653,18 +154651,22 @@ var require_index = __commonJS({
         allowMajorBumps: core2.getInput("allow-major-bumps") !== "" ? core2.getInput("allow-major-bumps").toLowerCase() === "true" : void 0
       };
     }
-    function getIgnoredPreparedReleaseInputs(input) {
+    function neutralizeIgnoredPreparedReleaseInputs(input) {
       if (!input.preparedReleaseId) return [];
-      return [
-        ["version", input.version],
-        ["tag", input.tag],
-        ["commitish", input.commitish],
-        ["base-ref-override", input.baseRefOverride],
-        ["base-version-override", input.baseVersionOverride],
-        ["prerelease", input.prerelease],
-        ["prerelease-identifier", input.preReleaseIdentifier],
-        ["allow-major-bumps", input.allowMajorBumps]
-      ].filter(([, value]) => value !== void 0).map(([name]) => name);
+      const ignored = [
+        ["version", "version"],
+        ["tag", "tag"],
+        ["commitish", "commitish"],
+        ["base-ref-override", "baseRefOverride"],
+        ["base-version-override", "baseVersionOverride"],
+        ["prerelease", "prerelease"],
+        ["prerelease-identifier", "preReleaseIdentifier"],
+        ["allow-major-bumps", "allowMajorBumps"]
+      ].filter(([, key]) => input[key] !== void 0);
+      for (const [, key] of ignored) {
+        input[key] = void 0;
+      }
+      return ignored.map(([name]) => name);
     }
     function updateConfigFromInput(config, input) {
       if (input.commitish) {

@@ -154,10 +154,12 @@ inputs:
   allow-major-bumps:
     description: |
       A boolean indicating whether to allow automatic major version bumps.
-      When false or unset (the default behavior), breaking changes will only
-      bump the minor version, following "marketing-aware" semver semantics. When
-      true, breaking changes will trigger a major version bump according to
-      standard semver rules.
+      When false, breaking changes will only bump the minor version, following
+      "marketing-aware" semver semantics. When true, breaking changes will
+      trigger a major version bump according to standard semver rules. When left
+      unset, the behavior defers to the repo config's
+      `version-resolver.no-auto-major`, which itself defaults to the
+      marketing-aware (minor-only) behavior.
       Note: Pre-1.0 versions always bump minor for breaking changes regardless of this setting.
     required: false
   attach-files:

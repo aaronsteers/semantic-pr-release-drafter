@@ -154660,7 +154660,12 @@ var require_index = __commonJS({
         ["base-version-override", input.baseVersionOverride],
         ["prerelease", input.prerelease],
         ["prerelease-identifier", input.preReleaseIdentifier],
-        ["allow-major-bumps", input.allowMajorBumps]
+        // `allow-major-bumps` has a non-empty default ('false') in action.yml, so it
+        // always arrives via getInput and can't be distinguished from an explicit
+        // `false`. Only an explicit `true` expresses intent to influence the (now
+        // frozen) version resolution, so treat only that as a conflict — otherwise
+        // the default would make every prepared-release-id finalize fail.
+        ["allow-major-bumps", input.allowMajorBumps === true ? true : void 0]
       ].filter(([, value]) => value !== void 0).map(([name]) => name);
       if (incompatible.length === 0) return;
       return `prepared-release-id targets an already-prepared release as the source of truth, so the following input(s) are incompatible and must not be set alongside it: ${incompatible.join(", ")}. Remove them; their values are taken from the prepared release.`;

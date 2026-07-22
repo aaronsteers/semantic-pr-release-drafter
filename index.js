@@ -472,7 +472,12 @@ function getPreparedReleaseConflict(input) {
     ['base-version-override', input.baseVersionOverride],
     ['prerelease', input.prerelease],
     ['prerelease-identifier', input.preReleaseIdentifier],
-    ['allow-major-bumps', input.allowMajorBumps],
+    // `allow-major-bumps` has a non-empty default ('false') in action.yml, so it
+    // always arrives via getInput and can't be distinguished from an explicit
+    // `false`. Only an explicit `true` expresses intent to influence the (now
+    // frozen) version resolution, so treat only that as a conflict — otherwise
+    // the default would make every prepared-release-id finalize fail.
+    ['allow-major-bumps', input.allowMajorBumps === true ? true : undefined],
   ]
     .filter(([, value]) => value !== undefined)
     .map(([name]) => name)

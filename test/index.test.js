@@ -4209,6 +4209,86 @@ describe('release-drafter', () => {
         setFailedSpy.mockRestore()
         restoreEnvironment()
       })
+
+      it('does not treat allow-major-bumps=false (the action default) as a conflict', async () => {
+        // `allow-major-bumps` has a non-empty default ('false') in action.yml,
+        // so real Actions runs always pass it. It must NOT be flagged as an
+        // incompatible input, otherwise every prepared-release-id finalize fails.
+        let restoreEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
+          'INPUT_ALLOW-MAJOR-BUMPS': 'false',
+        })
+        const setFailedSpy = jest
+          .spyOn(core, 'setFailed')
+          .mockImplementation(() => {})
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [{ ...releasePayload, id: 999, draft: false }])
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+            (body) => {
+              expect(body.draft).toBe(true)
+              return true
+            }
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setFailedSpy).not.toHaveBeenCalled()
+        expect.assertions(2)
+
+        setFailedSpy.mockRestore()
+        restoreEnvironment()
+      })
+
+      it('fails when allow-major-bumps=true is set alongside prepared-release-id', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
+          'INPUT_ALLOW-MAJOR-BUMPS': 'true',
+        })
+        const setFailedSpy = jest
+          .spyOn(core, 'setFailed')
+          .mockImplementation(() => {})
+
+        // No API is mocked: the conflict is caught before any release lookup.
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setFailedSpy).toHaveBeenCalledWith(
+          expect.stringContaining('allow-major-bumps')
+        )
+        expect(setFailedSpy).toHaveBeenCalledWith(
+          expect.stringContaining('prepared-release-id')
+        )
+        expect.assertions(2)
+
+        setFailedSpy.mockRestore()
+        restoreEnvironment()
+      })
     })
 
     describe('with resolved SHA pinning', () => {

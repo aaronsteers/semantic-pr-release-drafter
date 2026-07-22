@@ -861,6 +861,8 @@ In some cases, you may need to resolve the version string before building. In su
 
 Use the `not-ready` input to prevent admins from prematurely publishing a draft while assets are still being prepared. The `not-ready` input accepts `'true'` (default banner) or a custom string (used as the banner message). When set, a visible `> [!CAUTION]` banner is prepended to the release body.
 
+When running in GitHub Actions, the banner also links to the active workflow run (`$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID`) so admins can jump straight to the run that is preparing the release. The link is added automatically for both the default and custom banner messages, and is omitted when those environment variables are unavailable (e.g. running locally).
+
 Since each run regenerates the body from scratch, calling the action without `not-ready` automatically removes the banner.
 
 > [!IMPORTANT]

@@ -381,6 +381,8 @@ jobs:
               > **NOT READY FOR PUBLISHING**
               >
               > This release draft is still being prepared. Do not publish until this banner is removed.
+              >
+              > [View the workflow run preparing this release](RUN_URL)
 
               ## Features
 
@@ -652,6 +654,9 @@ jobs:
 
           # Strip the admin metadata comment (appended by the action on every run)
           BODY=$(echo "$BODY" | sed '/^<!-- Release drafted at .* -->$/d')
+
+          # Normalize the dynamic workflow run URL in the not-ready banner
+          BODY=$(echo "$BODY" | sed -E 's#\(https://[^)]*/actions/runs/[0-9]+\)#(RUN_URL)#')
 
           # Normalize whitespace for comparison (trim leading/trailing, normalize newlines)
           BODY_NORMALIZED=$(echo "$BODY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -s '\n')

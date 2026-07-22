@@ -154534,11 +154534,15 @@ var require_index = __commonJS({
         });
         if (notReady) {
           const bannerMessage = typeof notReady === "string" ? notReady : "This release draft is still being prepared. Do not publish until this banner is removed.";
+          const runUrl = getWorkflowRunUrl();
+          const runUrlLine = runUrl ? `>
+> [View the workflow run preparing this release](${runUrl})
+` : "";
           releaseInfo.body = `> [!CAUTION]
 > **NOT READY FOR PUBLISHING**
 >
 > ${bannerMessage}
-
+` + runUrlLine + `
 ` + releaseInfo.body;
         }
         const pacificTimestamp = formatPacificTimestamp(/* @__PURE__ */ new Date());
@@ -154779,6 +154783,13 @@ var require_index = __commonJS({
       const sha = process.env.GITHUB_SHA;
       if (!repository || !sha) return null;
       return `${serverUrl}/${repository}/commit/${sha}`;
+    }
+    function getWorkflowRunUrl() {
+      const serverUrl = process.env.GITHUB_SERVER_URL || "https://github.com";
+      const repository = process.env.GITHUB_REPOSITORY;
+      const runId = process.env.GITHUB_RUN_ID;
+      if (!repository || !runId) return null;
+      return `${serverUrl}/${repository}/actions/runs/${runId}`;
     }
   }
 });

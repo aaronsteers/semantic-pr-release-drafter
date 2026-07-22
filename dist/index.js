@@ -154346,7 +154346,7 @@ var require_index = __commonJS({
         const ignoredPreparedReleaseInputs = neutralizeIgnoredPreparedReleaseInputs(input);
         if (ignoredPreparedReleaseInputs.length > 0) {
           core2.warning(
-            `prepared-release-id is set, so the following input(s) are ignored (no-op): ${ignoredPreparedReleaseInputs.join(", ")}. Their values come from the targeted release.`
+            `prepared-release-id is set, so the following input(s) are ignored (no-op) and will not affect this run: ${ignoredPreparedReleaseInputs.join(", ")}.`
           );
         }
         const config = await getConfig({

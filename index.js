@@ -39,8 +39,8 @@ module.exports = (app, { getRouter }) => {
     if (ignoredPreparedReleaseInputs.length > 0) {
       core.warning(
         `prepared-release-id is set, so the following input(s) are ignored ` +
-          `(no-op): ${ignoredPreparedReleaseInputs.join(', ')}. Their values ` +
-          `come from the targeted release.`
+          `(no-op) and will not affect this run: ` +
+          `${ignoredPreparedReleaseInputs.join(', ')}.`
       )
     }
 

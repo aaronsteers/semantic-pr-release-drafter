@@ -4211,9 +4211,22 @@ describe('release-drafter', () => {
           .reply(200, releaseDrafterFixture)
 
         nock('https://api.github.com')
-          .post('/graphql', (body) =>
-            body.query.includes('query findCommitsWithAssociatedPullRequests')
-          )
+          .post('/graphql', (body) => {
+            if (
+              !body.query.includes(
+                'query findCommitsWithAssociatedPullRequests'
+              )
+            ) {
+              return false
+            }
+            // Proves neutralization: the injected commitish must NOT drive the
+            // commit range used to regenerate the changelog. If it leaked
+            // through updateConfigFromInput, targetCommitish would be it.
+            expect(body.variables.targetCommitish).not.toBe(
+              'refs/heads/some-other-branch'
+            )
+            return true
+          })
           .reply(200, graphqlCommitsMergeCommit)
 
         nock('https://api.github.com')
@@ -4232,7 +4245,7 @@ describe('release-drafter', () => {
           expect.stringContaining('commitish')
         )
         expect(setFailedSpy).not.toHaveBeenCalled()
-        expect.assertions(2)
+        expect.assertions(3)
 
         warningSpy.mockRestore()
         setFailedSpy.mockRestore()

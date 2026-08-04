@@ -608,9 +608,11 @@ jobs:
         if: matrix.live-release == true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ format('v0.0.{0}', github.run_id) }}
+          RELEASE_NAME: ${{ format('v0.0.{0}', github.run_id) }}
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/release.json"
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.name == \"$RELEASE_NAME\") | .id" | head -n 1)"
+          [ -n "$release_id" ]
+          gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" > "$RUNNER_TEMP/release.json"
           jq -e '
             .draft == true and
             (.body | contains("[!CAUTION]") | not) and
@@ -621,11 +623,10 @@ jobs:
         if: matrix.live-release == true && always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ format('v0.0.{0}', github.run_id) }}
+          RELEASE_NAME: ${{ format('v0.0.{0}', github.run_id) }}
         run: |
-          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id' 2>/dev/null | jq -r 'select(type == "number")' || true)"
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.name == \"$RELEASE_NAME\") | .id" 2>/dev/null | head -n 1 || true)"
           [ -z "$release_id" ] || gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$release_id"
-          gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$RELEASE_TAG" 2>/dev/null || true
 
       - name: Run release-drafter expecting failure
         id: release-drafter-failure

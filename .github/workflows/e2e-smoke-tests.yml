@@ -618,13 +618,30 @@ jobs:
             ([.assets[].name] | sort) == ["app-1.0.0.whl", "file1.txt", "file2.txt"]
           ' "$RUNNER_TEMP/release.json"
 
-      - name: Clean up live draft release
-        if: matrix.live-release == true && always()
+      - name: Clean up live draft release by id
+        if: matrix.live-release == true && always() && steps.release-drafter.outputs.id != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_ID: ${{ steps.release-drafter.outputs.id }}
         run: |
-          [ -z "$RELEASE_ID" ] || gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" 2>/dev/null || true
+          gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" 2>/dev/null || true
+
+      - name: Clean up live draft release by name
+        if: matrix.live-release == true && always() && steps.release-drafter.outputs.id == ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NAME: ${{ format('v0.0.{0}', github.run_id) }}
+        run: |
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.name == \"$RELEASE_NAME\") | .id" 2>/dev/null | head -n 1 || true)"
+          [ -z "$release_id" ] || gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$release_id" 2>/dev/null || true
+
+      - name: Clean up live draft release tag
+        if: matrix.live-release == true && always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ format('v0.0.{0}', github.run_id) }}
+        run: |
+          gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$RELEASE_TAG" 2>/dev/null || true
 
       - name: Run release-drafter expecting failure
         id: release-drafter-failure

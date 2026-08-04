@@ -861,6 +861,12 @@ In some cases, you may need to resolve the version string before building. In su
 
 Use the `not-ready` input to prevent admins from prematurely publishing a draft while assets are still being prepared. The `not-ready` input accepts `'true'` (default banner) or a custom string (used as the banner message). When set, a visible `> [!CAUTION]` banner is prepended to the release body.
 
+When `attach-files` is provided without `not-ready`, a single invocation is
+automatically guarded by a transient `> [!CAUTION]` hold banner while existing
+assets are removed and new assets are uploaded. The hold is removed only after
+all uploads complete, so the release cannot appear ready while it has missing
+or partial assets. If an upload fails, the hold deliberately remains.
+
 When running in GitHub Actions, the banner also links to the active workflow run (`$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID`) so admins can jump straight to the run that is preparing the release. The link is added automatically for both the default and custom banner messages. It requires `$GITHUB_REPOSITORY` and `$GITHUB_RUN_ID` (`$GITHUB_SERVER_URL` defaults to `https://github.com`), so it is omitted when those are unavailable (e.g. running locally).
 
 Since each run regenerates the body from scratch, calling the action without `not-ready` automatically removes the banner.
@@ -937,6 +943,19 @@ Since each run regenerates the body from scratch, calling the action without `no
     # Target the exact release from step 1 (point-read by ID). The release is
     # the source of truth, so version/tag/prerelease/commit all come from it.
     prepared-release-id: ${{ steps.not-ready-draft.outputs.id }}
+    attach-files: dist/*.whl
+```
+
+For a one-step workflow, build the artifacts before invoking the action and set
+`attach-files` directly. The action applies the transient upload hold
+automatically and removes it after the uploads finish:
+
+```yaml
+- name: Attach assets and publish-ready release
+  uses: aaronsteers/semantic-pr-release-drafter@main
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
     attach-files: dist/*.whl
 ```
 

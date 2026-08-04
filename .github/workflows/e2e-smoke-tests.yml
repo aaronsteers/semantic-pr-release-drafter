@@ -589,6 +589,7 @@ jobs:
           base-ref-override: ${{ matrix.test-start-version-string }}
           tag: ${{ matrix.live-release == true && format('e2e-attach-files-{0}', github.run_id) || '' }}
           version: ${{ matrix.live-release == true && format('0.0.{0}', github.run_id) || '' }}
+          commitish: ${{ matrix.live-release == true && 'main' || '' }}
           config-name: ${{ matrix.config-name }}
           template: ${{ matrix.template }}
           change-template: ${{ matrix.change-template }}
@@ -622,7 +623,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ format('e2e-attach-files-{0}', github.run_id) }}
         run: |
-          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id' 2>/dev/null || true)"
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id' 2>/dev/null | jq -r 'select(type == "number")' || true)"
           [ -z "$release_id" ] || gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$release_id"
           gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$RELEASE_TAG" 2>/dev/null || true
 

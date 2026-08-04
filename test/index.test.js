@@ -6,6 +6,9 @@ const core = require('@actions/core')
 const mockedEnv = require('mocked-env')
 const pino = require('pino')
 const Stream = require('node:stream')
+const fs = require('node:fs')
+const os = require('node:os')
+const path = require('node:path')
 const pushPayload = require('./fixtures/push.json')
 const pushTagPayload = require('./fixtures/push-tag.json')
 const releasePayload = require('./fixtures/release.json')
@@ -4082,6 +4085,199 @@ describe('release-drafter', () => {
         })
 
         expect.assertions(1)
+      })
+    })
+
+    describe('with attach-files input', () => {
+      let workspace
+
+      beforeEach(() => {
+        workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'release-assets-'))
+        fs.writeFileSync(path.join(workspace, 'artifact.txt'), 'artifact')
+      })
+
+      afterEach(() => {
+        fs.rmSync(workspace, { recursive: true, force: true })
+      })
+
+      const setupAttachFilesMocks = ({
+        notReady = '',
+        publish = false,
+        expectHoldBody,
+        expectFinalBody,
+      } = {}) => {
+        const environment = {
+          GITHUB_WORKSPACE: workspace,
+          'INPUT_ATTACH-FILES': 'artifact.txt',
+        }
+        if (notReady) environment['INPUT_NOT-READY'] = notReady
+        if (publish) environment.INPUT_PUBLISH = 'true'
+        const previousEnvironment = {
+          GITHUB_WORKSPACE: process.env.GITHUB_WORKSPACE,
+          'INPUT_ATTACH-FILES': process.env['INPUT_ATTACH-FILES'],
+          'INPUT_NOT-READY': process.env['INPUT_NOT-READY'],
+          INPUT_PUBLISH: process.env.INPUT_PUBLISH,
+        }
+        Object.assign(process.env, environment)
+        if (!notReady) delete process.env['INPUT_NOT-READY']
+        if (!publish) delete process.env.INPUT_PUBLISH
+        const restore = () => {
+          for (const [key, value] of Object.entries(previousEnvironment)) {
+            if (value === undefined) delete process.env[key]
+            else process.env[key] = value
+          }
+        }
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              if (expectHoldBody) {
+                expect(body.body).toContain('NOT READY FOR PUBLISHING')
+                expect(body.body).toContain(expectHoldBody)
+              } else {
+                expect(body.body).not.toContain('NOT READY FOR PUBLISHING')
+                expect(body.body).not.toContain('[!CAUTION]')
+              }
+              if (publish) expect(body.draft).toBe(false)
+              expect(body.body).toContain('<!-- Release drafted at')
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725/assets'
+          )
+          .query({ per_page: 100 })
+          .reply(200, [])
+
+        nock('https://uploads.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725/assets',
+            () => true
+          )
+          .query({ name: 'artifact.txt' })
+          .reply(200, { id: 1, name: 'artifact.txt' })
+
+        if (expectFinalBody) {
+          nock('https://api.github.com')
+            .patch(
+              '/repos/toolmantim/release-drafter-test-project/releases/11691725',
+              (body) => {
+                expect(body).toEqual({ body: expectFinalBody })
+                expect(body.body).not.toContain(
+                  'Release assets are still uploading'
+                )
+                return true
+              }
+            )
+            .reply(200, releasePayload)
+        }
+
+        return restore
+      }
+
+      it('holds the banner during uploads and removes it after uploads complete', async () => {
+        const restore = setupAttachFilesMocks({
+          expectHoldBody:
+            'Release assets are still uploading. Do not publish until this banner is removed.',
+          expectFinalBody: expect.any(String),
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        restore()
+      })
+
+      it('keeps the requested not-ready banner without an extra body update', async () => {
+        const restore = setupAttachFilesMocks({
+          notReady: 'true',
+          expectHoldBody:
+            'This release draft is still being prepared. Do not publish until this banner is removed.',
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        restore()
+      })
+
+      it('does not add a hold banner or body update when publishing', async () => {
+        const restore = setupAttachFilesMocks({ publish: true })
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        restore()
+      })
+
+      it('writes the body only once when attach-files is not set', async () => {
+        const previousWorkspace = process.env.GITHUB_WORKSPACE
+        const previousAttachFiles = process.env['INPUT_ATTACH-FILES']
+        delete process.env.GITHUB_WORKSPACE
+        delete process.env['INPUT_ATTACH-FILES']
+        const restore = () => {
+          if (previousWorkspace === undefined)
+            delete process.env.GITHUB_WORKSPACE
+          else process.env.GITHUB_WORKSPACE = previousWorkspace
+          if (previousAttachFiles === undefined)
+            delete process.env['INPUT_ATTACH-FILES']
+          else process.env['INPUT_ATTACH-FILES'] = previousAttachFiles
+        }
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.body).not.toContain('NOT READY FOR PUBLISHING')
+              expect(body.body).toContain('<!-- Release drafted at')
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        restore()
       })
     })
 

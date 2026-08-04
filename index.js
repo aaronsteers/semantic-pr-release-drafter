@@ -6,6 +6,7 @@ const {
   generateReleaseInfo,
   createRelease,
   updateRelease,
+  updateReleaseBody,
 } = require('./lib/releases')
 const { findCommitsWithAssociatedPullRequests } = require('./lib/commits')
 const {
@@ -312,18 +313,7 @@ module.exports = (app, { getRouter }) => {
         typeof notReady === 'string'
           ? notReady
           : 'This release draft is still being prepared. Do not publish until this banner is removed.'
-      const runUrl = getWorkflowRunUrl()
-      const runUrlLine = runUrl
-        ? `>\n> [View the workflow run preparing this release](${runUrl})\n`
-        : ''
-      releaseInfo.body =
-        `> [!CAUTION]\n` +
-        `> **NOT READY FOR PUBLISHING**\n` +
-        `>\n` +
-        `> ${bannerMessage}\n` +
-        runUrlLine +
-        `\n` +
-        releaseInfo.body
+      releaseInfo.body = prependReleaseBanner(releaseInfo.body, bannerMessage)
     }
 
     // Append hidden admin metadata comment (Pacific time + commit link)
@@ -333,6 +323,11 @@ module.exports = (app, { getRouter }) => {
       `\n<!-- Release drafted at ${pacificTimestamp}` +
       (commitUrl ? ` from ${commitUrl}` : '') +
       ` -->\n`
+    const finalReleaseBody = releaseInfo.body
+    const uploadHoldBody = prependReleaseBanner(
+      finalReleaseBody,
+      'Release assets are still uploading. Do not publish until this banner is removed.'
+    )
 
     // In dry-run mode, skip creating/updating releases but still set outputs
     if (dryRun) {
@@ -375,12 +370,21 @@ module.exports = (app, { getRouter }) => {
       return
     }
 
+    const holdApplied = Boolean(attachFiles && !notReady && releaseInfo.draft)
+    const releaseBodyDuringUpload = holdApplied
+      ? uploadHoldBody
+      : finalReleaseBody
+    const releaseInfoDuringUpload =
+      releaseBodyDuringUpload === releaseInfo.body
+        ? releaseInfo
+        : { ...releaseInfo, body: releaseBodyDuringUpload }
+
     let createOrUpdateReleaseResponse
     if (!draftRelease) {
       log({ context, message: 'Creating new release' })
       createOrUpdateReleaseResponse = await createRelease({
         context,
-        releaseInfo,
+        releaseInfo: releaseInfoDuringUpload,
         config,
       })
     } else {
@@ -388,7 +392,7 @@ module.exports = (app, { getRouter }) => {
       createOrUpdateReleaseResponse = await updateRelease({
         context,
         draftRelease,
-        releaseInfo,
+        releaseInfo: releaseInfoDuringUpload,
         config,
       })
     }
@@ -411,6 +415,14 @@ module.exports = (app, { getRouter }) => {
         attachFilesInput: attachFiles,
         resetFiles: shouldResetFiles,
       })
+
+      if (holdApplied) {
+        await updateReleaseBody({
+          context,
+          releaseId,
+          body: finalReleaseBody,
+        })
+      }
     }
 
     if (runnerIsActions()) {
@@ -423,6 +435,22 @@ module.exports = (app, { getRouter }) => {
   } else {
     app.on('push', drafter)
   }
+}
+
+function prependReleaseBanner(body, message) {
+  const runUrl = getWorkflowRunUrl()
+  const runUrlLine = runUrl
+    ? `>\n> [View the workflow run preparing this release](${runUrl})\n`
+    : ''
+  return (
+    `> [!CAUTION]\n` +
+    `> **NOT READY FOR PUBLISHING**\n` +
+    `>\n` +
+    `> ${message}\n` +
+    runUrlLine +
+    `\n` +
+    body
+  )
 }
 
 function getInput() {

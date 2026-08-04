@@ -150740,6 +150740,14 @@ var require_releases = __commonJS({
         })
       );
     };
+    var updateReleaseBody = ({ context, releaseId, body }) => {
+      return context.octokit.repos.updateRelease(
+        context.repo({
+          release_id: releaseId,
+          body
+        })
+      );
+    };
     function updateDraftReleaseParameters(parameters) {
       const updateReleaseParameters = { ...parameters };
       if (!updateReleaseParameters.name) {
@@ -150759,6 +150767,7 @@ var require_releases = __commonJS({
     exports2.generateReleaseInfo = generateReleaseInfo;
     exports2.createRelease = createRelease;
     exports2.updateRelease = updateRelease;
+    exports2.updateReleaseBody = updateReleaseBody;
   }
 });
 
@@ -154317,7 +154326,8 @@ var require_index = __commonJS({
       getReleaseById,
       generateReleaseInfo,
       createRelease,
-      updateRelease
+      updateRelease,
+      updateReleaseBody
     } = require_releases();
     var { findCommitsWithAssociatedPullRequests } = require_commits();
     var {
@@ -154535,22 +154545,18 @@ var require_index = __commonJS({
         });
         if (notReady) {
           const bannerMessage = typeof notReady === "string" ? notReady : "This release draft is still being prepared. Do not publish until this banner is removed.";
-          const runUrl = getWorkflowRunUrl();
-          const runUrlLine = runUrl ? `>
-> [View the workflow run preparing this release](${runUrl})
-` : "";
-          releaseInfo.body = `> [!CAUTION]
-> **NOT READY FOR PUBLISHING**
->
-> ${bannerMessage}
-` + runUrlLine + `
-` + releaseInfo.body;
+          releaseInfo.body = prependReleaseBanner(releaseInfo.body, bannerMessage);
         }
         const pacificTimestamp = formatPacificTimestamp(/* @__PURE__ */ new Date());
         const commitUrl = getCommitUrl();
         releaseInfo.body += `
 <!-- Release drafted at ${pacificTimestamp}` + (commitUrl ? ` from ${commitUrl}` : "") + ` -->
 `;
+        const finalReleaseBody = releaseInfo.body;
+        const uploadHoldBody = prependReleaseBanner(
+          finalReleaseBody,
+          "Release assets are still uploading. Do not publish until this banner is removed."
+        );
         if (dryRun) {
           log({
             context,
@@ -154583,12 +154589,15 @@ var require_index = __commonJS({
           }
           return;
         }
+        const holdApplied = Boolean(attachFiles && !notReady && releaseInfo.draft);
+        const releaseBodyDuringUpload = holdApplied ? uploadHoldBody : finalReleaseBody;
+        const releaseInfoDuringUpload = releaseBodyDuringUpload === releaseInfo.body ? releaseInfo : { ...releaseInfo, body: releaseBodyDuringUpload };
         let createOrUpdateReleaseResponse;
         if (!draftRelease) {
           log({ context, message: "Creating new release" });
           createOrUpdateReleaseResponse = await createRelease({
             context,
-            releaseInfo,
+            releaseInfo: releaseInfoDuringUpload,
             config
           });
         } else {
@@ -154596,7 +154605,7 @@ var require_index = __commonJS({
           createOrUpdateReleaseResponse = await updateRelease({
             context,
             draftRelease,
-            releaseInfo,
+            releaseInfo: releaseInfoDuringUpload,
             config
           });
         }
@@ -154616,6 +154625,13 @@ var require_index = __commonJS({
             attachFilesInput: attachFiles,
             resetFiles: shouldResetFiles
           });
+          if (holdApplied) {
+            await updateReleaseBody({
+              context,
+              releaseId,
+              body: finalReleaseBody
+            });
+          }
         }
         if (runnerIsActions()) {
           setActionOutput(createOrUpdateReleaseResponse, releaseInfo, resolvedSha);
@@ -154627,6 +154643,18 @@ var require_index = __commonJS({
         app.on("push", drafter);
       }
     };
+    function prependReleaseBanner(body, message) {
+      const runUrl = getWorkflowRunUrl();
+      const runUrlLine = runUrl ? `>
+> [View the workflow run preparing this release](${runUrl})
+` : "";
+      return `> [!CAUTION]
+> **NOT READY FOR PUBLISHING**
+>
+> ${message}
+` + runUrlLine + `
+` + body;
+    }
     function getInput() {
       return {
         configName: core2.getInput("config-name"),

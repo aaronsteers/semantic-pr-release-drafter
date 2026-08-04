@@ -170,8 +170,16 @@ inputs:
       Paths are resolved relative to GITHUB_WORKSPACE.
 
       When set, the action will:
-      1. Delete ALL existing assets on the draft release (unless reset-files is false)
-      2. Upload all matched files as release assets
+      1. Place a transient "NOT READY FOR PUBLISHING" hold banner on a draft
+         release while its assets are being updated (unless `not-ready` is set,
+         which keeps its requested banner)
+      2. Delete ALL existing assets on the draft release (unless reset-files is false)
+      3. Upload all matched files as release assets
+      4. Remove the transient hold banner only after every upload completes
+
+      This automatically guards a single-invocation upload workflow so the draft
+      cannot appear ready while it has missing or partial assets. Existing
+      assets are deleted only when reset-files resolves to true.
 
       If the pattern matches zero files, the action will fail with an error.
       Requires GITHUB_TOKEN with contents: write permission.
@@ -222,6 +230,11 @@ inputs:
       will be shown as the banner message.
       Set to 'false' (or omit) to remove the banner.
 
+      When `attach-files` is provided without `not-ready`, the action
+      automatically uses the same banner as a transient upload hold on draft
+      releases and removes it only after all uploads complete. If an upload
+      fails, the hold remains on the draft release.
+
       Usage patterns:
 
         A. Third-party asset attacher (e.g. GoReleaser):
@@ -233,6 +246,8 @@ inputs:
           1. Run with `not-ready: true` to create the draft with a WIP banner.
           2. (Build assets via custom steps.)
           3. Run with `attach-files` (without `not-ready`) to attach assets and finalize.
+             A transient hold banner is applied during the upload and removed
+             only after all uploads complete.
     required: false
     default: ''
 outputs:

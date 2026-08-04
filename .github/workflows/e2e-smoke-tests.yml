@@ -370,6 +370,29 @@ jobs:
             # Flag to indicate this test needs attach-files setup
             needs-attach-files: true
 
+          # Test attach-files on a draft release without not-ready
+          # Verifies the final body has no caution banner and matched assets are present
+          - test-name: 'attach-files-draft-final-body'
+            test-start-version-string: 'v1.0.0'
+            test-commit-list: |
+              feat: add draft release artifacts (#302)
+            expected-version-string: '1.1.0'
+            expected-body: |
+              ## Features
+
+              * Add draft release artifacts (#302)
+            template: |
+              $CHANGES
+            change-template: '* $TITLE (#$NUMBER)'
+            category-template: '## $TITLE'
+            categories: |
+              - title: Features
+                commit-types:
+                  - feat
+            # No not-ready input: the default release is a draft with a final,
+            # banner-free body after attach-files completes.
+            needs-attach-files: true
+
           # Test not-ready input: banner is prepended to body
           - test-name: 'not-ready-banner'
             test-start-version-string: 'v1.0.0'

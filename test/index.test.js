@@ -4102,6 +4102,7 @@ describe('release-drafter', () => {
 
       const setupAttachFilesMocks = ({
         notReady = '',
+        publish = false,
         expectHoldBody,
         expectFinalBody,
       } = {}) => {
@@ -4110,13 +4111,16 @@ describe('release-drafter', () => {
           'INPUT_ATTACH-FILES': 'artifact.txt',
         }
         if (notReady) environment['INPUT_NOT-READY'] = notReady
+        if (publish) environment.INPUT_PUBLISH = 'true'
         const previousEnvironment = {
           GITHUB_WORKSPACE: process.env.GITHUB_WORKSPACE,
           'INPUT_ATTACH-FILES': process.env['INPUT_ATTACH-FILES'],
           'INPUT_NOT-READY': process.env['INPUT_NOT-READY'],
+          INPUT_PUBLISH: process.env.INPUT_PUBLISH,
         }
         Object.assign(process.env, environment)
         if (!notReady) delete process.env['INPUT_NOT-READY']
+        if (!publish) delete process.env.INPUT_PUBLISH
         const restore = () => {
           for (const [key, value] of Object.entries(previousEnvironment)) {
             if (value === undefined) delete process.env[key]
@@ -4142,8 +4146,14 @@ describe('release-drafter', () => {
           .post(
             '/repos/toolmantim/release-drafter-test-project/releases',
             (body) => {
-              expect(body.body).toContain('NOT READY FOR PUBLISHING')
-              expect(body.body).toContain(expectHoldBody)
+              if (expectHoldBody) {
+                expect(body.body).toContain('NOT READY FOR PUBLISHING')
+                expect(body.body).toContain(expectHoldBody)
+              } else {
+                expect(body.body).not.toContain('NOT READY FOR PUBLISHING')
+                expect(body.body).not.toContain('[!CAUTION]')
+              }
+              if (publish) expect(body.draft).toBe(false)
               expect(body.body).toContain('<!-- Release drafted at')
               return true
             }
@@ -4204,6 +4214,17 @@ describe('release-drafter', () => {
           expectHoldBody:
             'This release draft is still being prepared. Do not publish until this banner is removed.',
         })
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        restore()
+      })
+
+      it('does not add a hold banner or body update when publishing', async () => {
+        const restore = setupAttachFilesMocks({ publish: true })
 
         await probot.receive({
           name: 'push',

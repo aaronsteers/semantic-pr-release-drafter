@@ -370,8 +370,10 @@ module.exports = (app, { getRouter }) => {
       return
     }
 
-    const releaseBodyDuringUpload =
-      attachFiles && !notReady ? uploadHoldBody : finalReleaseBody
+    const holdApplied = Boolean(attachFiles && !notReady && releaseInfo.draft)
+    const releaseBodyDuringUpload = holdApplied
+      ? uploadHoldBody
+      : finalReleaseBody
     const releaseInfoDuringUpload =
       releaseBodyDuringUpload === releaseInfo.body
         ? releaseInfo
@@ -414,7 +416,7 @@ module.exports = (app, { getRouter }) => {
         resetFiles: shouldResetFiles,
       })
 
-      if (!notReady) {
+      if (holdApplied) {
         await updateReleaseBody({
           context,
           releaseId,

@@ -154589,7 +154589,8 @@ var require_index = __commonJS({
           }
           return;
         }
-        const releaseBodyDuringUpload = attachFiles && !notReady ? uploadHoldBody : finalReleaseBody;
+        const holdApplied = Boolean(attachFiles && !notReady && releaseInfo.draft);
+        const releaseBodyDuringUpload = holdApplied ? uploadHoldBody : finalReleaseBody;
         const releaseInfoDuringUpload = releaseBodyDuringUpload === releaseInfo.body ? releaseInfo : { ...releaseInfo, body: releaseBodyDuringUpload };
         let createOrUpdateReleaseResponse;
         if (!draftRelease) {
@@ -154624,7 +154625,7 @@ var require_index = __commonJS({
             attachFilesInput: attachFiles,
             resetFiles: shouldResetFiles
           });
-          if (!notReady) {
+          if (holdApplied) {
             await updateReleaseBody({
               context,
               releaseId,

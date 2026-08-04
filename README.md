@@ -861,11 +861,12 @@ In some cases, you may need to resolve the version string before building. In su
 
 Use the `not-ready` input to prevent admins from prematurely publishing a draft while assets are still being prepared. The `not-ready` input accepts `'true'` (default banner) or a custom string (used as the banner message). When set, a visible `> [!CAUTION]` banner is prepended to the release body.
 
-When `attach-files` is provided without `not-ready`, a single invocation is
-automatically guarded by a transient `> [!CAUTION]` hold banner while existing
-assets are removed and new assets are uploaded. The hold is removed only after
-all uploads complete, so the release cannot appear ready while it has missing
-or partial assets. If an upload fails, the hold deliberately remains.
+When `attach-files` is provided without `not-ready`, a draft release is
+automatically guarded by a transient `> [!CAUTION]` hold banner while its
+release assets are updated. Existing assets are removed only when
+`reset-files` resolves to `true`. The hold is removed only after all uploads
+complete, so the draft cannot appear ready while it has missing or partial
+assets. If an upload fails, the hold deliberately remains.
 
 When running in GitHub Actions, the banner also links to the active workflow run (`$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID`) so admins can jump straight to the run that is preparing the release. The link is added automatically for both the default and custom banner messages. It requires `$GITHUB_REPOSITORY` and `$GITHUB_RUN_ID` (`$GITHUB_SERVER_URL` defaults to `https://github.com`), so it is omitted when those are unavailable (e.g. running locally).
 

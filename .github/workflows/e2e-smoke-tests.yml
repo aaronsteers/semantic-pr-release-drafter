@@ -7,7 +7,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   # Disable Husky git hooks (for local dev only)
@@ -392,6 +392,7 @@ jobs:
             # No not-ready input: the default release is a draft with a final,
             # banner-free body after attach-files completes.
             needs-attach-files: true
+            live-release: true
 
           # Test not-ready input: banner is prepended to body
           - test-name: 'not-ready-banner'
@@ -578,14 +579,16 @@ jobs:
           # Set a pattern that won't match any files (no files created)
           echo "ATTACH_FILES_PATTERNS=$TEST_REPO/nonexistent/*.whl" >> $GITHUB_ENV
 
-      - name: Run release-drafter in dry-run mode
+      - name: Run release-drafter
         id: release-drafter
         if: matrix.attach-files-expect-failure != true
         uses: ./
         with:
-          dry-run: 'true'
+          dry-run: ${{ matrix.live-release != true }}
           local-git-root: ${{ env.TEST_REPO }}
           base-ref-override: ${{ matrix.test-start-version-string }}
+          tag: ${{ matrix.live-release == true && format('e2e-attach-files-{0}', github.run_id) || '' }}
+          version: ${{ matrix.live-release == true && format('0.0.{0}', github.run_id) || '' }}
           config-name: ${{ matrix.config-name }}
           template: ${{ matrix.template }}
           change-template: ${{ matrix.change-template }}
@@ -599,6 +602,29 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REF: refs/heads/main
+
+      - name: Verify live draft release assets and body
+        if: matrix.live-release == true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ format('e2e-attach-files-{0}', github.run_id) }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/release.json"
+          jq -e '
+            .draft == true and
+            (.body | contains("[!CAUTION]") | not) and
+            ([.assets[].name] | sort) == ["app-1.0.0.whl", "file1.txt", "file2.txt"]
+          ' "$RUNNER_TEMP/release.json"
+
+      - name: Clean up live draft release
+        if: matrix.live-release == true && always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ format('e2e-attach-files-{0}', github.run_id) }}
+        run: |
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id' 2>/dev/null || true)"
+          [ -z "$release_id" ] || gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$release_id"
+          gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$RELEASE_TAG" 2>/dev/null || true
 
       - name: Run release-drafter expecting failure
         id: release-drafter-failure
@@ -631,7 +657,7 @@ jobs:
           echo "Correctly failed when no files matched attach-files pattern"
 
       - name: Verify resolved version
-        if: matrix.attach-files-expect-failure != true
+        if: matrix.attach-files-expect-failure != true && matrix.live-release != true
         run: |
           RESOLVED_VERSION="${{ steps.release-drafter.outputs.resolved-version }}"
           EXPECTED_VERSION="${{ matrix.expected-version-string }}"

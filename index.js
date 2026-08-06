@@ -421,6 +421,7 @@ module.exports = (app, { getRouter }) => {
           context,
           releaseId,
           body: finalReleaseBody,
+          releaseInfo,
         })
       }
     }

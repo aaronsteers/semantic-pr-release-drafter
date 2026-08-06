@@ -4105,6 +4105,13 @@ describe('release-drafter', () => {
         publish = false,
         expectHoldBody,
         expectFinalBody,
+        configFile = 'config.yml',
+        expectCreateIdentity,
+        expectFinalIdentity = {
+          name: 'v0.1.0',
+          tag_name: 'v0.1.0',
+          target_commitish: 'refs/heads/master',
+        },
       } = {}) => {
         const environment = {
           GITHUB_WORKSPACE: workspace,
@@ -4128,7 +4135,7 @@ describe('release-drafter', () => {
           }
         }
 
-        getConfigMock()
+        getConfigMock(configFile)
 
         nock('https://api.github.com')
           .get(
@@ -4152,6 +4159,9 @@ describe('release-drafter', () => {
               } else {
                 expect(body.body).not.toContain('NOT READY FOR PUBLISHING')
                 expect(body.body).not.toContain('[!CAUTION]')
+              }
+              if (expectCreateIdentity) {
+                expect(body).toMatchObject(expectCreateIdentity)
               }
               if (publish) expect(body.draft).toBe(false)
               expect(body.body).toContain('<!-- Release drafted at')
@@ -4180,11 +4190,9 @@ describe('release-drafter', () => {
             .patch(
               '/repos/toolmantim/release-drafter-test-project/releases/11691725',
               (body) => {
-                expect(body).toMatchObject({
+                expect(body).toEqual({
                   body: expectFinalBody,
-                  name: 'v0.1.0',
-                  tag_name: 'v0.1.0',
-                  target_commitish: 'refs/heads/master',
+                  ...expectFinalIdentity,
                 })
                 expect(body.body).not.toContain(
                   'Release assets are still uploading'
@@ -4203,6 +4211,31 @@ describe('release-drafter', () => {
           expectHoldBody:
             'Release assets are still uploading. Do not publish until this banner is removed.',
           expectFinalBody: expect.any(String),
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        restore()
+      })
+
+      it('preserves the existing tag when templates resolve empty', async () => {
+        const restore = setupAttachFilesMocks({
+          configFile: 'config-empty-templates.yml',
+          expectCreateIdentity: {
+            name: '',
+            tag_name: '',
+          },
+          expectHoldBody:
+            'Release assets are still uploading. Do not publish until this banner is removed.',
+          expectFinalBody: expect.any(String),
+          expectFinalIdentity: {
+            name: releasePayload.name,
+            tag_name: releasePayload.tag_name,
+            target_commitish: 'refs/heads/master',
+          },
         })
 
         await probot.receive({

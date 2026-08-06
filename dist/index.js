@@ -150740,11 +150740,17 @@ var require_releases = __commonJS({
         })
       );
     };
-    var updateReleaseBody = ({ context, releaseId, body, releaseInfo }) => {
+    var updateReleaseBody = ({
+      context,
+      releaseId,
+      body,
+      releaseInfo,
+      release
+    }) => {
       const updateReleaseParameters = updateDraftReleaseParameters({
-        name: releaseInfo.name,
-        tag_name: releaseInfo.tag,
-        target_commitish: releaseInfo.targetCommitish
+        name: releaseInfo.name || release.name,
+        tag_name: releaseInfo.tag || release.tag_name,
+        target_commitish: releaseInfo.targetCommitish || release.target_commitish
       });
       return context.octokit.repos.updateRelease(
         context.repo({
@@ -154636,7 +154642,8 @@ var require_index = __commonJS({
               context,
               releaseId,
               body: finalReleaseBody,
-              releaseInfo
+              releaseInfo,
+              release: createOrUpdateReleaseResponse.data
             });
           }
         }

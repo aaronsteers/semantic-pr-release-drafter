@@ -422,6 +422,7 @@ module.exports = (app, { getRouter }) => {
           releaseId,
           body: finalReleaseBody,
           releaseInfo,
+          release: createOrUpdateReleaseResponse.data,
         })
       }
     }

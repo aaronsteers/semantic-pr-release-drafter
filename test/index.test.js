@@ -4180,7 +4180,12 @@ describe('release-drafter', () => {
             .patch(
               '/repos/toolmantim/release-drafter-test-project/releases/11691725',
               (body) => {
-                expect(body).toEqual({ body: expectFinalBody })
+                expect(body).toMatchObject({
+                  body: expectFinalBody,
+                  name: 'v0.1.0',
+                  tag_name: 'v0.1.0',
+                  target_commitish: 'refs/heads/master',
+                })
                 expect(body.body).not.toContain(
                   'Release assets are still uploading'
                 )

@@ -9,6 +9,11 @@ on:
 permissions:
   contents: write
 
+# Serialize runs so overlapping pushes can't both pick the same draft/version.
+concurrency:
+  group: release-drafter
+  cancel-in-progress: false
+
 jobs:
   update_release_draft:
     runs-on: ubuntu-latest

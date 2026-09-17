@@ -16,12 +16,19 @@ jobs:
       fail-fast: false
       matrix:
         release:
+          # The action's own release is published automatically on every push
+          # to main (the workflow is the release gate). Manual dispatches only
+          # refresh the draft so a rerun with no new commits can't publish an
+          # empty patch release.
           - name: semantic-pr-release-drafter
             config-name: release-drafter.yml
+            publish: ${{ github.event_name == 'push' }}
           - name: dummy-project/dummy-project-a
             config-name: release-drafter-dummy-project-a.yml
+            publish: false
           - name: dummy-project/dummy-project-b
             config-name: release-drafter-dummy-project-b.yml
+            publish: false
     name: Draft release (${{ matrix.release.name }})
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +37,7 @@ jobs:
       - uses: ./
         with:
           config-name: ${{ matrix.release.config-name }}
+          publish: ${{ matrix.release.publish }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # The following config is commented out because it now matches the defaults.

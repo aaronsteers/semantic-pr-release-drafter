@@ -9,6 +9,14 @@ on:
 permissions:
   contents: write
 
+# Serialize runs so overlapping pushes can't both pick the same draft/version.
+# Pushes and manual dispatches use separate groups so a draft-only dispatch
+# can never displace a queued publishing push. Queued pushes may coalesce;
+# the surviving run still covers every commit since the last release.
+concurrency:
+  group: release-drafter-${{ github.event_name }}
+  cancel-in-progress: false
+
 jobs:
   update_release_draft:
     runs-on: ubuntu-latest

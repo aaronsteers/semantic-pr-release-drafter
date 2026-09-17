@@ -154238,11 +154238,21 @@ var require_assets = __commonJS({
         context,
         message: `Deleting asset: ${assetName} (ID: ${assetId})`
       });
-      await context.octokit.repos.deleteReleaseAsset(
-        context.repo({
-          asset_id: assetId
-        })
-      );
+      try {
+        await context.octokit.repos.deleteReleaseAsset(
+          context.repo({
+            asset_id: assetId
+          })
+        );
+      } catch (error) {
+        if (error.status !== 404) {
+          throw error;
+        }
+        log({
+          context,
+          message: `Asset ${assetName} (ID: ${assetId}) already deleted; continuing`
+        });
+      }
     };
     var deleteAllReleaseAssets = async ({ context, releaseId }) => {
       const assets = await listReleaseAssets({ context, releaseId });
@@ -154652,7 +154662,14 @@ var require_index = __commonJS({
         }
       };
       if (runnerIsActions()) {
-        app.onAny(drafter);
+        app.onAny(async (context) => {
+          try {
+            await drafter(context);
+          } catch (error) {
+            core2.setFailed(`\u{1F4A5} Release drafter failed with error: ${error.message}`);
+            throw error;
+          }
+        });
       } else {
         app.on("push", drafter);
       }

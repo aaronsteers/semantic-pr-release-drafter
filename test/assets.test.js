@@ -241,6 +241,63 @@ describe('manageReleaseAssets integration', () => {
     )
   })
 
+  test('tolerates 404 when an existing asset was already deleted', async () => {
+    createTestFiles(['dist/file.whl'])
+
+    const existingAssets = [
+      { id: 1, name: 'old-file-1.whl' },
+      { id: 2, name: 'old-file-2.tar.gz' },
+    ]
+
+    const mockContext = createMockContext(existingAssets)
+    mockContext.octokit.repos.deleteReleaseAsset
+      .mockRejectedValueOnce(
+        Object.assign(new Error('Not Found'), { status: 404 })
+      )
+      .mockResolvedValueOnce({})
+    const originalEnv = process.env.GITHUB_WORKSPACE
+    process.env.GITHUB_WORKSPACE = tempDir
+
+    await manageReleaseAssets({
+      context: mockContext,
+      releaseId: 12_345,
+      attachFilesInput: 'dist/*.whl',
+      resetFiles: true,
+    })
+
+    process.env.GITHUB_WORKSPACE = originalEnv
+
+    expect(mockContext.octokit.repos.deleteReleaseAsset).toHaveBeenCalledTimes(
+      2
+    )
+    expect(mockContext.octokit.repos.uploadReleaseAsset).toHaveBeenCalledTimes(
+      1
+    )
+  })
+
+  test('rethrows non-404 errors when deleting existing assets', async () => {
+    createTestFiles(['dist/file.whl'])
+
+    const mockContext = createMockContext([{ id: 1, name: 'old-file-1.whl' }])
+    mockContext.octokit.repos.deleteReleaseAsset.mockRejectedValueOnce(
+      Object.assign(new Error('Server Error'), { status: 500 })
+    )
+    const originalEnv = process.env.GITHUB_WORKSPACE
+    process.env.GITHUB_WORKSPACE = tempDir
+
+    await expect(
+      manageReleaseAssets({
+        context: mockContext,
+        releaseId: 12_345,
+        attachFilesInput: 'dist/*.whl',
+        resetFiles: true,
+      })
+    ).rejects.toThrow('Server Error')
+
+    process.env.GITHUB_WORKSPACE = originalEnv
+    expect(mockContext.octokit.repos.uploadReleaseAsset).not.toHaveBeenCalled()
+  })
+
   test('throws error when no files match pattern', async () => {
     createTestFiles(['dist/file.txt'])
 

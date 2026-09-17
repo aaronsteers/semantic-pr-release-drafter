@@ -433,7 +433,16 @@ module.exports = (app, { getRouter }) => {
   }
 
   if (runnerIsActions()) {
-    app.onAny(drafter)
+    // The Actions adapter swallows handler rejections (logs and resolves), so
+    // fail the step explicitly to avoid a green job with a half-updated draft.
+    app.onAny(async (context) => {
+      try {
+        await drafter(context)
+      } catch (error) {
+        core.setFailed(`💥 Release drafter failed with error: ${error.message}`)
+        throw error
+      }
+    })
   } else {
     app.on('push', drafter)
   }

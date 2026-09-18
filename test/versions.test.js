@@ -275,6 +275,112 @@ describe('versions', () => {
     expect(versionInfo.$RESOLVED_VERSION.version).toEqual('1.2.0')
   })
 
+  it('release branch floor raises a computed version', () => {
+    const versionInfo = getVersionInfo(
+      { tag_name: 'v0.36.0', name: 'v0.36.0' },
+      '$MAJOR.$MINOR.$PATCH$PRERELEASE',
+      undefined,
+      'prepatch',
+      'v',
+      'rc',
+      undefined,
+      '1.0.0-rc.1'
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('1.0.0-rc.1')
+    expect(versionInfo.$NEXT_PATCH_VERSION.version).toEqual('1.0.0-rc.1')
+    expect(versionInfo.$NEXT_PRERELEASE_VERSION.version).toEqual('1.0.0-rc.1')
+    expect(versionInfo.$NEXT_PRERELEASE_VERSION.template).toEqual('$PRERELEASE')
+  })
+
+  it('uses the configured identifier for the default prerelease version', () => {
+    const versionInfo = getVersionInfo(
+      undefined,
+      '$MAJOR.$MINOR.$PATCH$PRERELEASE',
+      undefined,
+      'prepatch',
+      'v',
+      'beta'
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('0.1.0-beta.0')
+  })
+
+  it('raises the configured default prerelease to a release branch floor', () => {
+    const versionInfo = getVersionInfo(
+      undefined,
+      '$MAJOR.$MINOR.$PATCH$PRERELEASE',
+      undefined,
+      'prepatch',
+      'v',
+      'beta',
+      undefined,
+      '0.1.0-beta.1'
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('0.1.0-beta.1')
+  })
+
+  it('release branch floor applies when no last release exists', () => {
+    const versionInfo = getVersionInfo(
+      undefined,
+      '$MAJOR.$MINOR.$PATCH$PRERELEASE',
+      undefined,
+      'prepatch',
+      'v',
+      'rc',
+      undefined,
+      '1.0.0-rc.1'
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('1.0.0-rc.1')
+  })
+
+  it('release branch floor applies over a preserved draft prerelease', () => {
+    const versionInfo = getVersionInfo(
+      { tag_name: 'v0.36.0', name: 'v0.36.0' },
+      '$MAJOR.$MINOR.$PATCH$PRERELEASE',
+      undefined,
+      'prepatch',
+      'v',
+      'rc',
+      '1.0.0-rc.5',
+      '1.0.1-rc.1'
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('1.0.1-rc.1')
+  })
+
+  it('does not lower a computed version to the release branch floor', () => {
+    const versionInfo = getVersionInfo(
+      { tag_name: 'v1.0.1', name: 'v1.0.1' },
+      '$MAJOR.$MINOR.$PATCH$PRERELEASE',
+      undefined,
+      'prepatch',
+      'v',
+      'rc',
+      undefined,
+      '1.0.0-rc.1'
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('1.0.2-rc.0')
+  })
+
+  it('explicit input version wins over the release branch floor', () => {
+    const versionInfo = getVersionInfo(
+      { tag_name: 'v0.36.0', name: 'v0.36.0' },
+      '$MAJOR.$MINOR.$PATCH$PRERELEASE',
+      '2.0.0',
+      'prepatch',
+      'v',
+      'rc',
+      undefined,
+      '3.0.0-rc.1'
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('2.0.0')
+  })
+
   it('explicit input version overrides both computed and draft versions', () => {
     const versionInfo = getVersionInfo(
       { tag_name: 'v0.64.5', name: 'v0.64.5' },

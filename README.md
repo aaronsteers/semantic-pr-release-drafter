@@ -730,6 +730,65 @@ Using `prerelease-identifier` automatically enable `include-prereleases`.
 prerelease-identifier: 'alpha' # will create a prerelease with version number x.x.x-alpha.x
 ```
 
+## Release branches (long-running release candidates)
+
+Long-running release candidate branches can opt into branch-name-driven release
+tracks with `prerelease-branch-rules`. The preferred form matches a literal branch
+prefix; `prerelease-identifier` is optional for stable version floors:
+
+```yml
+prerelease-branch-rules:
+  - branch-prefix: release-candidate/
+    prerelease-identifier: rc
+```
+
+If a rule sets `prerelease-identifier`, a different top-level
+`prerelease-identifier` is rejected to avoid conflicting release tracks.
+
+A push to `release-candidate/v1` creates or updates a prerelease at or above
+the version floor `v1.0.0-rc.1`; `release-candidate/v1.2` and the full
+`release-candidate/v1.2.0` form are also supported. The floor is applied to
+the version computed from commits, so:
+
+- after `v0.36.0`, the first release is `v1.0.0-rc.1`;
+- after `v1.0.0-rc.2`, the next release is `v1.0.0-rc.3`;
+- after an out-of-band `v1.0.1`, a `fix:` commit produces `v1.0.2-rc.0`.
+
+On a release-branch prerelease track the bump type is always `prerelease`;
+commit types do not move major/minor/patch.
+
+An existing draft is preserved if it was manually advanced. For `rc.1`, the
+last release (including prereleases) is used as the commit-range boundary, so
+the notes contain changes since the highest prior release rather than the
+entire repository history.
+
+For patterns that cannot be expressed as a prefix, use a regular expression
+with a named `version` capture group:
+
+```yml
+prerelease-branch-rules:
+  - branch-pattern: '^rc-(?<version>\d+(\.\d+){0,2})$'
+    prerelease-identifier: rc
+```
+
+After the release branch pull request is merged into the default branch, the
+merged PR's head branch sets a floor for the stable draft at the branch's GA
+version (`v1.0.0`). Rebase-merge is recommended because the release commits
+then appear natively in the default branch history. Squash-merge is also
+supported: the action expands the merged PR's commits and removes the
+redundant squash commit from the notes.
+Lineage detection on the default branch only sees merged PRs that survive
+`include-paths` filtering, so a release-branch PR touching no included path
+will not set the GA floor.
+
+### Limitations
+
+When `include-paths` is configured, squash-expanded commits are not
+path-filtered. Prefer rebase-merge for release branches in path-filtered
+repositories. Default-branch lineage detection only inspects PRs within
+`pull-request-limit`, so keep that limit above the number of PRs merged per
+release.
+
 ## Projects that don't use Semantic Versioning
 
 If your project doesn't follow [Semantic Versioning](https://semver.org) you can still use Release Drafter, but you may want to set the `version-template` option to customize how the `$NEXT_{PATCH,MINOR,MAJOR}_VERSION` environment variables are generated.

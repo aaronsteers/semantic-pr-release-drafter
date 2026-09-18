@@ -2,6 +2,7 @@ const { getConfig } = require('./lib/config')
 const { isTriggerableReference } = require('./lib/triggerable-reference')
 const {
   findReleases,
+  sortReleases,
   getReleaseById,
   generateReleaseInfo,
   createRelease,
@@ -24,6 +25,14 @@ const {
 } = require('./lib/assets')
 const { getEffectiveTagPrefix } = require('./lib/tag-prefix')
 const semver = require('semver')
+const yaml = require('yaml')
+const Joi = require('joi')
+const {
+  parseReleaseBranch,
+  releaseTagMatcher,
+  findReleaseBranchPullRequests,
+} = require('./lib/release-branches')
+const { prereleaseBranchRulesSchema } = require('./lib/schema')
 
 module.exports = (app, { getRouter }) => {
   if (!runnerIsActions() && typeof getRouter === 'function') {
@@ -55,26 +64,48 @@ module.exports = (app, { getRouter }) => {
 
     updateConfigFromInput(config, input)
 
+    const tagPrefix = getEffectiveTagPrefix(config)
+    const configuredLatest = input.latest || config.latest
+    const ref = process.env['GITHUB_REF'] || context.payload.ref
+    const releaseBranch = parseReleaseBranch({
+      ref,
+      rules: config['prerelease-branch-rules'],
+    })
+    if (releaseBranch && !releaseBranch.identifier) {
+      config.prerelease = false
+    } else if (releaseBranch?.identifier) {
+      const configuredIdentifier = config['prerelease-identifier']
+      if (
+        configuredIdentifier &&
+        configuredIdentifier !== releaseBranch.identifier
+      ) {
+        throw new Error(
+          `Release branch rule sets prerelease identifier "${releaseBranch.identifier}" but configuration sets "${configuredIdentifier}". Remove one of them.`
+        )
+      }
+      config.prerelease = true
+      config['prerelease-identifier'] = releaseBranch.identifier
+    }
+    config.latest = config.prerelease
+      ? 'false'
+      : input.latest || config.latest || undefined
+
     // GitHub Actions merge payloads slightly differ, in that their ref points
     // to the PR branch instead of refs/heads/master
-    const ref = process.env['GITHUB_REF'] || context.payload.ref
-
-    if (!isTriggerableReference({ ref, context, config })) {
+    if (!releaseBranch && !isTriggerableReference({ ref, context, config })) {
       return
     }
 
     let targetCommitish = config.commitish || ref
     const hasExplicitCommitish = Boolean(config.commitish)
 
-    const {
+    let {
       'filter-by-commitish': filterByCommitish,
       'include-pre-releases': includePreReleases,
       'prerelease-identifier': preReleaseIdentifier,
-      latest,
-      prerelease,
     } = config
-    const tagPrefix = getEffectiveTagPrefix(config)
-
+    let latest = config.latest
+    let prerelease = config.prerelease
     const shouldIncludePreReleases = Boolean(
       includePreReleases || preReleaseIdentifier
     )
@@ -88,6 +119,8 @@ module.exports = (app, { getRouter }) => {
 
     // Local git mode: use git log instead of GitHub API
     let draftRelease, lastRelease, commits, mergedPullRequests
+    let releasesResult
+    let releaseBranchMergeVersion
     // The already-prepared release resolved via `prepared-release-id`, when the
     // finalize pass targets an earlier `not-ready` draft by its id.
     let preparedRelease = null
@@ -120,13 +153,36 @@ module.exports = (app, { getRouter }) => {
       mergedPullRequests = localGitResult.pullRequests
     } else {
       // Standard GitHub API mode
-      const releasesResult = await findReleases({
-        context,
-        targetCommitish,
-        filterByCommitish,
-        includePreReleases: shouldIncludePreReleases,
-        tagPrefix,
-      })
+      if (releaseBranch) {
+        const tagMatcher = releaseTagMatcher({
+          tagPrefix,
+          version: releaseBranch.version,
+          identifier: releaseBranch.identifier,
+        })
+        releasesResult = await findReleases({
+          context,
+          targetCommitish,
+          includePreReleases: Boolean(releaseBranch.identifier),
+          tagPrefix,
+          tagMatcher,
+        })
+        releasesResult.lastRelease = sortReleases(
+          releasesResult.releases.filter(
+            (release) =>
+              !release.draft &&
+              (!tagPrefix || release.tag_name.startsWith(tagPrefix))
+          ),
+          tagPrefix
+        ).at(-1)
+      } else {
+        releasesResult = await findReleases({
+          context,
+          targetCommitish,
+          filterByCommitish,
+          includePreReleases: shouldIncludePreReleases,
+          tagPrefix,
+        })
+      }
       draftRelease = releasesResult.draftRelease
       lastRelease = releasesResult.lastRelease
 
@@ -158,7 +214,7 @@ module.exports = (app, { getRouter }) => {
       const pinnedSha = resolveTargetSha({
         targetCommitish,
         hasExplicitCommitish,
-        filterByCommitish,
+        filterByCommitish: releaseBranch ? false : filterByCommitish,
         finalizeRelease: preparedRelease,
       })
       if (pinnedSha) {
@@ -174,6 +230,113 @@ module.exports = (app, { getRouter }) => {
       })
       commits = commitsResult.commits
       mergedPullRequests = commitsResult.pullRequests
+    }
+
+    const defaultBranch = context.payload.repository?.default_branch
+    const isDefaultBranch =
+      !defaultBranch ||
+      ref === defaultBranch ||
+      ref === `refs/heads/${defaultBranch}`
+    if (
+      !releaseBranch &&
+      isDefaultBranch &&
+      config['prerelease-branch-rules']?.length > 0
+    ) {
+      const matches = findReleaseBranchPullRequests({
+        pullRequests: mergedPullRequests,
+        rules: config['prerelease-branch-rules'],
+      })
+      if (matches.length > 1) {
+        throw new Error(
+          `Multiple release branches were merged since the last release: ${matches
+            .map((match) => `${match.version} (#${match.number})`)
+            .join(', ')}`
+        )
+      }
+      if (matches.length === 1) {
+        const match = matches[0]
+        releaseBranchMergeVersion = match.version
+        if (localGitRoot) {
+          log({
+            context,
+            message:
+              'Skipping release branch PR commit expansion in local git mode.',
+          })
+        } else {
+          const associatedInRange = commits.filter((commit) =>
+            commit.associatedPullRequests.nodes.some(
+              (pullRequest) => pullRequest.number === match.number
+            )
+          )
+          if (associatedInRange.length > 1) {
+            log({
+              context,
+              message: `Skipping release branch PR commit expansion because ${associatedInRange.length} associated commits are already in range.`,
+            })
+          } else if (associatedInRange.length === 1) {
+            const expandedCommits = await context.octokit.paginate(
+              context.octokit.pulls.listCommits,
+              context.repo({ pull_number: match.number, per_page: 100 })
+            )
+            const associatedCommit = associatedInRange[0]
+            const expandedShas = new Set(
+              expandedCommits.map((commit) => commit.sha)
+            )
+            const isSquashMerge = !expandedShas.has(associatedCommit.oid)
+            const existingOids = new Set(
+              commits
+                .filter(
+                  (commit) =>
+                    !isSquashMerge || commit.oid !== associatedCommit.oid
+                )
+                .map((commit) => commit.oid)
+            )
+            const replacementCommits = expandedCommits
+              .map((commit) => ({
+                id: commit.sha,
+                oid: commit.sha,
+                committedDate: commit.commit.committer.date,
+                message: commit.commit.message,
+                author: {
+                  name: commit.commit.author.name,
+                  user: commit.author ? { login: commit.author.login } : null,
+                },
+                associatedPullRequests: associatedCommit.associatedPullRequests,
+              }))
+              .filter((commit) => !existingOids.has(commit.oid))
+            if (replacementCommits.length > 0) {
+              commits = [
+                ...commits.filter(
+                  (commit) =>
+                    !isSquashMerge ||
+                    !commit.associatedPullRequests.nodes.some(
+                      (pullRequest) => pullRequest.number === match.number
+                    ) ||
+                    expandedShas.has(commit.oid)
+                ),
+                ...replacementCommits,
+              ]
+            }
+          }
+        }
+      }
+    }
+    if (releaseBranchMergeVersion) {
+      config.prerelease = false
+      config.latest = configuredLatest
+      prerelease = false
+      latest = config.latest
+      if (releasesResult) {
+        draftRelease = sortReleases(
+          releasesResult.releases.filter(
+            (release) =>
+              release.draft &&
+              !release.prerelease &&
+              (!tagPrefix || release.tag_name.startsWith(tagPrefix))
+          ),
+          tagPrefix
+        ).at(-1)
+      }
     }
 
     const sortedMergedPullRequests = sortPullRequests(
@@ -223,6 +386,27 @@ module.exports = (app, { getRouter }) => {
     // - overrideVersion: explicit user input via action arg (always wins, skips calculations)
     // - draftVersion: extracted from draft release (acts as floor vs computed version)
     let overrideVersion = version
+    let floorVersion
+    if (releaseBranch && !version && !preparedRelease) {
+      floorVersion = releaseBranch.identifier
+        ? `${releaseBranch.version}-${releaseBranch.identifier}.1`
+        : releaseBranch.version
+      log({
+        context,
+        message: `Set release branch version floor to ${floorVersion}`,
+      })
+    } else if (
+      !releaseBranch &&
+      !version &&
+      !preparedRelease &&
+      releaseBranchMergeVersion
+    ) {
+      floorVersion = releaseBranchMergeVersion
+      log({
+        context,
+        message: `Set merged release branch version floor to ${floorVersion}`,
+      })
+    }
     let draftVersion
 
     if (draftRelease) {
@@ -299,6 +483,7 @@ module.exports = (app, { getRouter }) => {
       mergedPullRequests: sortedMergedPullRequests,
       overrideVersion,
       draftVersion,
+      floorVersion,
       tag: effectiveTag,
       name,
       isPreRelease: effectiveIsPreRelease,
@@ -484,6 +669,8 @@ function getInput() {
         ? core.getInput('prerelease').toLowerCase() === 'true'
         : undefined,
     preReleaseIdentifier: core.getInput('prerelease-identifier') || undefined,
+    prereleaseBranchRules:
+      core.getInput('prerelease-branch-rules') || undefined,
     latest: core.getInput('latest')?.toLowerCase() || undefined,
     attachFiles: core.getInput('attach-files') || undefined,
     resetFiles: core.getInput('reset-files').toLowerCase() || 'auto',
@@ -520,6 +707,7 @@ function neutralizeIgnoredPreparedReleaseInputs(input) {
     ['base-version-override', 'baseVersionOverride'],
     ['prerelease', 'prerelease'],
     ['prerelease-identifier', 'preReleaseIdentifier'],
+    ['prerelease-branch-rules', 'prereleaseBranchRules'],
     ['allow-major-bumps', 'allowMajorBumps'],
   ].filter(([, key]) => input[key] !== undefined)
   for (const [, key] of ignored) {
@@ -553,16 +741,33 @@ function updateConfigFromInput(config, input) {
     config['prerelease-identifier'] = input.preReleaseIdentifier
   }
 
+  if (input.prereleaseBranchRules) {
+    try {
+      const prereleaseBranchRules = yaml.parse(input.prereleaseBranchRules)
+      config['prerelease-branch-rules'] = Joi.attempt(
+        prereleaseBranchRules,
+        prereleaseBranchRulesSchema
+      )
+    } catch (error) {
+      if (error instanceof Joi.ValidationError) {
+        throw new TypeError(
+          `Invalid prerelease-branch-rules input: ${error.message}`
+        )
+      }
+      core.warning(
+        `Failed to parse 'prerelease-branch-rules' input as YAML or JSON list. This input will be ignored. Error: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      )
+    }
+  }
+
   if (input.allowMajorBumps !== undefined) {
     if (!config['version-resolver']) {
       config['version-resolver'] = {}
     }
     config['version-resolver']['no-auto-major'] = !input.allowMajorBumps
   }
-
-  config.latest = config.prerelease
-    ? 'false'
-    : input.latest || config.latest || undefined
 }
 
 function setActionOutput(

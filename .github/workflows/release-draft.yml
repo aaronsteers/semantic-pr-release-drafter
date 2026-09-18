@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 'release-candidate/**'
   workflow_dispatch:
 
 permissions:
@@ -31,12 +32,20 @@ jobs:
           - name: semantic-pr-release-drafter
             config-name: release-drafter.yml
             publish: ${{ github.event_name == 'push' }}
+            # Pushes to `release-candidate/vX[.Y[.Z]]` publish `vX.Y.Z-rc.N`
+            # prereleases; merging that branch into main floors the GA release
+            # at `vX.Y.Z`.
+            prerelease-branch-rules: |
+              - branch-prefix: release-candidate/
+                prerelease-identifier: rc
           - name: dummy-project/dummy-project-a
             config-name: release-drafter-dummy-project-a.yml
             publish: false
+            prerelease-branch-rules: ''
           - name: dummy-project/dummy-project-b
             config-name: release-drafter-dummy-project-b.yml
             publish: false
+            prerelease-branch-rules: ''
     name: Draft release (${{ matrix.release.name }})
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +55,7 @@ jobs:
         with:
           config-name: ${{ matrix.release.config-name }}
           publish: ${{ matrix.release.publish }}
+          prerelease-branch-rules: ${{ matrix.release.prerelease-branch-rules }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # The following config is commented out because it now matches the defaults.

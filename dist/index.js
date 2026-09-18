@@ -147387,6 +147387,7 @@ var require_default_config = __commonJS({
       "sort-direction": SORT_DIRECTIONS.descending,
       prerelease: false,
       "prerelease-identifier": "",
+      "prerelease-branch-rules": [],
       "include-pre-releases": false,
       latest: "true",
       "filter-by-commitish": false,
@@ -147503,6 +147504,21 @@ var require_schema6 = __commonJS({
     var { DEFAULT_CONFIG } = require_default_config();
     var { validateReplacers } = require_template2();
     var merge = require_cjs();
+    var releaseBranchRule = Joi.object({
+      "branch-prefix": Joi.string().min(1),
+      "branch-pattern": Joi.string().pattern(/\(\?<version>/).custom((value, helpers) => {
+        try {
+          new RegExp(value);
+        } catch {
+          return helpers.error("any.custom", {
+            message: "must be a valid regular expression"
+          });
+        }
+        return value;
+      }),
+      "prerelease-identifier": Joi.string().allow("")
+    }).xor("branch-prefix", "branch-pattern");
+    var prereleaseBranchRulesSchema = Joi.array().items(releaseBranchRule);
     var schema = (context) => {
       const defaultBranch = _.get(
         context,
@@ -147533,6 +147549,7 @@ var require_schema6 = __commonJS({
         "sort-direction": Joi.string().valid(SORT_DIRECTIONS.ascending, SORT_DIRECTIONS.descending).default(DEFAULT_CONFIG["sort-direction"]),
         prerelease: Joi.boolean().default(DEFAULT_CONFIG.prerelease),
         "prerelease-identifier": Joi.string().allow("").default(DEFAULT_CONFIG["prerelease-identifier"]),
+        "prerelease-branch-rules": Joi.array().items(releaseBranchRule).default(DEFAULT_CONFIG["prerelease-branch-rules"]),
         latest: Joi.string().allow("", "true", "false", "legacy").default(DEFAULT_CONFIG.latest),
         "filter-by-commitish": Joi.boolean().default(
           DEFAULT_CONFIG["filter-by-commitish"]
@@ -147603,6 +147620,8 @@ var require_schema6 = __commonJS({
     };
     exports2.schema = schema;
     exports2.validateSchema = validateSchema;
+    exports2.releaseBranchRule = releaseBranchRule;
+    exports2.prereleaseBranchRulesSchema = prereleaseBranchRulesSchema;
   }
 });
 
@@ -149784,21 +149803,83 @@ var require_versions = __commonJS({
       const prerelease = semver.prerelease(version2);
       return prerelease && prerelease.length > 0;
     };
-    var getVersionInfo = (release, template, inputVersion, versionKeyIncrement, tagPrefix, preReleaseIdentifier, draftVersion) => {
+    var resolvedFromSemver = (version2, template, inputVersion = version2) => {
+      const prereleaseVersion = semver.prerelease(version2)?.join(".") || "";
+      return {
+        version: version2.version,
+        template,
+        inputVersion,
+        versionKeyIncrement: null,
+        $MAJOR: semver.major(version2),
+        $MINOR: semver.minor(version2),
+        $PATCH: semver.patch(version2),
+        $PRERELEASE: prereleaseVersion ? `-${prereleaseVersion}` : "",
+        $COMPLETE: version2.version
+      };
+    };
+    var applyVersionFloor = (templatableVersion, floorVersion, template) => {
+      const resolvedVersion = templatableVersion.$RESOLVED_VERSION;
+      if (!floorVersion || !resolvedVersion || !semver.gt(floorVersion, resolvedVersion.version)) {
+        return templatableVersion;
+      }
+      templatableVersion.$RESOLVED_VERSION = resolvedFromSemver(
+        floorVersion,
+        template
+      );
+      for (const [key, versionTemplate] of [
+        ["$NEXT_MAJOR_VERSION", template],
+        ["$NEXT_MINOR_VERSION", template],
+        ["$NEXT_PATCH_VERSION", template],
+        ["$NEXT_PRERELEASE_VERSION", "$PRERELEASE"],
+        ["$NEXT_MAJOR_VERSION_MAJOR", "$MAJOR"],
+        ["$NEXT_MAJOR_VERSION_MINOR", "$MINOR"],
+        ["$NEXT_MAJOR_VERSION_PATCH", "$PATCH"],
+        ["$NEXT_MINOR_VERSION_MAJOR", "$MAJOR"],
+        ["$NEXT_MINOR_VERSION_MINOR", "$MINOR"],
+        ["$NEXT_MINOR_VERSION_PATCH", "$PATCH"],
+        ["$NEXT_PATCH_VERSION_MAJOR", "$MAJOR"],
+        ["$NEXT_PATCH_VERSION_MINOR", "$MINOR"],
+        ["$NEXT_PATCH_VERSION_PATCH", "$PATCH"]
+      ]) {
+        templatableVersion[key] = resolvedFromSemver(floorVersion, versionTemplate);
+      }
+      return templatableVersion;
+    };
+    var getVersionInfo = (release, template, inputVersion, versionKeyIncrement, tagPrefix, preReleaseIdentifier, draftVersion, floorVersion) => {
       const version2 = coerceVersion(release, tagPrefix);
       inputVersion = coerceVersion(inputVersion, tagPrefix);
       draftVersion = coerceVersion(draftVersion, tagPrefix);
+      floorVersion = coerceVersion(floorVersion, tagPrefix);
       const isPreVersionKeyIncrement = versionKeyIncrement?.startsWith("pre");
       if (!version2 && !inputVersion && !draftVersion) {
+        const resolvedDefaultVersionInfo = {
+          ...defaultVersionInfo,
+          $RESOLVED_VERSION: { ...defaultVersionInfo.$RESOLVED_VERSION }
+        };
         if (isPreVersionKeyIncrement) {
-          defaultVersionInfo["$RESOLVED_VERSION"] = {
-            ...defaultVersionInfo["$NEXT_PRERELEASE_VERSION"]
-          };
+          if (preReleaseIdentifier) {
+            const defaultPrerelease = semver.parse(
+              semver.inc("0.1.0-0", "prerelease", true, preReleaseIdentifier)
+            );
+            const nextPrereleaseVersion = {
+              ...defaultVersionInfo.$NEXT_PRERELEASE_VERSION,
+              version: defaultPrerelease.version,
+              preReleaseIdentifier,
+              $PRERELEASE: `-${defaultPrerelease.prerelease.join(".")}`
+            };
+            resolvedDefaultVersionInfo.$NEXT_PRERELEASE_VERSION = nextPrereleaseVersion;
+            resolvedDefaultVersionInfo.$RESOLVED_VERSION = {
+              ...nextPrereleaseVersion
+            };
+          } else {
+            resolvedDefaultVersionInfo.$RESOLVED_VERSION = {
+              ...defaultVersionInfo.$NEXT_PRERELEASE_VERSION
+            };
+          }
         }
-        return defaultVersionInfo;
+        return applyVersionFloor(resolvedDefaultVersionInfo, floorVersion, template);
       }
       if (inputVersion && hasPreReleaseTag(inputVersion)) {
-        const prereleaseVersion = semver.prerelease(inputVersion)?.join(".") || "";
         return {
           ...getTemplatableVersion({
             version: version2,
@@ -149807,33 +149888,16 @@ var require_versions = __commonJS({
             versionKeyIncrement: null,
             preReleaseIdentifier
           }),
-          $INPUT_VERSION: {
-            version: inputVersion.version,
-            template,
+          $INPUT_VERSION: resolvedFromSemver(inputVersion, template, inputVersion),
+          $RESOLVED_VERSION: resolvedFromSemver(
             inputVersion,
-            versionKeyIncrement: null,
-            $MAJOR: semver.major(inputVersion),
-            $MINOR: semver.minor(inputVersion),
-            $PATCH: semver.patch(inputVersion),
-            $PRERELEASE: prereleaseVersion ? `-${prereleaseVersion}` : "",
-            $COMPLETE: inputVersion.version
-          },
-          $RESOLVED_VERSION: {
-            version: inputVersion.version,
             template,
-            inputVersion,
-            versionKeyIncrement: null,
-            $MAJOR: semver.major(inputVersion),
-            $MINOR: semver.minor(inputVersion),
-            $PATCH: semver.patch(inputVersion),
-            $PRERELEASE: prereleaseVersion ? `-${prereleaseVersion}` : "",
-            $COMPLETE: inputVersion.version
-          }
+            inputVersion
+          )
         };
       }
       if (!inputVersion && draftVersion && hasPreReleaseTag(draftVersion)) {
-        const prereleaseVersion = semver.prerelease(draftVersion)?.join(".") || "";
-        return {
+        const templatableVersion2 = {
           ...getTemplatableVersion({
             version: version2,
             template,
@@ -149841,18 +149905,13 @@ var require_versions = __commonJS({
             versionKeyIncrement: null,
             preReleaseIdentifier
           }),
-          $RESOLVED_VERSION: {
-            version: draftVersion.version,
+          $RESOLVED_VERSION: resolvedFromSemver(
+            draftVersion,
             template,
-            inputVersion: draftVersion,
-            versionKeyIncrement: null,
-            $MAJOR: semver.major(draftVersion),
-            $MINOR: semver.minor(draftVersion),
-            $PATCH: semver.patch(draftVersion),
-            $PRERELEASE: prereleaseVersion ? `-${prereleaseVersion}` : "",
-            $COMPLETE: draftVersion.version
-          }
+            draftVersion
+          )
         };
+        return applyVersionFloor(templatableVersion2, floorVersion, template);
       }
       const shouldIncrementAsPrerelease = isPreVersionKeyIncrement && version2?.prerelease?.length;
       if (shouldIncrementAsPrerelease) {
@@ -149869,21 +149928,14 @@ var require_versions = __commonJS({
         const resolvedVersion = templatableVersion.$RESOLVED_VERSION.version;
         const draftVersionStr = draftVersion.version;
         if (semver.valid(resolvedVersion) && semver.valid(draftVersionStr) && semver.gt(draftVersionStr, resolvedVersion)) {
-          const prereleaseVersion = semver.prerelease(draftVersion)?.join(".") || "";
-          templatableVersion.$RESOLVED_VERSION = {
-            version: draftVersionStr,
+          templatableVersion.$RESOLVED_VERSION = resolvedFromSemver(
+            draftVersion,
             template,
-            inputVersion: draftVersion,
-            versionKeyIncrement: null,
-            $MAJOR: semver.major(draftVersion),
-            $MINOR: semver.minor(draftVersion),
-            $PATCH: semver.patch(draftVersion),
-            $PRERELEASE: prereleaseVersion ? `-${prereleaseVersion}` : "",
-            $COMPLETE: draftVersionStr
-          };
+            draftVersion
+          );
         }
       }
-      return templatableVersion;
+      return inputVersion ? templatableVersion : applyVersionFloor(templatableVersion, floorVersion, template);
     };
     exports2.getVersionInfo = getVersionInfo;
     exports2.defaultVersionInfo = defaultVersionInfo;
@@ -150491,7 +150543,8 @@ var require_releases = __commonJS({
       targetCommitish,
       filterByCommitish,
       includePreReleases,
-      tagPrefix
+      tagPrefix,
+      tagMatcher
     }) => {
       let releaseCount = 0;
       let releases = await context.octokit.paginate(
@@ -150514,7 +150567,14 @@ var require_releases = __commonJS({
       const commitishFilteredReleases = filterByCommitish ? releases.filter(
         (r) => targetCommitishName === r.target_commitish.replace(headRefRegex, "")
       ) : releases;
-      const filteredReleases = tagPrefix ? commitishFilteredReleases.filter((r) => r.tag_name.startsWith(tagPrefix)) : commitishFilteredReleases;
+      let filteredReleases = commitishFilteredReleases;
+      if (tagMatcher) {
+        filteredReleases = releases.filter((r) => tagMatcher(r.tag_name));
+      } else if (tagPrefix) {
+        filteredReleases = commitishFilteredReleases.filter(
+          (r) => r.tag_name.startsWith(tagPrefix)
+        );
+      }
       const sortedSelectedReleases = sortReleases(
         filteredReleases.filter(
           (r) => !r.draft && (!r.prerelease || includePreReleases)
@@ -150539,7 +150599,7 @@ var require_releases = __commonJS({
       } else {
         log({ context, message: `No last release found` });
       }
-      return { draftRelease, lastRelease };
+      return { draftRelease, lastRelease, releases };
     };
     var contributorsSentence = ({ commits, pullRequests, config }) => {
       const { "exclude-contributors": excludeContributors } = config;
@@ -150577,7 +150637,7 @@ var require_releases = __commonJS({
       const changeItems = ReleaseChangeLineItems.fromCommits(commits);
       return changeItems.renderWithConfig(config, context);
     };
-    var resolveVersionKeyIncrement = (commits, config, isPreRelease, lastRelease) => {
+    var resolveVersionKeyIncrement = (commits, config, isPreRelease, lastRelease, forcePrereleaseIncrement) => {
       const versionResolver = config["version-resolver"] || {};
       const preOneZeroMinorForBreaking = versionResolver["pre-one-zero-minor-for-breaking"] !== false;
       const noAutoMajor = versionResolver["no-auto-major"] !== false;
@@ -150594,6 +150654,9 @@ var require_releases = __commonJS({
         currentMajor
       });
       core2.debug("versionKeyIncrement: " + versionKeyIncrement);
+      if (forcePrereleaseIncrement) {
+        return "prerelease";
+      }
       const shouldIncrementAsPrerelease = isPreRelease && config["prerelease-identifier"];
       if (!shouldIncrementAsPrerelease) {
         return versionKeyIncrement;
@@ -150608,6 +150671,7 @@ var require_releases = __commonJS({
       mergedPullRequests,
       overrideVersion,
       draftVersion,
+      floorVersion,
       tag,
       name,
       isPreRelease,
@@ -150637,7 +150701,8 @@ var require_releases = __commonJS({
         commits,
         config,
         isPreRelease,
-        lastRelease
+        lastRelease,
+        Boolean(floorVersion) && isPreRelease && Boolean(config["prerelease-identifier"])
       );
       core2.info(`Version bump type: ${versionKeyIncrement}`);
       const versionInfo = getVersionInfo(
@@ -150650,7 +150715,9 @@ var require_releases = __commonJS({
         tagPrefix,
         config["prerelease-identifier"],
         // draftVersion: from draft release (acts as floor vs computed)
-        draftVersion
+        draftVersion,
+        // floorVersion: branch-derived minimum version
+        floorVersion
       );
       if (versionInfo && versionInfo.$RESOLVED_VERSION) {
         core2.info(`Calculated version: ${versionInfo.$RESOLVED_VERSION.version}`);
@@ -150774,6 +150841,7 @@ var require_releases = __commonJS({
       return updateReleaseParameters;
     }
     exports2.findReleases = findReleases;
+    exports2.sortReleases = sortReleases;
     exports2.getReleaseById = getReleaseById;
     exports2.generateChangeLog = generateChangeLog;
     exports2.generateReleaseInfo = generateReleaseInfo;
@@ -150938,7 +151006,7 @@ var require_commits = __commonJS({
         withPullRequestBody: config["change-template"].includes("$BODY"),
         withPullRequestURL: config["change-template"].includes("$URL"),
         withBaseRefName: config["change-template"].includes("$BASE_REF_NAME"),
-        withHeadRefName: config["change-template"].includes("$HEAD_REF_NAME"),
+        withHeadRefName: config["change-template"].includes("$HEAD_REF_NAME") || config["prerelease-branch-rules"]?.length > 0,
         pullRequestLimit: config["pull-request-limit"]
       };
       const includePaths = config["include-paths"];
@@ -154338,6 +154406,107 @@ var require_assets = __commonJS({
   }
 });
 
+// lib/release-branches.js
+var require_release_branches = __commonJS({
+  "lib/release-branches.js"(exports2, module2) {
+    var semver = require_semver4();
+    var core2 = require_core();
+    var parseVersionSuffix = ({ branch, suffix }) => {
+      const normalizedSuffix = suffix?.replace(/^v/, "");
+      if (!normalizedSuffix || !/^\d+(?:\.\d+){0,2}$/.test(normalizedSuffix)) {
+        throw new Error(
+          `Release branch "${branch}" has an invalid version suffix "${suffix}".`
+        );
+      }
+      const versionParts = normalizedSuffix.split(".");
+      while (versionParts.length < 3) versionParts.push("0");
+      const version2 = semver.parse(versionParts.join("."));
+      if (!version2 || version2.prerelease.length > 0 || version2.build.length > 0) {
+        throw new Error(
+          `Release branch "${branch}" has an invalid release version "${suffix}".`
+        );
+      }
+      return version2.version;
+    };
+    var parseReleaseBranch = ({ ref, rules }) => {
+      const branch = (ref || "").replace(/^refs\/heads\//, "");
+      for (const rule of rules || []) {
+        if (rule["branch-prefix"]) {
+          const prefix = rule["branch-prefix"];
+          if (!branch.startsWith(prefix)) continue;
+          const suffix = branch.slice(prefix.length);
+          const version3 = parseVersionSuffix({ branch, suffix });
+          return {
+            rule,
+            identifier: rule["prerelease-identifier"],
+            version: version3
+          };
+        }
+        const pattern = new RegExp(rule["branch-pattern"]);
+        const match = pattern.exec(branch);
+        if (!match) continue;
+        const version2 = parseVersionSuffix({
+          branch,
+          suffix: match.groups.version
+        });
+        return {
+          rule,
+          identifier: rule["prerelease-identifier"],
+          version: version2
+        };
+      }
+      return null;
+    };
+    var stripReleaseTagPrefix = ({ tagName, tagPrefix }) => {
+      if (tagPrefix) {
+        return tagName.startsWith(tagPrefix) ? tagName.slice(tagPrefix.length) : null;
+      }
+      return tagName;
+    };
+    var releaseTagMatcher = ({ tagPrefix, version: version2, identifier }) => (tagName) => {
+      let normalizedTag = stripReleaseTagPrefix({ tagName, tagPrefix });
+      if (normalizedTag === null) return false;
+      if (!tagPrefix) normalizedTag = normalizedTag.replace(/^v/, "");
+      const parsed = semver.parse(normalizedTag);
+      const floor = semver.parse(
+        identifier ? `${version2}-${identifier}.0` : version2
+      );
+      if (!parsed || !floor || parsed.major !== floor.major || !semver.gte(parsed, floor)) {
+        return false;
+      }
+      if (!identifier) return parsed.prerelease.length === 0;
+      return parsed.prerelease.length === 2 && String(parsed.prerelease[0]) === identifier && typeof parsed.prerelease[1] === "number";
+    };
+    var findReleaseBranchPullRequests = ({ pullRequests, rules }) => {
+      const matches = [];
+      const branches = /* @__PURE__ */ new Set();
+      for (const pullRequest of pullRequests || []) {
+        if (!pullRequest.merged) continue;
+        try {
+          const parsed = parseReleaseBranch({
+            ref: pullRequest.headRefName,
+            rules
+          });
+          if (!parsed) continue;
+          const branchKey = `${rules.indexOf(parsed.rule)}:${parsed.version}`;
+          if (branches.has(branchKey)) continue;
+          branches.add(branchKey);
+          matches.push({ number: pullRequest.number, ...parsed });
+        } catch (error) {
+          core2.warning(error.message);
+        }
+      }
+      return matches;
+    };
+    module2.exports = {
+      parseReleaseBranch,
+      releaseTagMatcher,
+      stripReleaseTagPrefix,
+      findReleaseBranchPullRequests
+    };
+  }
+});
+
 // index.js
 var require_index = __commonJS({
   "index.js"(exports2, module2) {
@@ -154345,6 +154514,7 @@ var require_index = __commonJS({
     var { isTriggerableReference } = require_triggerable_reference();
     var {
       findReleases,
+      sortReleases,
       getReleaseById,
       generateReleaseInfo,
       createRelease,
@@ -154367,6 +154537,14 @@ var require_index = __commonJS({
     } = require_assets();
     var { getEffectiveTagPrefix } = require_tag_prefix();
     var semver = require_semver4();
+    var yaml = require_dist2();
+    var Joi = require_lib14();
+    var {
+      parseReleaseBranch,
+      releaseTagMatcher,
+      findReleaseBranchPullRequests
+    } = require_release_branches();
+    var { prereleaseBranchRulesSchema } = require_schema6();
     module2.exports = (app, { getRouter }) => {
       if (!runnerIsActions() && typeof getRouter === "function") {
         getRouter().get("/healthz", (request, response) => {
@@ -154388,20 +154566,38 @@ var require_index = __commonJS({
         });
         if (!config) return;
         updateConfigFromInput(config, input);
+        const tagPrefix = getEffectiveTagPrefix(config);
+        const configuredLatest = input.latest || config.latest;
         const ref = process.env["GITHUB_REF"] || context.payload.ref;
-        if (!isTriggerableReference({ ref, context, config })) {
+        const releaseBranch = parseReleaseBranch({
+          ref,
+          rules: config["prerelease-branch-rules"]
+        });
+        if (releaseBranch && !releaseBranch.identifier) {
+          config.prerelease = false;
+        } else if (releaseBranch?.identifier) {
+          const configuredIdentifier = config["prerelease-identifier"];
+          if (configuredIdentifier && configuredIdentifier !== releaseBranch.identifier) {
+            throw new Error(
+              `Release branch rule sets prerelease identifier "${releaseBranch.identifier}" but configuration sets "${configuredIdentifier}". Remove one of them.`
+            );
+          }
+          config.prerelease = true;
+          config["prerelease-identifier"] = releaseBranch.identifier;
+        }
+        config.latest = config.prerelease ? "false" : input.latest || config.latest || void 0;
+        if (!releaseBranch && !isTriggerableReference({ ref, context, config })) {
           return;
         }
         let targetCommitish = config.commitish || ref;
         const hasExplicitCommitish = Boolean(config.commitish);
-        const {
+        let {
           "filter-by-commitish": filterByCommitish,
           "include-pre-releases": includePreReleases,
-          "prerelease-identifier": preReleaseIdentifier,
-          latest,
-          prerelease
+          "prerelease-identifier": preReleaseIdentifier
         } = config;
-        const tagPrefix = getEffectiveTagPrefix(config);
+        let latest = config.latest;
+        let prerelease = config.prerelease;
         const shouldIncludePreReleases = Boolean(
           includePreReleases || preReleaseIdentifier
         );
@@ -154412,6 +154608,8 @@ var require_index = __commonJS({
           preparedReleaseId
         } = input;
         let draftRelease, lastRelease, commits, mergedPullRequests;
+        let releasesResult;
+        let releaseBranchMergeVersion;
         let preparedRelease = null;
         let resolvedSha;
         if (localGitRoot) {
@@ -154431,13 +154629,34 @@ var require_index = __commonJS({
           commits = localGitResult.commits;
           mergedPullRequests = localGitResult.pullRequests;
         } else {
-          const releasesResult = await findReleases({
-            context,
-            targetCommitish,
-            filterByCommitish,
-            includePreReleases: shouldIncludePreReleases,
-            tagPrefix
-          });
+          if (releaseBranch) {
+            const tagMatcher = releaseTagMatcher({
+              tagPrefix,
+              version: releaseBranch.version,
+              identifier: releaseBranch.identifier
+            });
+            releasesResult = await findReleases({
+              context,
+              targetCommitish,
+              includePreReleases: Boolean(releaseBranch.identifier),
+              tagPrefix,
+              tagMatcher
+            });
+            releasesResult.lastRelease = sortReleases(
+              releasesResult.releases.filter(
+                (release) => !release.draft && (!tagPrefix || release.tag_name.startsWith(tagPrefix))
+              ),
+              tagPrefix
+            ).at(-1);
+          } else {
+            releasesResult = await findReleases({
+              context,
+              targetCommitish,
+              filterByCommitish,
+              includePreReleases: shouldIncludePreReleases,
+              tagPrefix
+            });
+          }
           draftRelease = releasesResult.draftRelease;
           lastRelease = releasesResult.lastRelease;
           if (preparedReleaseId) {
@@ -154457,7 +154676,7 @@ var require_index = __commonJS({
           const pinnedSha = resolveTargetSha({
             targetCommitish,
             hasExplicitCommitish,
-            filterByCommitish,
+            filterByCommitish: releaseBranch ? false : filterByCommitish,
             finalizeRelease: preparedRelease
           });
           if (pinnedSha) {
@@ -154472,6 +154691,91 @@ var require_index = __commonJS({
           });
           commits = commitsResult.commits;
           mergedPullRequests = commitsResult.pullRequests;
+        }
+        const defaultBranch = context.payload.repository?.default_branch;
+        const isDefaultBranch = !defaultBranch || ref === defaultBranch || ref === `refs/heads/${defaultBranch}`;
+        if (!releaseBranch && isDefaultBranch && config["prerelease-branch-rules"]?.length > 0) {
+          const matches = findReleaseBranchPullRequests({
+            pullRequests: mergedPullRequests,
+            rules: config["prerelease-branch-rules"]
+          });
+          if (matches.length > 1) {
+            throw new Error(
+              `Multiple release branches were merged since the last release: ${matches.map((match) => `${match.version} (#${match.number})`).join(", ")}`
+            );
+          }
+          if (matches.length === 1) {
+            const match = matches[0];
+            releaseBranchMergeVersion = match.version;
+            if (localGitRoot) {
+              log({
+                context,
+                message: "Skipping release branch PR commit expansion in local git mode."
+              });
+            } else {
+              const associatedInRange = commits.filter(
+                (commit) => commit.associatedPullRequests.nodes.some(
+                  (pullRequest) => pullRequest.number === match.number
+                )
+              );
+              if (associatedInRange.length > 1) {
+                log({
+                  context,
+                  message: `Skipping release branch PR commit expansion because ${associatedInRange.length} associated commits are already in range.`
+                });
+              } else if (associatedInRange.length === 1) {
+                const expandedCommits = await context.octokit.paginate(
+                  context.octokit.pulls.listCommits,
+                  context.repo({ pull_number: match.number, per_page: 100 })
+                );
+                const associatedCommit = associatedInRange[0];
+                const expandedShas = new Set(
+                  expandedCommits.map((commit) => commit.sha)
+                );
+                const isSquashMerge = !expandedShas.has(associatedCommit.oid);
+                const existingOids = new Set(
+                  commits.filter(
+                    (commit) => !isSquashMerge || commit.oid !== associatedCommit.oid
+                  ).map((commit) => commit.oid)
+                );
+                const replacementCommits = expandedCommits.map((commit) => ({
+                  id: commit.sha,
+                  oid: commit.sha,
+                  committedDate: commit.commit.committer.date,
+                  message: commit.commit.message,
+                  author: {
+                    name: commit.commit.author.name,
+                    user: commit.author ? { login: commit.author.login } : null
+                  },
+                  associatedPullRequests: associatedCommit.associatedPullRequests
+                })).filter((commit) => !existingOids.has(commit.oid));
+                if (replacementCommits.length > 0) {
+                  commits = [
+                    ...commits.filter(
+                      (commit) => !isSquashMerge || !commit.associatedPullRequests.nodes.some(
+                        (pullRequest) => pullRequest.number === match.number
+                      ) || expandedShas.has(commit.oid)
+                    ),
+                    ...replacementCommits
+                  ];
+                }
+              }
+            }
+          }
+        }
+        if (releaseBranchMergeVersion) {
+          config.prerelease = false;
+          config.latest = configuredLatest;
+          prerelease = false;
+          latest = config.latest;
+          if (releasesResult) {
+            draftRelease = sortReleases(
+              releasesResult.releases.filter(
+                (release) => release.draft && !release.prerelease && (!tagPrefix || release.tag_name.startsWith(tagPrefix))
+              ),
+              tagPrefix
+            ).at(-1);
+          }
         }
         const sortedMergedPullRequests = sortPullRequests(
           mergedPullRequests,
@@ -154508,6 +154812,20 @@ var require_index = __commonJS({
           shouldResetFiles = !!attachFiles;
         }
         let overrideVersion = version2;
+        let floorVersion;
+        if (releaseBranch && !version2 && !preparedRelease) {
+          floorVersion = releaseBranch.identifier ? `${releaseBranch.version}-${releaseBranch.identifier}.1` : releaseBranch.version;
+          log({
+            context,
+            message: `Set release branch version floor to ${floorVersion}`
+          });
+        } else if (!releaseBranch && !version2 && !preparedRelease && releaseBranchMergeVersion) {
+          floorVersion = releaseBranchMergeVersion;
+          log({
+            context,
+            message: `Set merged release branch version floor to ${floorVersion}`
+          });
+        }
         let draftVersion;
         if (draftRelease) {
           const draftVersionStr = draftRelease.tag_name || draftRelease.name;
@@ -154558,6 +154876,7 @@ var require_index = __commonJS({
           mergedPullRequests: sortedMergedPullRequests,
           overrideVersion,
           draftVersion,
+          floorVersion,
           tag: effectiveTag,
           name,
           isPreRelease: effectiveIsPreRelease,
@@ -154703,6 +155022,7 @@ var require_index = __commonJS({
         footer: core2.getInput("footer") || void 0,
         prerelease: core2.getInput("prerelease") !== "" ? core2.getInput("prerelease").toLowerCase() === "true" : void 0,
         preReleaseIdentifier: core2.getInput("prerelease-identifier") || void 0,
+        prereleaseBranchRules: core2.getInput("prerelease-branch-rules") || void 0,
         latest: core2.getInput("latest")?.toLowerCase() || void 0,
         attachFiles: core2.getInput("attach-files") || void 0,
         resetFiles: core2.getInput("reset-files").toLowerCase() || "auto",
@@ -154720,6 +155040,7 @@ var require_index = __commonJS({
         ["base-version-override", "baseVersionOverride"],
         ["prerelease", "prerelease"],
         ["prerelease-identifier", "preReleaseIdentifier"],
+        ["prerelease-branch-rules", "prereleaseBranchRules"],
         ["allow-major-bumps", "allowMajorBumps"]
       ].filter(([, key]) => input[key] !== void 0);
       for (const [, key] of ignored) {
@@ -154743,13 +155064,30 @@ var require_index = __commonJS({
       if (input.preReleaseIdentifier) {
         config["prerelease-identifier"] = input.preReleaseIdentifier;
       }
+      if (input.prereleaseBranchRules) {
+        try {
+          const prereleaseBranchRules = yaml.parse(input.prereleaseBranchRules);
+          config["prerelease-branch-rules"] = Joi.attempt(
+            prereleaseBranchRules,
+            prereleaseBranchRulesSchema
+          );
+        } catch (error) {
+          if (error instanceof Joi.ValidationError) {
+            throw new TypeError(
+              `Invalid prerelease-branch-rules input: ${error.message}`
+            );
+          }
+          core2.warning(
+            `Failed to parse 'prerelease-branch-rules' input as YAML or JSON list. This input will be ignored. Error: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
       if (input.allowMajorBumps !== void 0) {
         if (!config["version-resolver"]) {
           config["version-resolver"] = {};
         }
         config["version-resolver"]["no-auto-major"] = !input.allowMajorBumps;
       }
-      config.latest = config.prerelease ? "false" : input.latest || config.latest || void 0;
     }
     function setActionOutput(releaseResponse, { body, resolvedVersion, majorVersion, minorVersion, patchVersion }, resolvedSha) {
       const {

@@ -6,6 +6,7 @@ const core = require('@actions/core')
 const mockedEnv = require('mocked-env')
 const pino = require('pino')
 const Stream = require('node:stream')
+const { execFileSync } = require('node:child_process')
 const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
@@ -31,6 +32,144 @@ const graphqlCommitsPaginated1 = require('./fixtures/graphql-commits-paginated-1
 const graphqlCommitsPaginated2 = require('./fixtures/graphql-commits-paginated-2.json')
 
 nock.disableNetConnect()
+
+const releaseBranchConfig = `template: |
+  # What's Changed
+
+  $CHANGES
+prerelease-branch-rules:
+  - branch-prefix: release-candidate/
+    prerelease-identifier: rc
+`
+
+const releaseBranchRef = 'refs/heads/release-candidate/v1'
+const releaseBranchSha = 'a'.repeat(40)
+
+const getReleaseBranchConfigMock = (config = releaseBranchConfig) =>
+  nock('https://api.github.com')
+    .get(
+      '/repos/toolmantim/release-drafter-test-project/contents/.github%2Frelease-drafter.yml'
+    )
+    .reply(200, config)
+
+const releaseBranchPayload = {
+  ...pushNonMasterPayload,
+  ref: releaseBranchRef,
+}
+
+const releaseBranchRelease = ({
+  tag_name,
+  id = 1,
+  draft = false,
+  prerelease = false,
+  created_at = '2024-01-01T00:00:00Z',
+}) => ({
+  ...releasePayload,
+  id,
+  tag_name,
+  name: tag_name,
+  draft,
+  prerelease,
+  created_at,
+  target_commitish: 'master',
+})
+
+const releaseBranchCommit = ({
+  oid,
+  message,
+  committedDate = '2024-02-01T00:00:00Z',
+  associatedPullRequests = [],
+}) => ({
+  id: oid,
+  oid,
+  committedDate,
+  message,
+  author: {
+    name: 'Release Branch Tester',
+    user: { login: 'release-branch-tester' },
+  },
+  associatedPullRequests: { nodes: associatedPullRequests },
+})
+
+const releaseBranchPullRequest = ({
+  number,
+  headRefName = 'release-candidate/v1',
+  title = 'Release candidate',
+}) => ({
+  title,
+  number,
+  url: `https://github.com/toolmantim/release-drafter-test-project/pull/${number}`,
+  body: '',
+  author: {
+    login: 'release-branch-tester',
+    __typename: 'User',
+    url: 'https://github.com/release-branch-tester',
+  },
+  baseRepository: {
+    nameWithOwner: 'toolmantim/release-drafter-test-project',
+  },
+  mergedAt: '2024-02-01T00:00:00Z',
+  isCrossRepository: false,
+  labels: { nodes: [] },
+  merged: true,
+  baseRefName: 'master',
+  headRefName,
+})
+
+const releaseBranchGraphqlPayload = (nodes) => ({
+  data: {
+    repository: {
+      object: {
+        history: {
+          totalCount: nodes.length,
+          pageInfo: { hasNextPage: false, endCursor: null },
+          nodes,
+        },
+      },
+    },
+  },
+})
+
+const mockMergedReleaseBranch = ({
+  firstHeadRefName = 'release-candidate/v1',
+  secondHeadRefName,
+  firstOid = 'squash-release-commit',
+  secondOid,
+  firstMessage = 'chore: merge release branch',
+} = {}) => {
+  const nodes = [
+    releaseBranchCommit({
+      oid: firstOid,
+      message: firstMessage,
+      associatedPullRequests: [
+        releaseBranchPullRequest({
+          number: 101,
+          headRefName: firstHeadRefName,
+        }),
+      ],
+    }),
+  ]
+  if (secondHeadRefName) {
+    nodes.push(
+      releaseBranchCommit({
+        oid: secondOid || 'second-release-commit',
+        message: 'chore: merge another release branch',
+        associatedPullRequests: [
+          releaseBranchPullRequest({
+            number: 102,
+            headRefName: secondHeadRefName,
+          }),
+        ],
+      })
+    )
+  }
+  return releaseBranchGraphqlPayload(nodes)
+}
+
+const configureReleaseBranchEnvironment = (ref) => {
+  process.env.GITHUB_REF = ref
+  process.env.GITHUB_SHA = releaseBranchSha
+}
 
 const _OriginalDate = global.Date
 
@@ -229,6 +368,1027 @@ describe('release-drafter', () => {
             payload: pushNonMasterPayload,
           })
         })
+      })
+    })
+
+    describe('with prerelease-branch-rules', () => {
+      it('rejects a conflicting top-level prerelease identifier', async () => {
+        getReleaseBranchConfigMock(
+          `${releaseBranchConfig}prerelease-identifier: beta\n`
+        )
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        await expect(
+          probot.receive({
+            name: 'push',
+            payload: releaseBranchPayload,
+          })
+        ).rejects.toThrow(
+          'Release branch rule sets prerelease identifier "rc" but configuration sets "beta". Remove one of them.'
+        )
+      })
+
+      it('allows a matching top-level prerelease identifier', async () => {
+        getReleaseBranchConfigMock(
+          `${releaseBranchConfig}prerelease-identifier: rc\n`
+        )
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, releaseBranchGraphqlPayload([]))
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body).toMatchObject({
+                tag_name: 'v1.0.0-rc.1',
+                prerelease: true,
+              })
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0-rc.1' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('creates rc.1 from the last stable release boundary', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const stableRelease = releaseBranchRelease({
+          tag_name: 'v0.36.0',
+          created_at: '2024-01-01T00:00:00Z',
+        })
+        const commits = [
+          releaseBranchCommit({
+            oid: 'release-branch-rc1',
+            message: 'fix: release candidate fix',
+          }),
+        ]
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [stableRelease])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.since).toBe(stableRelease.created_at)
+            expect(body.variables.withHeadRefName).toBe(true)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(200, releaseBranchGraphqlPayload(commits))
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body).toMatchObject({
+                tag_name: 'v1.0.0-rc.1',
+                prerelease: true,
+                make_latest: 'false',
+              })
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0-rc.1' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('uses the release branch floor in the patch tag template', async () => {
+        getReleaseBranchConfigMock(
+          `tag-template: v$NEXT_PATCH_VERSION\n${releaseBranchConfig}`
+        )
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const stableRelease = releaseBranchRelease({
+          tag_name: 'v0.36.0',
+          created_at: '2024-01-01T00:00:00Z',
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [stableRelease])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.since).toBe(stableRelease.created_at)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(200, releaseBranchGraphqlPayload([]))
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.0-rc.1')
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0-rc.1' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('increments after the highest published prerelease without changing the base version', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const publishedRelease = releaseBranchRelease({
+          tag_name: 'v1.0.0-rc.2',
+          created_at: '2024-01-15T00:00:00Z',
+        })
+        const olderStableRelease = releaseBranchRelease({
+          tag_name: 'v0.36.0',
+          created_at: '2024-01-01T00:00:00Z',
+        })
+        const commits = [
+          releaseBranchCommit({
+            oid: 'release-branch-rc3',
+            message: 'feat!: release candidate breaking change',
+            committedDate: '2024-02-01T00:00:00Z',
+          }),
+        ]
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [olderStableRelease, publishedRelease])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.since).toBe(publishedRelease.created_at)
+            expect(body.variables.withHeadRefName).toBe(true)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(200, releaseBranchGraphqlPayload(commits))
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.0-rc.3')
+              expect(body.prerelease).toBe(true)
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0-rc.3' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('preserves a manually advanced draft prerelease number', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const publishedRelease = releaseBranchRelease({
+          tag_name: 'v1.0.0-rc.2',
+          created_at: '2024-01-15T00:00:00Z',
+        })
+        const draftRelease = releaseBranchRelease({
+          tag_name: 'v1.0.0-rc.5',
+          id: 55,
+          draft: true,
+          prerelease: true,
+          created_at: '2024-02-01T00:00:00Z',
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [draftRelease, publishedRelease])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.since).toBe(publishedRelease.created_at)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(
+            200,
+            releaseBranchGraphqlPayload([
+              releaseBranchCommit({
+                oid: 'release-branch-draft',
+                message: 'fix: preserve draft number',
+              }),
+            ])
+          )
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/55',
+            (body) => {
+              expect(body).toMatchObject({
+                tag_name: 'v1.0.0-rc.5',
+                prerelease: true,
+                draft: true,
+              })
+              return true
+            }
+          )
+          .reply(200, draftRelease)
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('updates an existing stable draft for a stable floor rule', async () => {
+        getReleaseBranchConfigMock(
+          `template: |\n  $CHANGES\nprerelease-branch-rules:\n  - branch-prefix: release-candidate/\n`
+        )
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const draftRelease = releaseBranchRelease({
+          tag_name: 'v1.0.0',
+          id: 55,
+          draft: true,
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [draftRelease])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, releaseBranchGraphqlPayload([]))
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/55',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.0')
+              expect(body.prerelease).toBe(false)
+              return true
+            }
+          )
+          .reply(200, draftRelease)
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('forces stable semantics for a stable floor rule', async () => {
+        getReleaseBranchConfigMock(
+          `prerelease: true\ntemplate: |\n  $CHANGES\nprerelease-branch-rules:\n  - branch-prefix: release-candidate/\n`
+        )
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, releaseBranchGraphqlPayload([]))
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.0')
+              expect(body.prerelease).toBe(false)
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('tracks an advanced release branch draft above the computed floor', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const publishedRelease = releaseBranchRelease({
+          tag_name: 'v1.0.1',
+          created_at: '2024-03-01T00:00:00Z',
+        })
+        const draftRelease = releaseBranchRelease({
+          tag_name: 'v1.0.2-rc.0',
+          id: 56,
+          draft: true,
+          prerelease: true,
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [draftRelease, publishedRelease])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.since).toBe(publishedRelease.created_at)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(200, releaseBranchGraphqlPayload([]))
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/56',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.2-rc.0')
+              expect(body.prerelease).toBe(true)
+              return true
+            }
+          )
+          .reply(200, draftRelease)
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('raises the release branch floor above an out-of-band stable release', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const stableRelease = releaseBranchRelease({
+          tag_name: 'v1.0.1',
+          created_at: '2024-03-01T00:00:00Z',
+        })
+        const commits = [
+          releaseBranchCommit({
+            oid: 'release-branch-rc-after-ga',
+            message: 'feat: release candidate after out-of-band release',
+          }),
+        ]
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [stableRelease])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.since).toBe(stableRelease.created_at)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(200, releaseBranchGraphqlPayload(commits))
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.2-rc.0')
+              expect(body.prerelease).toBe(true)
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.2-rc.0' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('enables release branches from the action input', async () => {
+        getConfigMock()
+        const restoreInputEnvironment = mockedEnv({
+          'INPUT_PRERELEASE-BRANCH-RULES':
+            '[{ branch-prefix: release-candidate/, prerelease-identifier: rc }]',
+        })
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const stableRelease = releaseBranchRelease({
+          tag_name: 'v0.36.0',
+        })
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [stableRelease])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.withHeadRefName).toBe(true)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(
+            200,
+            releaseBranchGraphqlPayload([
+              releaseBranchCommit({
+                oid: 'release-branch-input',
+                message: 'fix: action input release branch',
+              }),
+            ])
+          )
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.0-rc.1')
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0-rc.1' }))
+
+        try {
+          await probot.receive({
+            name: 'push',
+            payload: releaseBranchPayload,
+          })
+        } finally {
+          restoreInputEnvironment()
+        }
+      })
+
+      it('rejects invalid release branch rules from the action input', async () => {
+        getConfigMock()
+        const restoreInputEnvironment = mockedEnv({
+          'INPUT_PRERELEASE-BRANCH-RULES':
+            '[{ branch-prefix: release-candidate/, branch-pattern: "^rc-(?<version>\\\\d+)$" }]',
+        })
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        try {
+          await expect(
+            probot.receive({
+              name: 'push',
+              payload: releaseBranchPayload,
+            })
+          ).rejects.toThrow(
+            'Invalid prerelease-branch-rules input: "[0]" contains a conflict between exclusive peers [branch-prefix, branch-pattern]'
+          )
+        } finally {
+          restoreInputEnvironment()
+        }
+      })
+
+      it('resolves prerelease numbering in local git mode', async () => {
+        const localGitRoot = fs.mkdtempSync(
+          path.join(os.tmpdir(), 'release-branch-local-')
+        )
+        fs.mkdirSync(path.join(localGitRoot, '.github'))
+        fs.writeFileSync(
+          path.join(localGitRoot, '.github', 'release-drafter.yml'),
+          releaseBranchConfig
+        )
+        fs.writeFileSync(path.join(localGitRoot, 'CHANGELOG.md'), 'changes\n')
+        execFileSync('git', ['-C', localGitRoot, 'init', '--quiet'])
+        execFileSync('git', [
+          '-C',
+          localGitRoot,
+          'config',
+          'user.email',
+          'release-branch@example.com',
+        ])
+        execFileSync('git', [
+          '-C',
+          localGitRoot,
+          'config',
+          'user.name',
+          'Release Branch Tester',
+        ])
+        execFileSync('git', ['-C', localGitRoot, 'add', 'CHANGELOG.md'])
+        execFileSync('git', [
+          '-C',
+          localGitRoot,
+          'commit',
+          '--quiet',
+          '-m',
+          'fix: local release branch change',
+        ])
+
+        const restoreLocalEnvironment = mockedEnv({
+          'INPUT_LOCAL-GIT-ROOT': localGitRoot,
+          'INPUT_DRY-RUN': 'true',
+          GITHUB_ACTIONS: 'true',
+          GITHUB_REF: releaseBranchRef,
+          GITHUB_SHA: releaseBranchSha,
+        })
+        const setOutput = jest.spyOn(core, 'setOutput')
+
+        try {
+          await probot.receive({
+            name: 'push',
+            payload: releaseBranchPayload,
+          })
+          expect(setOutput).toHaveBeenCalledWith(
+            'resolved-version',
+            '1.0.0-rc.1'
+          )
+        } finally {
+          restoreLocalEnvironment()
+          fs.rmSync(localGitRoot, { recursive: true, force: true })
+        }
+      })
+    })
+
+    describe('after merging a release branch pull request', () => {
+      const releaseBranchMergePayload = {
+        ...pushPayload,
+        ref: 'refs/heads/master',
+      }
+
+      const expandedCommits = [
+        {
+          sha: 'expanded-release-feature',
+          commit: {
+            committer: { date: '2024-02-01T00:00:00Z' },
+            author: { name: 'Release Branch Tester' },
+            message: 'feat: expanded release feature',
+          },
+          author: { login: 'release-branch-tester' },
+        },
+        {
+          sha: 'expanded-release-fix',
+          commit: {
+            committer: { date: '2024-02-01T00:01:00Z' },
+            author: { name: 'Release Branch Tester' },
+            message: 'fix: expanded release fix',
+          },
+          author: { login: 'release-branch-tester' },
+        },
+      ]
+
+      const mockReleaseBranchMergeApi = ({
+        graphqlPayload,
+        restCommits = expandedCommits,
+        releases = [],
+        responseTag = 'v1.0.0',
+        expectBody,
+      }) => {
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, releases)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.withHeadRefName).toBe(true)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(200, graphqlPayload)
+
+        if (restCommits !== null) {
+          nock('https://api.github.com')
+            .get(
+              '/repos/toolmantim/release-drafter-test-project/pulls/101/commits'
+            )
+            .query({ per_page: '100' })
+            .reply(200, restCommits)
+        }
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expectBody(body)
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: responseTag }))
+      }
+
+      it('sets the GA version floor and expands squash-merged release commits', async () => {
+        getReleaseBranchConfigMock(
+          `${releaseBranchConfig}change-template: '* $TITLE (#$NUMBER)'\n`
+        )
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch(),
+          expectBody: (body) => {
+            expect(body.tag_name).toBe('v1.0.0')
+            expect(body.prerelease).toBe(false)
+            expect(body.make_latest).not.toBe('false')
+            expect(body.body).toContain('Expanded release feature')
+            expect(body.body).toContain('Expanded release fix')
+            expect(body.body).toContain('(#101)')
+            expect(body.body).not.toContain('Merge release branch')
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('selects a stable draft instead of an rc draft during GA promotion', async () => {
+        getReleaseBranchConfigMock('prerelease: true\n' + releaseBranchConfig)
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        const rcDraft = releaseBranchRelease({
+          id: 60,
+          tag_name: 'v1.0.0-rc.3',
+          draft: true,
+          prerelease: true,
+        })
+        const stableDraft = releaseBranchRelease({
+          id: 61,
+          tag_name: 'v0.37.0',
+          draft: true,
+          prerelease: false,
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [rcDraft, stableDraft])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.withHeadRefName).toBe(true)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(200, mockMergedReleaseBranch())
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/pulls/101/commits'
+          )
+          .query({ per_page: '100' })
+          .reply(200, expandedCommits)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/61',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.0')
+              expect(body.prerelease).toBe(false)
+              return true
+            }
+          )
+          .reply(200, stableDraft)
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('preserves configured latest when forcing stable semantics', async () => {
+        getReleaseBranchConfigMock(
+          `prerelease: true\nlatest: 'false'\n${releaseBranchConfig}`
+        )
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch(),
+          expectBody: (body) => {
+            expect(body.tag_name).toBe('v1.0.0')
+            expect(body.prerelease).toBe(false)
+            expect(body.make_latest).toBe('false')
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('preserves configured latest true when forcing stable semantics', async () => {
+        getReleaseBranchConfigMock(
+          `prerelease: true\nlatest: 'true'\n${releaseBranchConfig}`
+        )
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch(),
+          expectBody: (body) => {
+            expect(body.tag_name).toBe('v1.0.0')
+            expect(body.prerelease).toBe(false)
+            expect(body.make_latest).toBe('true')
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('computes the GA version above an existing stable release', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        const stableRelease = releaseBranchRelease({
+          tag_name: 'v1.0.1',
+        })
+        const commits = [
+          releaseBranchCommit({
+            oid: 'release-branch-ga-fix',
+            message: 'fix: release branch fix',
+          }),
+        ]
+        const restCommits = [
+          {
+            sha: 'expanded-release-fix',
+            commit: {
+              committer: { date: '2024-02-01T00:00:00Z' },
+              author: { name: 'Release Branch Tester' },
+              message: 'fix: expanded release fix',
+            },
+            author: { login: 'release-branch-tester' },
+          },
+        ]
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch({
+            firstOid: commits[0].oid,
+            firstMessage: commits[0].message,
+          }),
+          restCommits,
+          releases: [stableRelease],
+          responseTag: 'v1.0.2',
+          expectBody: (body) => {
+            expect(body.tag_name).toBe('v1.0.2')
+            expect(body.prerelease).toBe(false)
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('keeps squash PR commits already in history while adding missing commits', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch({
+            firstOid: expandedCommits[0].sha,
+            firstMessage: expandedCommits[0].commit.message,
+          }),
+          expectBody: (body) => {
+            expect(body.body.match(/Expanded release feature/g)).toHaveLength(1)
+            expect(body.body.match(/Expanded release fix/g)).toHaveLength(1)
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('does not duplicate commits when the squash PR commits are already present', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        const graphqlPayload = releaseBranchGraphqlPayload([
+          releaseBranchCommit({
+            oid: expandedCommits[0].sha,
+            message: expandedCommits[0].commit.message,
+            associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
+          }),
+          releaseBranchCommit({
+            oid: expandedCommits[1].sha,
+            message: expandedCommits[1].commit.message,
+          }),
+        ])
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload,
+          expectBody: (body) => {
+            expect(body.tag_name).toBe('v1.0.0')
+            expect(body.body.match(/Expanded release feature/g)).toHaveLength(1)
+            expect(body.body.match(/Expanded release fix/g)).toHaveLength(1)
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('replaces a one-commit squash merge with its expanded commit', async () => {
+        getReleaseBranchConfigMock(
+          `${releaseBranchConfig}change-template: '* $TITLE (#$NUMBER)'\n`
+        )
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        const expandedCommit = {
+          sha: 'expanded-single-release-commit',
+          commit: {
+            committer: { date: '2024-02-01T00:00:00Z' },
+            author: { name: 'Release Branch Tester' },
+            message: 'fix: expanded single release commit',
+          },
+          author: { login: 'release-branch-tester' },
+        }
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch(),
+          restCommits: [expandedCommit],
+          expectBody: (body) => {
+            expect(body.body).toContain('Expanded single release commit')
+            expect(body.body).toContain('(#101)')
+            expect(body.body).not.toContain('Merge release branch')
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('does not replace a one-commit rebase merge with its expanded commit', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        const rebaseOid = 'rebase-single-release-commit'
+        const expandedCommit = {
+          sha: rebaseOid,
+          commit: {
+            committer: { date: '2024-02-01T00:00:00Z' },
+            author: { name: 'Release Branch Tester' },
+            message: 'fix: expanded rebase release commit',
+          },
+          author: { login: 'release-branch-tester' },
+        }
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch({
+            firstOid: rebaseOid,
+            firstMessage: 'fix: rebase release commit',
+          }),
+          restCommits: [expandedCommit],
+          expectBody: (body) => {
+            expect(body.body).toContain('Rebase release commit')
+            expect(body.body).not.toContain('Expanded rebase release commit')
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('keeps all commits from a rebase-merged release branch without expansion', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        const rebaseCommits = [
+          releaseBranchCommit({
+            oid: 'rebase-release-a',
+            message: 'feat: release feature',
+            associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
+          }),
+          releaseBranchCommit({
+            oid: 'rebase-release-b',
+            message: 'fix: release fix',
+            associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
+          }),
+          releaseBranchCommit({
+            oid: 'rebase-release-c',
+            message: 'docs: release docs',
+            associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
+          }),
+        ]
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.withHeadRefName).toBe(true)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(200, releaseBranchGraphqlPayload(rebaseCommits))
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.body).toContain('Release feature')
+              expect(body.body).toContain('Release fix')
+              expect(body.body).toContain('Release docs')
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('rejects multiple release branches merged in one window', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.withHeadRefName).toBe(true)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(
+            200,
+            mockMergedReleaseBranch({
+              secondHeadRefName: 'release-candidate/v2',
+            })
+          )
+
+        await expect(
+          probot.receive({
+            name: 'push',
+            payload: releaseBranchMergePayload,
+          })
+        ).rejects.toThrow('1.0.0 (#101), 2.0.0 (#102)')
+      })
+    })
+
+    it('does not request headRefName when prerelease-branch-rules is disabled', async () => {
+      getConfigMock()
+      configureReleaseBranchEnvironment('refs/heads/master')
+
+      nock('https://api.github.com')
+        .get('/repos/toolmantim/release-drafter-test-project/releases')
+        .query(true)
+        .reply(200, [])
+
+      nock('https://api.github.com')
+        .post('/graphql', (body) => {
+          expect(body.variables.withHeadRefName).toBe(false)
+          return body.query.includes(
+            'query findCommitsWithAssociatedPullRequests'
+          )
+        })
+        .reply(200, graphqlCommitsNoPRsPayload)
+
+      nock('https://api.github.com')
+        .post('/repos/toolmantim/release-drafter-test-project/releases')
+        .reply(200, releasePayload)
+
+      await probot.receive({
+        name: 'push',
+        payload: pushPayload,
       })
     })
 
@@ -4416,13 +5576,15 @@ describe('release-drafter', () => {
         restoreEnvironment()
       })
 
-      it('warns but still finalizes when an ignored input (commitish) is set alongside prepared-release-id', async () => {
+      it('warns but ignores commitish and release branches alongside prepared-release-id', async () => {
         // `commitish` is the subtle case: it flows through updateConfigFromInput
         // and would otherwise shift the commit range used to regenerate the
         // changelog. Neutralizing it keeps the prepared release authoritative.
         let restoreEnvironment = mockedEnv({
           'INPUT_PREPARED-RELEASE-ID': '11691725',
           INPUT_COMMITISH: 'refs/heads/some-other-branch',
+          'INPUT_PRERELEASE-BRANCH-RULES':
+            '[{ branch-prefix: release-candidate/, prerelease-identifier: rc }]',
         })
         const setFailedSpy = jest
           .spyOn(core, 'setFailed')
@@ -4459,6 +5621,7 @@ describe('release-drafter', () => {
             expect(body.variables.targetCommitish).not.toBe(
               'refs/heads/some-other-branch'
             )
+            expect(body.variables.withHeadRefName).toBe(false)
             return true
           })
           .reply(200, graphqlCommitsMergeCommit)
@@ -4478,8 +5641,11 @@ describe('release-drafter', () => {
         expect(warningSpy).toHaveBeenCalledWith(
           expect.stringContaining('commitish')
         )
+        expect(warningSpy).toHaveBeenCalledWith(
+          expect.stringContaining('prerelease-branch-rules')
+        )
         expect(setFailedSpy).not.toHaveBeenCalled()
-        expect.assertions(3)
+        expect.assertions(5)
 
         warningSpy.mockRestore()
         setFailedSpy.mockRestore()

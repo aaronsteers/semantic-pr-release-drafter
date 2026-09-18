@@ -21,6 +21,18 @@ const validConfigs = [
   [{ template, footer: 'I am on bottm' }],
   [{ template, header: 'I am on top', footer: 'I am on bottm' }],
   [{ template, 'pull-request-limit': 49 }],
+  [
+    {
+      template,
+      'prerelease-branch-rules': [
+        {
+          'branch-prefix': 'release-candidate/',
+          'prerelease-identifier': 'rc',
+        },
+        { 'branch-pattern': '^rc-(?<version>\\d+)$' },
+      ],
+    },
+  ],
 ]
 
 const invalidConfigs = [
@@ -87,6 +99,47 @@ describe('schema', () => {
 
   it('current schema matches the generated JSON Schema, update schema with `yarn generate-schema`', () => {
     expect(jsonSchema).toMatchObject(schemaJson)
+  })
+
+  it('defines release branch rules', () => {
+    expect(schemaJson.properties['prerelease-branch-rules']).toMatchObject({
+      type: 'array',
+    })
+    expect(
+      schemaJson.properties['prerelease-branch-rules'].items.properties[
+        'branch-pattern'
+      ]
+    ).toMatchObject({
+      pattern: '\\(\\?<version>',
+    })
+    expect(
+      schemaJson.properties['prerelease-branch-rules'].items.properties[
+        'branch-prefix'
+      ]
+    ).toMatchObject({
+      minLength: 1,
+    })
+  })
+
+  it('rejects release branch patterns without a version group', () => {
+    const { error } = schema(context).validate({
+      template,
+      'prerelease-branch-rules': [{ 'branch-pattern': '^rc-(\\d+)$' }],
+    })
+    expect(error).toBeDefined()
+  })
+
+  it('requires exactly one release branch matcher', () => {
+    const { error } = schema(context).validate({
+      template,
+      'prerelease-branch-rules': [
+        {
+          'branch-prefix': 'release/',
+          'branch-pattern': '^release-(?<version>\\d+)$',
+        },
+      ],
+    })
+    expect(error).toBeDefined()
   })
 
   describe('validateSchema', () => {

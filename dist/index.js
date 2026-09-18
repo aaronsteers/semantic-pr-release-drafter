@@ -154486,7 +154486,7 @@ var require_release_branches = __commonJS({
         if (normalizedTag === null) return false;
         if (!tagPrefix) normalizedTag = normalizedTag.replace(/^v/, "");
         const parsed = semver.parse(normalizedTag);
-        return Boolean(parsed) && parsed.major === major && parsed.prerelease.length === 0;
+        return Boolean(parsed) && parsed.major <= major && parsed.prerelease.length === 0;
       };
     };
     var findReleaseBranchPullRequests = ({ pullRequests, rules }) => {

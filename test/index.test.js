@@ -424,7 +424,7 @@ describe('release-drafter', () => {
         })
       })
 
-      it('creates rc.1 from the release branch floor', async () => {
+      it('creates rc.1 from the last stable release boundary', async () => {
         getReleaseBranchConfigMock()
         configureReleaseBranchEnvironment(releaseBranchRef)
 
@@ -446,7 +446,7 @@ describe('release-drafter', () => {
 
         nock('https://api.github.com')
           .post('/graphql', (body) => {
-            expect(body.variables.since).toBeUndefined()
+            expect(body.variables.since).toBe(stableRelease.created_at)
             expect(body.variables.withHeadRefName).toBe(true)
             return body.query.includes(
               'query findCommitsWithAssociatedPullRequests'
@@ -492,7 +492,7 @@ describe('release-drafter', () => {
 
         nock('https://api.github.com')
           .post('/graphql', (body) => {
-            expect(body.variables.since).toBeUndefined()
+            expect(body.variables.since).toBe(stableRelease.created_at)
             return body.query.includes(
               'query findCommitsWithAssociatedPullRequests'
             )

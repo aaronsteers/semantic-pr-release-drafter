@@ -107,6 +107,15 @@ describe('release branches', () => {
     expect(matcher('v1.0.0-rc.1')).toBe(false)
   })
 
+  test('matches numeric prerelease identifiers', () => {
+    const matcher = releaseTagMatcher({
+      tagPrefix: '',
+      version: '1.0.0',
+      identifier: '123',
+    })
+    expect(matcher('v1.0.0-123.1')).toBe(true)
+  })
+
   test('strips a required release tag prefix', () => {
     expect(
       stripReleaseTagPrefix({

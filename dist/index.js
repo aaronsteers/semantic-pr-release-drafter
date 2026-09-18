@@ -149826,6 +149826,22 @@ var require_versions = __commonJS({
         floorVersion,
         template
       );
+      for (const [key, versionTemplate] of [
+        ["$NEXT_MAJOR_VERSION", template],
+        ["$NEXT_MINOR_VERSION", template],
+        ["$NEXT_PATCH_VERSION", template],
+        ["$NEXT_MAJOR_VERSION_MAJOR", "$MAJOR"],
+        ["$NEXT_MAJOR_VERSION_MINOR", "$MINOR"],
+        ["$NEXT_MAJOR_VERSION_PATCH", "$PATCH"],
+        ["$NEXT_MINOR_VERSION_MAJOR", "$MAJOR"],
+        ["$NEXT_MINOR_VERSION_MINOR", "$MINOR"],
+        ["$NEXT_MINOR_VERSION_PATCH", "$PATCH"],
+        ["$NEXT_PATCH_VERSION_MAJOR", "$MAJOR"],
+        ["$NEXT_PATCH_VERSION_MINOR", "$MINOR"],
+        ["$NEXT_PATCH_VERSION_PATCH", "$PATCH"]
+      ]) {
+        templatableVersion[key] = resolvedFromSemver(floorVersion, versionTemplate);
+      }
       return templatableVersion;
     };
     var getVersionInfo = (release, template, inputVersion, versionKeyIncrement, tagPrefix, preReleaseIdentifier, draftVersion, floorVersion) => {
@@ -154438,7 +154454,7 @@ var require_release_branches = __commonJS({
         return false;
       }
       if (!identifier) return parsed.prerelease.length === 0;
-      return parsed.prerelease.length === 2 && parsed.prerelease[0] === identifier && typeof parsed.prerelease[1] === "number";
+      return parsed.prerelease.length === 2 && String(parsed.prerelease[0]) === identifier && typeof parsed.prerelease[1] === "number";
     };
     var findReleaseBranchPullRequests = ({ pullRequests, rules }) => {
       const matches = [];
@@ -154676,32 +154692,44 @@ var require_index = __commonJS({
                 message: "Skipping release branch PR commit expansion in local git mode."
               });
             } else {
-              const expandedCommits = await context.octokit.paginate(
-                context.octokit.pulls.listCommits,
-                context.repo({ pull_number: match.number, per_page: 100 })
+              const associatedInRange = commits.filter(
+                (commit) => commit.associatedPullRequests.nodes.some(
+                  (pullRequest) => pullRequest.number === match.number
+                )
               );
-              const existingOids = new Set(commits.map((commit) => commit.oid));
-              const appendedCommits = expandedCommits.map((commit) => ({
-                id: commit.sha,
-                oid: commit.sha,
-                committedDate: commit.commit.committer.date,
-                message: commit.commit.message,
-                author: {
-                  name: commit.commit.author.name,
-                  user: commit.author ? { login: commit.author.login } : null
-                },
-                associatedPullRequests: { nodes: [] }
-              })).filter((commit) => !existingOids.has(commit.oid));
-              if (appendedCommits.length > 0) {
-                const expandedShas = new Set(
-                  expandedCommits.map((commit) => commit.sha)
+              if (associatedInRange.length > 1) {
+                log({
+                  context,
+                  message: `Skipping release branch PR commit expansion because ${associatedInRange.length} associated commits are already in range.`
+                });
+              } else if (associatedInRange.length === 1) {
+                const expandedCommits = await context.octokit.paginate(
+                  context.octokit.pulls.listCommits,
+                  context.repo({ pull_number: match.number, per_page: 100 })
                 );
-                commits.push(...appendedCommits);
-                commits = commits.filter(
-                  (commit) => !(commit.associatedPullRequests.nodes.some(
-                    (pullRequest) => pullRequest.number === match.number
-                  ) && !expandedShas.has(commit.oid))
-                );
+                if (expandedCommits.length >= 2) {
+                  const associatedCommit = associatedInRange[0];
+                  const existingOids = new Set(
+                    commits.filter((commit) => commit.oid !== associatedCommit.oid).map((commit) => commit.oid)
+                  );
+                  const replacementCommits = expandedCommits.map((commit) => ({
+                    id: commit.sha,
+                    oid: commit.sha,
+                    committedDate: commit.commit.committer.date,
+                    message: commit.commit.message,
+                    author: {
+                      name: commit.commit.author.name,
+                      user: commit.author ? { login: commit.author.login } : null
+                    },
+                    associatedPullRequests: { nodes: [] }
+                  })).filter((commit) => !existingOids.has(commit.oid));
+                  commits = [
+                    ...commits.filter(
+                      (commit) => commit.oid !== associatedCommit.oid
+                    ),
+                    ...replacementCommits
+                  ];
+                }
               }
             }
           }
@@ -154711,6 +154739,14 @@ var require_index = __commonJS({
           config.latest = configuredLatest;
           prerelease = false;
           latest = config.latest;
+          if (releasesResult) {
+            draftRelease = sortReleases(
+              releasesResult.releases.filter(
+                (release) => release.draft && !release.prerelease && (!tagPrefix || release.tag_name.startsWith(tagPrefix))
+              ),
+              tagPrefix
+            ).at(-1);
+          }
         }
         const sortedMergedPullRequests = sortPullRequests(
           mergedPullRequests,
@@ -154975,6 +155011,7 @@ var require_index = __commonJS({
         ["base-version-override", "baseVersionOverride"],
         ["prerelease", "prerelease"],
         ["prerelease-identifier", "preReleaseIdentifier"],
+        ["release-branches", "releaseBranches"],
         ["allow-major-bumps", "allowMajorBumps"]
       ].filter(([, key]) => input[key] !== void 0);
       for (const [, key] of ignored) {

@@ -288,6 +288,7 @@ describe('versions', () => {
     )
 
     expect(versionInfo.$RESOLVED_VERSION.version).toEqual('1.0.0-rc.1')
+    expect(versionInfo.$NEXT_PATCH_VERSION.version).toEqual('1.0.0-rc.1')
   })
 
   it('release branch floor applies when no last release exists', () => {

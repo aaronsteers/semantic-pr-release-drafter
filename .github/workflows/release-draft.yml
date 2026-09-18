@@ -10,12 +10,13 @@ on:
 permissions:
   contents: write
 
-# Serialize runs so overlapping pushes can't both pick the same draft/version.
+# Serialize runs per branch so overlapping pushes can't both pick the same
+# draft/version while keeping main and release-candidate branches independent.
 # Pushes and manual dispatches use separate groups so a draft-only dispatch
 # can never displace a queued publishing push. Queued pushes may coalesce;
 # the surviving run still covers every commit since the last release.
 concurrency:
-  group: release-drafter-${{ github.event_name }}
+  group: release-drafter-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

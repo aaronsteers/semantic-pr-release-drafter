@@ -30,6 +30,7 @@ const Joi = require('joi')
 const {
   parseReleaseBranch,
   releaseTagMatcher,
+  releaseTrackBaseMatcher,
   findReleaseBranchPullRequests,
 } = require('./lib/release-branches')
 const { prereleaseBranchRulesSchema } = require('./lib/schema')
@@ -166,11 +167,14 @@ module.exports = (app, { getRouter }) => {
           tagPrefix,
           tagMatcher,
         })
+        const baseMatcher = releaseTrackBaseMatcher({
+          tagPrefix,
+          version: releaseBranch.version,
+          identifier: releaseBranch.identifier,
+        })
         releasesResult.lastRelease = sortReleases(
           releasesResult.releases.filter(
-            (release) =>
-              !release.draft &&
-              (!tagPrefix || release.tag_name.startsWith(tagPrefix))
+            (release) => !release.draft && baseMatcher(release.tag_name)
           ),
           tagPrefix
         ).at(-1)
@@ -326,7 +330,7 @@ module.exports = (app, { getRouter }) => {
       config.latest = configuredLatest
       prerelease = false
       latest = config.latest
-      if (releasesResult) {
+      if (releasesResult && !preparedRelease) {
         draftRelease = sortReleases(
           releasesResult.releases.filter(
             (release) =>

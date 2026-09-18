@@ -154559,6 +154559,17 @@ var require_index = __commonJS({
       findReleaseBranchPullRequests
     } = require_release_branches();
     var { prereleaseBranchRulesSchema } = require_schema6();
+    var isAssociated = (commit, wrapperNumber) => commit.associatedPullRequests.nodes.some(
+      (pullRequest) => pullRequest.number === wrapperNumber
+    );
+    var withoutWrapperAssociation = (commit, wrapperNumber) => ({
+      ...commit,
+      associatedPullRequests: {
+        nodes: commit.associatedPullRequests.nodes.filter(
+          (pullRequest) => pullRequest.number !== wrapperNumber
+        )
+      }
+    });
     module2.exports = (app, { getRouter }) => {
       if (!runnerIsActions() && typeof getRouter === "function") {
         getRouter().get("/healthz", (request, response) => {
@@ -154733,15 +154744,16 @@ var require_index = __commonJS({
               });
             } else {
               const associatedInRange = commits.filter(
-                (commit) => commit.associatedPullRequests.nodes.some(
-                  (pullRequest) => pullRequest.number === match.number
-                )
+                (commit) => isAssociated(commit, match.number)
               );
               if (associatedInRange.length > 1) {
                 log({
                   context,
                   message: `Skipping release branch PR commit expansion because ${associatedInRange.length} associated commits are already in range.`
                 });
+                commits = commits.map(
+                  (commit) => isAssociated(commit, match.number) ? withoutWrapperAssociation(commit, match.number) : commit
+                );
               } else if (associatedInRange.length === 1) {
                 const expandedCommits = await context.octokit.paginate(
                   context.octokit.pulls.listCommits,
@@ -154779,9 +154791,9 @@ var require_index = __commonJS({
                   })).filter((commit) => !existingOids.has(commit.oid));
                   commits = [
                     ...commits.filter(
-                      (commit) => !commit.associatedPullRequests.nodes.some(
-                        (pullRequest) => pullRequest.number === match.number
-                      ) || expandedShas.has(commit.oid)
+                      (commit) => !isAssociated(commit, match.number) || expandedShas.has(commit.oid)
+                    ).map(
+                      (commit) => isAssociated(commit, match.number) && expandedShas.has(commit.oid) ? withoutWrapperAssociation(commit, match.number) : commit
                     ),
                     ...replacementCommits
                   ];

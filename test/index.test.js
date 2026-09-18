@@ -1309,7 +1309,9 @@ describe('release-drafter', () => {
       })
 
       it('does not duplicate commits when the squash PR commits are already present', async () => {
-        getReleaseBranchConfigMock()
+        getReleaseBranchConfigMock(
+          `${releaseBranchConfig}change-template: '* $TITLE ($URL)'\n`
+        )
         configureReleaseBranchEnvironment('refs/heads/master')
 
         const graphqlPayload = releaseBranchGraphqlPayload([
@@ -1321,6 +1323,7 @@ describe('release-drafter', () => {
           releaseBranchCommit({
             oid: expandedCommits[1].sha,
             message: expandedCommits[1].commit.message,
+            associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
           }),
         ])
 
@@ -1330,6 +1333,59 @@ describe('release-drafter', () => {
             expect(body.tag_name).toBe('v1.0.0')
             expect(body.body.match(/Expanded release feature/g)).toHaveLength(1)
             expect(body.body.match(/Expanded release fix/g)).toHaveLength(1)
+            expect(body.body).toContain(
+              'https://github.com/toolmantim/release-drafter-test-project/pull/69'
+            )
+            expect(body.body).toContain(
+              'https://github.com/toolmantim/release-drafter-test-project/pull/70'
+            )
+            expect(body.body).not.toContain(
+              'https://github.com/toolmantim/release-drafter-test-project/pull/101'
+            )
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('removes wrapper PR associations from rebase-merged commits', async () => {
+        getReleaseBranchConfigMock(
+          `${releaseBranchConfig}change-template: '* $TITLE ($URL)'\n`
+        )
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        const graphqlPayload = releaseBranchGraphqlPayload([
+          releaseBranchCommit({
+            oid: 'rebase-release-feature',
+            message: 'feat: rebase release feature (#69)',
+            associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
+          }),
+          releaseBranchCommit({
+            oid: 'rebase-release-fix',
+            message: 'fix: rebase release fix (#70)',
+            associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
+          }),
+        ])
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload,
+          restCommits: null,
+          expectBody: (body) => {
+            expect(body.tag_name).toBe('v1.0.0')
+            expect(body.body.match(/Rebase release feature/g)).toHaveLength(1)
+            expect(body.body.match(/Rebase release fix/g)).toHaveLength(1)
+            expect(body.body).toContain(
+              'https://github.com/toolmantim/release-drafter-test-project/pull/69'
+            )
+            expect(body.body).toContain(
+              'https://github.com/toolmantim/release-drafter-test-project/pull/70'
+            )
+            expect(body.body).not.toContain(
+              'https://github.com/toolmantim/release-drafter-test-project/pull/101'
+            )
           },
         })
 

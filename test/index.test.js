@@ -128,6 +128,41 @@ const releaseBranchGraphqlPayload = (nodes) => ({
   },
 })
 
+const mockMergedReleaseBranch = ({
+  firstHeadRefName = 'release-candidate/v1',
+  secondHeadRefName,
+  firstOid = 'squash-release-commit',
+  secondOid,
+} = {}) => {
+  const nodes = [
+    releaseBranchCommit({
+      oid: firstOid,
+      message: 'chore: merge release branch',
+      associatedPullRequests: [
+        releaseBranchPullRequest({
+          number: 101,
+          headRefName: firstHeadRefName,
+        }),
+      ],
+    }),
+  ]
+  if (secondHeadRefName) {
+    nodes.push(
+      releaseBranchCommit({
+        oid: secondOid || 'second-release-commit',
+        message: 'chore: merge another release branch',
+        associatedPullRequests: [
+          releaseBranchPullRequest({
+            number: 102,
+            headRefName: secondHeadRefName,
+          }),
+        ],
+      })
+    )
+  }
+  return releaseBranchGraphqlPayload(nodes)
+}
+
 const configureReleaseBranchEnvironment = (ref) => {
   process.env.GITHUB_REF = ref
   process.env.GITHUB_SHA = releaseBranchSha
@@ -545,41 +580,6 @@ describe('release-drafter', () => {
           author: { login: 'release-branch-tester' },
         },
       ]
-
-      const mockMergedReleaseBranch = ({
-        firstHeadRefName = 'release-candidate/v1',
-        secondHeadRefName,
-        firstOid = 'squash-release-commit',
-        secondOid,
-      } = {}) => {
-        const nodes = [
-          releaseBranchCommit({
-            oid: firstOid,
-            message: 'chore: merge release branch',
-            associatedPullRequests: [
-              releaseBranchPullRequest({
-                number: 101,
-                headRefName: firstHeadRefName,
-              }),
-            ],
-          }),
-        ]
-        if (secondHeadRefName) {
-          nodes.push(
-            releaseBranchCommit({
-              oid: secondOid || 'second-release-commit',
-              message: 'chore: merge another release branch',
-              associatedPullRequests: [
-                releaseBranchPullRequest({
-                  number: 102,
-                  headRefName: secondHeadRefName,
-                }),
-              ],
-            })
-          )
-        }
-        return releaseBranchGraphqlPayload(nodes)
-      }
 
       const mockReleaseBranchMergeApi = ({
         graphqlPayload,

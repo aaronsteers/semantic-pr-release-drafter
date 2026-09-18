@@ -28,6 +28,7 @@ const yaml = require('yaml')
 const {
   parseReleaseBranch,
   releaseTagPattern,
+  stripReleaseTagPrefix,
   findReleaseBranchPullRequests,
 } = require('./lib/release-branches')
 
@@ -62,8 +63,9 @@ module.exports = (app, { getRouter }) => {
     updateConfigFromInput(config, input)
 
     const tagPrefix = getEffectiveTagPrefix(config)
+    const ref = process.env['GITHUB_REF'] || context.payload.ref
     const releaseBranch = parseReleaseBranch({
-      ref: context.payload.ref || process.env.GITHUB_REF,
+      ref,
       types: config['release-branch-types'],
       tagPrefix,
     })
@@ -77,8 +79,6 @@ module.exports = (app, { getRouter }) => {
 
     // GitHub Actions merge payloads slightly differ, in that their ref points
     // to the PR branch instead of refs/heads/master
-    const ref = process.env['GITHUB_REF'] || context.payload.ref
-
     if (!releaseBranch && !isTriggerableReference({ ref, context, config })) {
       return
     }
@@ -86,13 +86,13 @@ module.exports = (app, { getRouter }) => {
     let targetCommitish = config.commitish || ref
     const hasExplicitCommitish = Boolean(config.commitish)
 
-    const {
+    let {
       'filter-by-commitish': filterByCommitish,
       'include-pre-releases': includePreReleases,
       'prerelease-identifier': preReleaseIdentifier,
-      latest,
-      prerelease,
     } = config
+    let latest = config.latest
+    let prerelease = config.prerelease
     const shouldIncludePreReleases = Boolean(
       includePreReleases || preReleaseIdentifier
     )
@@ -166,11 +166,14 @@ module.exports = (app, { getRouter }) => {
 
         const stableRelease = releasesResult.releases.find((release) => {
           if (release.draft || release.prerelease) return false
-          const tag =
-            tagPrefix && release.tag_name.startsWith(tagPrefix)
-              ? release.tag_name.slice(tagPrefix.length)
-              : release.tag_name
-          return tag.replace(/^v/, '') === releaseBranch.version
+          const tag = stripReleaseTagPrefix({
+            tagName: release.tag_name,
+            tagPrefix,
+          })
+          if (tag === null) return false
+          return tagPrefix
+            ? tag === releaseBranch.version
+            : tag.replace(/^v/, '') === releaseBranch.version
         })
         if (stableRelease) {
           throw new Error(
@@ -235,8 +238,14 @@ module.exports = (app, { getRouter }) => {
       mergedPullRequests = commitsResult.pullRequests
     }
 
+    const defaultBranch = context.payload.repository?.default_branch
+    const isDefaultBranch =
+      !defaultBranch ||
+      ref === defaultBranch ||
+      ref === `refs/heads/${defaultBranch}`
     if (
       !releaseBranch &&
+      isDefaultBranch &&
       Object.keys(config['release-branch-types'] || {}).length > 0
     ) {
       const matches = findReleaseBranchPullRequests({
@@ -282,16 +291,27 @@ module.exports = (app, { getRouter }) => {
             }))
             .filter((commit) => !existingOids.has(commit.oid))
           if (appendedCommits.length > 0) {
+            const expandedShas = new Set(
+              expandedCommits.map((commit) => commit.sha)
+            )
             commits.push(...appendedCommits)
             commits = commits.filter(
               (commit) =>
-                !commit.associatedPullRequests.nodes.some(
-                  (pullRequest) => pullRequest.number === match.number
+                !(
+                  commit.associatedPullRequests.nodes.some(
+                    (pullRequest) => pullRequest.number === match.number
+                  ) && !expandedShas.has(commit.oid)
                 )
             )
           }
         }
       }
+    }
+    if (releaseBranchMergeVersion) {
+      config.prerelease = false
+      config.latest = input.latest || 'true'
+      prerelease = false
+      latest = config.latest
     }
 
     const sortedMergedPullRequests = sortPullRequests(
@@ -347,7 +367,8 @@ module.exports = (app, { getRouter }) => {
         version: releaseBranch.version,
         identifier: releaseBranch.identifier,
       })
-      const releaseNumbers = releasesResult.releases
+      const knownReleases = releasesResult?.releases || []
+      const releaseNumbers = knownReleases
         .map((release) => ({
           release,
           number: Number(pattern.exec(release.tag_name)?.[1] || 0),
@@ -357,8 +378,10 @@ module.exports = (app, { getRouter }) => {
       for (const { release, number } of releaseNumbers) {
         if (!release.draft) publishedMax = Math.max(publishedMax, number)
       }
-      const draftN =
-        releaseNumbers.find(({ release }) => release.draft)?.number || 0
+      let draftN = 0
+      for (const { release, number } of releaseNumbers) {
+        if (release.draft) draftN = Math.max(draftN, number)
+      }
       const nextN = Math.max(publishedMax + 1, draftN)
       overrideVersion = `${releaseBranch.version}-${releaseBranch.identifier}.${nextN}`
       log({

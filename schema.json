@@ -77,8 +77,9 @@
     "release-branch-types": {
       "type": "object",
       "default": {},
-      "properties": {},
-      "additionalProperties": false
+      "additionalProperties": {
+        "type": "string"
+      }
     },
     "latest": {
       "type": "string",

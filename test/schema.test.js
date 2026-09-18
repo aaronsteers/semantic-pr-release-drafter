@@ -21,7 +21,12 @@ const validConfigs = [
   [{ template, footer: 'I am on bottm' }],
   [{ template, header: 'I am on top', footer: 'I am on bottm' }],
   [{ template, 'pull-request-limit': 49 }],
-  [{ template, 'release-branch-types': { 'release-candidate': 'rc' } }],
+  [
+    {
+      template,
+      'release-branch-types': { 'release-candidate': 'rc', hotfix: 'beta' },
+    },
+  ],
 ]
 
 const invalidConfigs = [
@@ -88,6 +93,12 @@ describe('schema', () => {
 
   it('current schema matches the generated JSON Schema, update schema with `yarn generate-schema`', () => {
     expect(jsonSchema).toMatchObject(schemaJson)
+  })
+
+  it('allows arbitrary string-valued release branch types', () => {
+    expect(schemaJson.properties['release-branch-types']).toMatchObject({
+      additionalProperties: { type: 'string' },
+    })
   })
 
   describe('validateSchema', () => {

@@ -6,6 +6,7 @@ const core = require('@actions/core')
 const mockedEnv = require('mocked-env')
 const pino = require('pino')
 const Stream = require('node:stream')
+const { execFileSync } = require('node:child_process')
 const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
@@ -43,12 +44,12 @@ release-branch-types:
 const releaseBranchRef = 'refs/heads/release-candidate/v1'
 const releaseBranchSha = 'a'.repeat(40)
 
-const getReleaseBranchConfigMock = () =>
+const getReleaseBranchConfigMock = (config = releaseBranchConfig) =>
   nock('https://api.github.com')
     .get(
       '/repos/toolmantim/release-drafter-test-project/contents/.github%2Frelease-drafter.yml'
     )
-    .reply(200, releaseBranchConfig)
+    .reply(200, config)
 
 const releaseBranchPayload = {
   ...pushNonMasterPayload,
@@ -133,11 +134,12 @@ const mockMergedReleaseBranch = ({
   secondHeadRefName,
   firstOid = 'squash-release-commit',
   secondOid,
+  firstMessage = 'chore: merge release branch',
 } = {}) => {
   const nodes = [
     releaseBranchCommit({
       oid: firstOid,
-      message: 'chore: merge release branch',
+      message: firstMessage,
       associatedPullRequests: [
         releaseBranchPullRequest({
           number: 101,
@@ -552,6 +554,120 @@ describe('release-drafter', () => {
           })
         ).rejects.toThrow('stable release v1.0.0 already exists')
       })
+
+      it('enables release branch types from the action input', async () => {
+        getConfigMock()
+        const restoreInputEnvironment = mockedEnv({
+          'INPUT_RELEASE-BRANCH-TYPES': '{ release-candidate: rc }',
+        })
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const stableRelease = releaseBranchRelease({
+          tag_name: 'v0.36.0',
+        })
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [])
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [stableRelease])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.withHeadRefName).toBe(true)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(
+            200,
+            releaseBranchGraphqlPayload([
+              releaseBranchCommit({
+                oid: 'release-branch-input',
+                message: 'fix: action input release branch',
+              }),
+            ])
+          )
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.0-rc.1')
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0-rc.1' }))
+
+        try {
+          await probot.receive({
+            name: 'push',
+            payload: releaseBranchPayload,
+          })
+        } finally {
+          restoreInputEnvironment()
+        }
+      })
+
+      it('resolves prerelease numbering in local git mode', async () => {
+        const localGitRoot = fs.mkdtempSync(
+          path.join(os.tmpdir(), 'release-branch-local-')
+        )
+        fs.mkdirSync(path.join(localGitRoot, '.github'))
+        fs.writeFileSync(
+          path.join(localGitRoot, '.github', 'release-drafter.yml'),
+          releaseBranchConfig
+        )
+        fs.writeFileSync(path.join(localGitRoot, 'CHANGELOG.md'), 'changes\n')
+        execFileSync('git', ['-C', localGitRoot, 'init', '--quiet'])
+        execFileSync('git', [
+          '-C',
+          localGitRoot,
+          'config',
+          'user.email',
+          'release-branch@example.com',
+        ])
+        execFileSync('git', [
+          '-C',
+          localGitRoot,
+          'config',
+          'user.name',
+          'Release Branch Tester',
+        ])
+        execFileSync('git', ['-C', localGitRoot, 'add', 'CHANGELOG.md'])
+        execFileSync('git', [
+          '-C',
+          localGitRoot,
+          'commit',
+          '--quiet',
+          '-m',
+          'fix: local release branch change',
+        ])
+
+        const restoreLocalEnvironment = mockedEnv({
+          'INPUT_LOCAL-GIT-ROOT': localGitRoot,
+          'INPUT_DRY-RUN': 'true',
+          GITHUB_ACTIONS: 'true',
+          GITHUB_REF: releaseBranchRef,
+          GITHUB_SHA: releaseBranchSha,
+        })
+        const setOutput = jest.spyOn(core, 'setOutput')
+
+        try {
+          await probot.receive({
+            name: 'push',
+            payload: releaseBranchPayload,
+          })
+          expect(setOutput).toHaveBeenCalledWith(
+            'resolved-version',
+            '1.0.0-rc.1'
+          )
+        } finally {
+          restoreLocalEnvironment()
+          fs.rmSync(localGitRoot, { recursive: true, force: true })
+        }
+      })
     })
 
     describe('after merging a release branch pull request', () => {
@@ -629,9 +745,50 @@ describe('release-drafter', () => {
           expectBody: (body) => {
             expect(body.tag_name).toBe('v1.0.0')
             expect(body.prerelease).toBe(false)
+            expect(body.make_latest).not.toBe('false')
             expect(body.body).toContain('Expanded release feature')
             expect(body.body).toContain('Expanded release fix')
             expect(body.body).not.toContain('Merge release branch')
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('forces stable semantics when the release branch config enables prereleases', async () => {
+        getReleaseBranchConfigMock(`prerelease: true\n${releaseBranchConfig}`)
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch(),
+          expectBody: (body) => {
+            expect(body.tag_name).toBe('v1.0.0')
+            expect(body.prerelease).toBe(false)
+            expect(body.make_latest).not.toBe('false')
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('keeps squash PR commits already in history while adding missing commits', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch({
+            firstOid: expandedCommits[0].sha,
+            firstMessage: expandedCommits[0].commit.message,
+          }),
+          expectBody: (body) => {
+            expect(body.body.match(/Expanded release feature/g)).toHaveLength(1)
+            expect(body.body.match(/Expanded release fix/g)).toHaveLength(1)
           },
         })
 

@@ -147534,7 +147534,7 @@ var require_schema6 = __commonJS({
         "sort-direction": Joi.string().valid(SORT_DIRECTIONS.ascending, SORT_DIRECTIONS.descending).default(DEFAULT_CONFIG["sort-direction"]),
         prerelease: Joi.boolean().default(DEFAULT_CONFIG.prerelease),
         "prerelease-identifier": Joi.string().allow("").default(DEFAULT_CONFIG["prerelease-identifier"]),
-        "release-branch-types": Joi.object().pattern(Joi.string(), Joi.string()).default(DEFAULT_CONFIG["release-branch-types"]),
+        "release-branch-types": Joi.object().pattern(/.*/, Joi.string()).default(DEFAULT_CONFIG["release-branch-types"]),
         latest: Joi.string().allow("", "true", "false", "legacy").default(DEFAULT_CONFIG.latest),
         "filter-by-commitish": Joi.boolean().default(
           DEFAULT_CONFIG["filter-by-commitish"]
@@ -154364,49 +154364,60 @@ var require_release_branches = __commonJS({
         }
         suffix = suffix.replace(/^v/, "");
         if (!/^\d+(?:\.\d+){0,2}$/.test(suffix)) {
-          core2.warning(
+          throw new Error(
             `Release branch "${branch}" has an invalid version suffix "${suffix}".`
           );
-          return null;
         }
         const versionParts = suffix.split(".");
         while (versionParts.length < 3) versionParts.push("0");
         const version2 = versionParts.join(".");
         const parsed = semver.parse(version2);
         if (!parsed || parsed.prerelease.length > 0 || parsed.build.length > 0) {
-          core2.warning(
+          throw new Error(
             `Release branch "${branch}" has an invalid release version "${suffix}".`
           );
-          return null;
         }
         return { prefix, identifier, version: parsed.version };
       }
       return null;
     };
+    var stripReleaseTagPrefix = ({ tagName, tagPrefix }) => {
+      if (tagPrefix) {
+        return tagName.startsWith(tagPrefix) ? tagName.slice(tagPrefix.length) : null;
+      }
+      return tagName;
+    };
     var releaseTagPattern = ({ tagPrefix, version: version2, identifier }) => new RegExp(
-      `^(?:${regexEscape(tagPrefix || "")})?v?${regexEscape(
+      `^${tagPrefix ? regexEscape(tagPrefix) : "v?"}${regexEscape(
         version2
       )}-${regexEscape(identifier)}\\.(\\d+)$`
     );
     var findReleaseBranchPullRequests = ({ pullRequests, types, tagPrefix }) => {
       const matches = [];
-      const versions = /* @__PURE__ */ new Set();
+      const branches = /* @__PURE__ */ new Set();
       for (const pullRequest of pullRequests || []) {
         if (!pullRequest.merged) continue;
-        const parsed = parseReleaseBranch({
-          ref: pullRequest.headRefName,
-          types,
-          tagPrefix
-        });
-        if (!parsed || versions.has(parsed.version)) continue;
-        versions.add(parsed.version);
-        matches.push({ number: pullRequest.number, ...parsed });
+        try {
+          const parsed = parseReleaseBranch({
+            ref: pullRequest.headRefName,
+            types,
+            tagPrefix
+          });
+          if (!parsed) continue;
+          const branchKey = `${parsed.prefix}:${parsed.version}`;
+          if (branches.has(branchKey)) continue;
+          branches.add(branchKey);
+          matches.push({ number: pullRequest.number, ...parsed });
+        } catch (error) {
+          core2.warning(error.message);
+        }
       }
       return matches;
     };
     module2.exports = {
       parseReleaseBranch,
       releaseTagPattern,
+      stripReleaseTagPrefix,
       findReleaseBranchPullRequests
     };
   }
@@ -154445,6 +154456,7 @@ var require_index = __commonJS({
     var {
       parseReleaseBranch,
       releaseTagPattern,
+      stripReleaseTagPrefix,
       findReleaseBranchPullRequests
     } = require_release_branches();
     module2.exports = (app, { getRouter }) => {
@@ -154469,8 +154481,9 @@ var require_index = __commonJS({
         if (!config) return;
         updateConfigFromInput(config, input);
         const tagPrefix = getEffectiveTagPrefix(config);
+        const ref = process.env["GITHUB_REF"] || context.payload.ref;
         const releaseBranch = parseReleaseBranch({
-          ref: context.payload.ref || process.env.GITHUB_REF,
+          ref,
           types: config["release-branch-types"],
           tagPrefix
         });
@@ -154479,19 +154492,18 @@ var require_index = __commonJS({
           config["prerelease-identifier"] = releaseBranch.identifier;
         }
         config.latest = config.prerelease ? "false" : input.latest || config.latest || void 0;
-        const ref = process.env["GITHUB_REF"] || context.payload.ref;
         if (!releaseBranch && !isTriggerableReference({ ref, context, config })) {
           return;
         }
         let targetCommitish = config.commitish || ref;
         const hasExplicitCommitish = Boolean(config.commitish);
-        const {
+        let {
           "filter-by-commitish": filterByCommitish,
           "include-pre-releases": includePreReleases,
-          "prerelease-identifier": preReleaseIdentifier,
-          latest,
-          prerelease
+          "prerelease-identifier": preReleaseIdentifier
         } = config;
+        let latest = config.latest;
+        let prerelease = config.prerelease;
         const shouldIncludePreReleases = Boolean(
           includePreReleases || preReleaseIdentifier
         );
@@ -154548,8 +154560,12 @@ var require_index = __commonJS({
             }
             const stableRelease = releasesResult.releases.find((release) => {
               if (release.draft || release.prerelease) return false;
-              const tag2 = tagPrefix && release.tag_name.startsWith(tagPrefix) ? release.tag_name.slice(tagPrefix.length) : release.tag_name;
-              return tag2.replace(/^v/, "") === releaseBranch.version;
+              const tag2 = stripReleaseTagPrefix({
+                tagName: release.tag_name,
+                tagPrefix
+              });
+              if (tag2 === null) return false;
+              return tagPrefix ? tag2 === releaseBranch.version : tag2.replace(/^v/, "") === releaseBranch.version;
             });
             if (stableRelease) {
               throw new Error(
@@ -154600,7 +154616,9 @@ var require_index = __commonJS({
           commits = commitsResult.commits;
           mergedPullRequests = commitsResult.pullRequests;
         }
-        if (!releaseBranch && Object.keys(config["release-branch-types"] || {}).length > 0) {
+        const defaultBranch = context.payload.repository?.default_branch;
+        const isDefaultBranch = !defaultBranch || ref === defaultBranch || ref === `refs/heads/${defaultBranch}`;
+        if (!releaseBranch && isDefaultBranch && Object.keys(config["release-branch-types"] || {}).length > 0) {
           const matches = findReleaseBranchPullRequests({
             pullRequests: mergedPullRequests,
             types: config["release-branch-types"],
@@ -154639,15 +154657,24 @@ var require_index = __commonJS({
                 associatedPullRequests: { nodes: [] }
               })).filter((commit) => !existingOids.has(commit.oid));
               if (appendedCommits.length > 0) {
+                const expandedShas = new Set(
+                  expandedCommits.map((commit) => commit.sha)
+                );
                 commits.push(...appendedCommits);
                 commits = commits.filter(
-                  (commit) => !commit.associatedPullRequests.nodes.some(
+                  (commit) => !(commit.associatedPullRequests.nodes.some(
                     (pullRequest) => pullRequest.number === match.number
-                  )
+                  ) && !expandedShas.has(commit.oid))
                 );
               }
             }
           }
+        }
+        if (releaseBranchMergeVersion) {
+          config.prerelease = false;
+          config.latest = input.latest || "true";
+          prerelease = false;
+          latest = config.latest;
         }
         const sortedMergedPullRequests = sortPullRequests(
           mergedPullRequests,
@@ -154690,7 +154717,8 @@ var require_index = __commonJS({
             version: releaseBranch.version,
             identifier: releaseBranch.identifier
           });
-          const releaseNumbers = releasesResult.releases.map((release) => ({
+          const knownReleases = releasesResult?.releases || [];
+          const releaseNumbers = knownReleases.map((release) => ({
             release,
             number: Number(pattern.exec(release.tag_name)?.[1] || 0)
           })).filter(({ number }) => number > 0);
@@ -154698,7 +154726,10 @@ var require_index = __commonJS({
           for (const { release, number } of releaseNumbers) {
             if (!release.draft) publishedMax = Math.max(publishedMax, number);
           }
-          const draftN = releaseNumbers.find(({ release }) => release.draft)?.number || 0;
+          let draftN = 0;
+          for (const { release, number } of releaseNumbers) {
+            if (release.draft) draftN = Math.max(draftN, number);
+          }
           const nextN = Math.max(publishedMax + 1, draftN);
           overrideVersion = `${releaseBranch.version}-${releaseBranch.identifier}.${nextN}`;
           log({

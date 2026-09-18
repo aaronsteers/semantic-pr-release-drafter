@@ -760,6 +760,12 @@ As a guardrail, a release branch refuses to run when a published stable release
 already exists for its target version. This prevents a branch from silently
 rewriting an existing GA release.
 
+### Limitations
+
+When `include-paths` is configured, squash-expanded commits are not
+path-filtered. Prefer rebase-merge for release branches in path-filtered
+repositories.
+
 ## Projects that don't use Semantic Versioning
 
 If your project doesn't follow [Semantic Versioning](https://semver.org) you can still use Release Drafter, but you may want to set the `version-template` option to customize how the `$NEXT_{PATCH,MINOR,MAJOR}_VERSION` environment variables are generated.

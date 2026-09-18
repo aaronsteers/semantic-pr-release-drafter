@@ -742,6 +742,9 @@ release-branches:
     prerelease-identifier: rc
 ```
 
+If a rule sets `prerelease-identifier`, a different top-level
+`prerelease-identifier` is rejected to avoid conflicting release tracks.
+
 A push to `release-candidate/v1` creates or updates a prerelease at or above
 the version floor `v1.0.0-rc.1`; `release-candidate/v1.2` and the full
 `release-candidate/v1.2.0` form are also supported. The floor is applied to

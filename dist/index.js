@@ -154526,6 +154526,12 @@ var require_index = __commonJS({
           rules: config["release-branches"]
         });
         if (releaseBranch?.identifier) {
+          const configuredIdentifier = config["prerelease-identifier"];
+          if (configuredIdentifier && configuredIdentifier !== releaseBranch.identifier) {
+            throw new Error(
+              `Release branch rule sets prerelease identifier "${releaseBranch.identifier}" but configuration sets "${configuredIdentifier}". Remove one of them.`
+            );
+          }
           config.prerelease = true;
           config["prerelease-identifier"] = releaseBranch.identifier;
         }

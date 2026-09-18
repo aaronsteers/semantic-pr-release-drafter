@@ -372,6 +372,61 @@ describe('release-drafter', () => {
     })
 
     describe('with release-branches', () => {
+      it('rejects a conflicting top-level prerelease identifier', async () => {
+        getReleaseBranchConfigMock(
+          `${releaseBranchConfig}prerelease-identifier: beta\n`
+        )
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        await expect(
+          probot.receive({
+            name: 'push',
+            payload: releaseBranchPayload,
+          })
+        ).rejects.toThrow(
+          'Release branch rule sets prerelease identifier "rc" but configuration sets "beta". Remove one of them.'
+        )
+      })
+
+      it('allows a matching top-level prerelease identifier', async () => {
+        getReleaseBranchConfigMock(
+          `${releaseBranchConfig}prerelease-identifier: rc\n`
+        )
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [])
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, releaseBranchGraphqlPayload([]))
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body).toMatchObject({
+                tag_name: 'v1.0.0-rc.1',
+                prerelease: true,
+              })
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0-rc.1' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
       it('creates rc.1 from the last stable release boundary', async () => {
         getReleaseBranchConfigMock()
         configureReleaseBranchEnvironment(releaseBranchRef)

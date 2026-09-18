@@ -5,9 +5,7 @@
   "properties": {
     "references": {
       "type": "array",
-      "default": [
-        "master"
-      ],
+      "default": ["master"],
       "items": {
         "type": "string"
       }
@@ -61,18 +59,12 @@
     "sort-by": {
       "type": "string",
       "default": "merged_at",
-      "enum": [
-        "merged_at",
-        "title"
-      ]
+      "enum": ["merged_at", "title"]
     },
     "sort-direction": {
       "type": "string",
       "default": "descending",
-      "enum": [
-        "ascending",
-        "descending"
-      ]
+      "enum": ["ascending", "descending"]
     },
     "prerelease": {
       "type": "boolean",
@@ -101,10 +93,7 @@
         "additionalProperties": false,
         "if": {
           "propertyNames": {
-            "enum": [
-              "branch-prefix",
-              "branch-pattern"
-            ]
+            "enum": ["branch-prefix", "branch-pattern"]
           },
           "minProperties": 2
         },
@@ -112,14 +101,10 @@
         "else": {
           "oneOf": [
             {
-              "required": [
-                "branch-prefix"
-              ]
+              "required": ["branch-prefix"]
             },
             {
-              "required": [
-                "branch-pattern"
-              ]
+              "required": ["branch-pattern"]
             }
           ]
         }
@@ -159,10 +144,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "search",
-          "replace"
-        ],
+        "required": ["search", "replace"],
         "additionalProperties": false
       }
     },
@@ -171,61 +153,42 @@
       "default": [
         {
           "title": "⚠️ Breaking Changes",
-          "commit-types": [
-            "breaking"
-          ],
+          "commit-types": ["breaking"],
           "commit-scopes": [],
           "collapse-after": 0,
           "display-order": null
         },
         {
           "title": "✨ New Features",
-          "commit-types": [
-            "feat"
-          ],
+          "commit-types": ["feat"],
           "commit-scopes": [],
           "collapse-after": 0,
           "display-order": null
         },
         {
           "title": "🐛 Bug Fixes",
-          "commit-types": [
-            "fix"
-          ],
+          "commit-types": ["fix"],
           "commit-scopes": [],
           "collapse-after": 0,
           "display-order": null
         },
         {
           "title": "▲ Other Changes",
-          "commit-types": [
-            "refactor",
-            "perf",
-            "style"
-          ],
+          "commit-types": ["refactor", "perf", "style"],
           "commit-scopes": [],
           "collapse-after": 2,
           "display-order": null
         },
         {
           "title": "📖 Documentation",
-          "commit-types": [
-            "docs"
-          ],
+          "commit-types": ["docs"],
           "commit-scopes": [],
           "collapse-after": 2,
           "display-order": null
         },
         {
           "title": "⚙️ Under the Hood",
-          "commit-types": [
-            "chore",
-            "ci",
-            "build",
-            "test",
-            "revert",
-            "infra"
-          ],
+          "commit-types": ["chore", "ci", "build", "test", "revert", "infra"],
           "commit-scopes": [],
           "collapse-after": 2,
           "display-order": null
@@ -243,10 +206,7 @@
             "minimum": 0
           },
           "display-order": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "description": "Controls the display order of this category in the changelog. Categories are evaluated in config order (first match wins), but displayed sorted by display-order (lower values first). Categories without display-order are displayed in their natural config order after sorted categories."
           },
           "commit-types": {
@@ -264,9 +224,7 @@
             }
           }
         },
-        "required": [
-          "title"
-        ],
+        "required": ["title"],
         "additionalProperties": false
       }
     },
@@ -289,11 +247,7 @@
         "default": {
           "type": "string",
           "default": "patch",
-          "enum": [
-            "major",
-            "minor",
-            "patch"
-          ]
+          "enum": ["major", "minor", "patch"]
         }
       },
       "additionalProperties": false

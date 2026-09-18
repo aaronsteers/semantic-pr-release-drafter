@@ -990,7 +990,7 @@ describe('release-drafter', () => {
           commit: {
             committer: { date: '2024-02-01T00:00:00Z' },
             author: { name: 'Release Branch Tester' },
-            message: 'feat: expanded release feature',
+            message: 'feat: expanded release feature (#69)',
           },
           author: { login: 'release-branch-tester' },
         },
@@ -999,7 +999,7 @@ describe('release-drafter', () => {
           commit: {
             committer: { date: '2024-02-01T00:01:00Z' },
             author: { name: 'Release Branch Tester' },
-            message: 'fix: expanded release fix',
+            message: 'fix: expanded release fix (#70)',
           },
           author: { login: 'release-branch-tester' },
         },
@@ -1060,7 +1060,9 @@ describe('release-drafter', () => {
             expect(body.make_latest).not.toBe('false')
             expect(body.body).toContain('Expanded release feature')
             expect(body.body).toContain('Expanded release fix')
-            expect(body.body).toContain('(#101)')
+            expect(body.body).toContain('(#69)')
+            expect(body.body).toContain('(#70)')
+            expect(body.body).not.toContain('(#101)')
             expect(body.body).not.toContain('Merge release branch')
           },
         })
@@ -1249,7 +1251,7 @@ describe('release-drafter', () => {
             commit: {
               committer: { date: '2024-02-01T00:00:00Z' },
               author: { name: 'Release Branch Tester' },
-              message: 'fix: expanded release fix',
+              message: 'fix: expanded release fix (#70)',
             },
             author: { login: 'release-branch-tester' },
           },
@@ -1279,14 +1281,24 @@ describe('release-drafter', () => {
         getReleaseBranchConfigMock()
         configureReleaseBranchEnvironment('refs/heads/master')
 
-        mockReleaseBranchMergeApi({
-          graphqlPayload: mockMergedReleaseBranch({
-            firstOid: expandedCommits[0].sha,
-            firstMessage: expandedCommits[0].commit.message,
+        const graphqlPayload = releaseBranchGraphqlPayload([
+          releaseBranchCommit({
+            oid: 'squash-release-commit',
+            message: 'chore: merge release branch',
+            associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
           }),
+          releaseBranchCommit({
+            oid: expandedCommits[0].sha,
+            message: expandedCommits[0].commit.message,
+          }),
+        ])
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload,
           expectBody: (body) => {
             expect(body.body.match(/Expanded release feature/g)).toHaveLength(1)
             expect(body.body.match(/Expanded release fix/g)).toHaveLength(1)
+            expect(body.body).not.toContain('Merge release branch')
           },
         })
 
@@ -1327,7 +1339,42 @@ describe('release-drafter', () => {
         })
       })
 
-      it('replaces a one-commit squash merge with its expanded commit', async () => {
+      it('removes a squash commit when all expanded commits are already present', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        const graphqlPayload = releaseBranchGraphqlPayload([
+          releaseBranchCommit({
+            oid: expandedCommits[0].sha,
+            message: expandedCommits[0].commit.message,
+          }),
+          releaseBranchCommit({
+            oid: expandedCommits[1].sha,
+            message: expandedCommits[1].commit.message,
+          }),
+          releaseBranchCommit({
+            oid: 'squash-release-commit',
+            message: 'chore: merge release branch',
+            associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
+          }),
+        ])
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload,
+          expectBody: (body) => {
+            expect(body.body.match(/Expanded release feature/g)).toHaveLength(1)
+            expect(body.body.match(/Expanded release fix/g)).toHaveLength(1)
+            expect(body.body).not.toContain('Merge release branch')
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('does not expand a one-commit squash merge', async () => {
         getReleaseBranchConfigMock(
           `${releaseBranchConfig}change-template: '* $TITLE (#$NUMBER)'\n`
         )
@@ -1347,9 +1394,8 @@ describe('release-drafter', () => {
           graphqlPayload: mockMergedReleaseBranch(),
           restCommits: [expandedCommit],
           expectBody: (body) => {
-            expect(body.body).toContain('Expanded single release commit')
-            expect(body.body).toContain('(#101)')
-            expect(body.body).not.toContain('Merge release branch')
+            expect(body.body).toContain('Merge release branch')
+            expect(body.body).not.toContain('Expanded single release commit')
           },
         })
 

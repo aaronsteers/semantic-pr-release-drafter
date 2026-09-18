@@ -154493,7 +154493,7 @@ var require_release_branches = __commonJS({
       const matches = [];
       const branches = /* @__PURE__ */ new Set();
       for (const pullRequest of pullRequests || []) {
-        if (!pullRequest.merged) continue;
+        if (!pullRequest.merged || pullRequest.isCrossRepository) continue;
         try {
           const parsed = parseReleaseBranch({
             ref: pullRequest.headRefName,
@@ -154751,27 +154751,35 @@ var require_index = __commonJS({
                 const expandedShas = new Set(
                   expandedCommits.map((commit) => commit.sha)
                 );
-                const isSquashMerge = !expandedShas.has(associatedCommit.oid);
-                const existingOids = new Set(
-                  commits.filter(
-                    (commit) => !isSquashMerge || commit.oid !== associatedCommit.oid
-                  ).map((commit) => commit.oid)
-                );
-                const replacementCommits = expandedCommits.map((commit) => ({
-                  id: commit.sha,
-                  oid: commit.sha,
-                  committedDate: commit.commit.committer.date,
-                  message: commit.commit.message,
-                  author: {
-                    name: commit.commit.author.name,
-                    user: commit.author ? { login: commit.author.login } : null
-                  },
-                  associatedPullRequests: associatedCommit.associatedPullRequests
-                })).filter((commit) => !existingOids.has(commit.oid));
-                if (replacementCommits.length > 0) {
+                const isSquashMerge = expandedCommits.length > 1 && !expandedShas.has(associatedCommit.oid);
+                if (expandedCommits.length <= 1) {
+                  log({
+                    context,
+                    message: "Skipping release branch PR commit expansion because the PR has at most one commit."
+                  });
+                } else if (!isSquashMerge) {
+                  log({
+                    context,
+                    message: "Skipping release branch PR commit expansion because the in-range commit is already among the PR commits."
+                  });
+                } else {
+                  const existingOids = new Set(
+                    commits.filter((commit) => commit.oid !== associatedCommit.oid).map((commit) => commit.oid)
+                  );
+                  const replacementCommits = expandedCommits.map((commit) => ({
+                    id: commit.sha,
+                    oid: commit.sha,
+                    committedDate: commit.commit.committer.date,
+                    message: commit.commit.message,
+                    author: {
+                      name: commit.commit.author.name,
+                      user: commit.author ? { login: commit.author.login } : null
+                    },
+                    associatedPullRequests: { nodes: [] }
+                  })).filter((commit) => !existingOids.has(commit.oid));
                   commits = [
                     ...commits.filter(
-                      (commit) => !isSquashMerge || !commit.associatedPullRequests.nodes.some(
+                      (commit) => !commit.associatedPullRequests.nodes.some(
                         (pullRequest) => pullRequest.number === match.number
                       ) || expandedShas.has(commit.oid)
                     ),

@@ -175,6 +175,43 @@ describe('release branches', () => {
     ])
   })
 
+  test('ignores merged fork pull requests', () => {
+    const pullRequests = [
+      {
+        number: 9,
+        merged: true,
+        isCrossRepository: true,
+        headRefName: 'release-candidate/v9',
+      },
+      {
+        number: 10,
+        merged: true,
+        isCrossRepository: false,
+        headRefName: 'release-candidate/v1',
+      },
+      {
+        number: 11,
+        merged: true,
+        headRefName: 'release-candidate/v2',
+      },
+    ]
+
+    expect(findReleaseBranchPullRequests({ pullRequests, rules })).toEqual([
+      {
+        number: 10,
+        rule: rules[0],
+        identifier: 'rc',
+        version: '1.0.0',
+      },
+      {
+        number: 11,
+        rule: rules[0],
+        identifier: 'rc',
+        version: '2.0.0',
+      },
+    ])
+  })
+
   test('keeps same-version branches with different prefixes distinct', () => {
     expect(
       findReleaseBranchPullRequests({

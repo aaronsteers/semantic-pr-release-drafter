@@ -43,7 +43,7 @@ inputs:
       A boolean indicating whether the release being created or updated is a prerelease.
     required: false
     default: ''
-  release-branches:
+  prerelease-branch-rules:
     description: |
       A YAML or JSON list of release-branch rules. Each rule can use a
       `branch-prefix` or `branch-pattern`, with an optional

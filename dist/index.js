@@ -147387,7 +147387,7 @@ var require_default_config = __commonJS({
       "sort-direction": SORT_DIRECTIONS.descending,
       prerelease: false,
       "prerelease-identifier": "",
-      "release-branches": [],
+      "prerelease-branch-rules": [],
       "include-pre-releases": false,
       latest: "true",
       "filter-by-commitish": false,
@@ -147518,7 +147518,7 @@ var require_schema6 = __commonJS({
       }),
       "prerelease-identifier": Joi.string().allow("")
     }).xor("branch-prefix", "branch-pattern");
-    var releaseBranchesSchema = Joi.array().items(releaseBranchRule);
+    var prereleaseBranchRulesSchema = Joi.array().items(releaseBranchRule);
     var schema = (context) => {
       const defaultBranch = _.get(
         context,
@@ -147549,7 +147549,7 @@ var require_schema6 = __commonJS({
         "sort-direction": Joi.string().valid(SORT_DIRECTIONS.ascending, SORT_DIRECTIONS.descending).default(DEFAULT_CONFIG["sort-direction"]),
         prerelease: Joi.boolean().default(DEFAULT_CONFIG.prerelease),
         "prerelease-identifier": Joi.string().allow("").default(DEFAULT_CONFIG["prerelease-identifier"]),
-        "release-branches": Joi.array().items(releaseBranchRule).default(DEFAULT_CONFIG["release-branches"]),
+        "prerelease-branch-rules": Joi.array().items(releaseBranchRule).default(DEFAULT_CONFIG["prerelease-branch-rules"]),
         latest: Joi.string().allow("", "true", "false", "legacy").default(DEFAULT_CONFIG.latest),
         "filter-by-commitish": Joi.boolean().default(
           DEFAULT_CONFIG["filter-by-commitish"]
@@ -147621,7 +147621,7 @@ var require_schema6 = __commonJS({
     exports2.schema = schema;
     exports2.validateSchema = validateSchema;
     exports2.releaseBranchRule = releaseBranchRule;
-    exports2.releaseBranchesSchema = releaseBranchesSchema;
+    exports2.prereleaseBranchRulesSchema = prereleaseBranchRulesSchema;
   }
 });
 
@@ -151006,7 +151006,7 @@ var require_commits = __commonJS({
         withPullRequestBody: config["change-template"].includes("$BODY"),
         withPullRequestURL: config["change-template"].includes("$URL"),
         withBaseRefName: config["change-template"].includes("$BASE_REF_NAME"),
-        withHeadRefName: config["change-template"].includes("$HEAD_REF_NAME") || config["release-branches"]?.length > 0,
+        withHeadRefName: config["change-template"].includes("$HEAD_REF_NAME") || config["prerelease-branch-rules"]?.length > 0,
         pullRequestLimit: config["pull-request-limit"]
       };
       const includePaths = config["include-paths"];
@@ -154544,7 +154544,7 @@ var require_index = __commonJS({
       releaseTagMatcher,
       findReleaseBranchPullRequests
     } = require_release_branches();
-    var { releaseBranchesSchema } = require_schema6();
+    var { prereleaseBranchRulesSchema } = require_schema6();
     module2.exports = (app, { getRouter }) => {
       if (!runnerIsActions() && typeof getRouter === "function") {
         getRouter().get("/healthz", (request, response) => {
@@ -154571,7 +154571,7 @@ var require_index = __commonJS({
         const ref = process.env["GITHUB_REF"] || context.payload.ref;
         const releaseBranch = parseReleaseBranch({
           ref,
-          rules: config["release-branches"]
+          rules: config["prerelease-branch-rules"]
         });
         if (releaseBranch && !releaseBranch.identifier) {
           config.prerelease = false;
@@ -154694,10 +154694,10 @@ var require_index = __commonJS({
         }
         const defaultBranch = context.payload.repository?.default_branch;
         const isDefaultBranch = !defaultBranch || ref === defaultBranch || ref === `refs/heads/${defaultBranch}`;
-        if (!releaseBranch && isDefaultBranch && config["release-branches"]?.length > 0) {
+        if (!releaseBranch && isDefaultBranch && config["prerelease-branch-rules"]?.length > 0) {
           const matches = findReleaseBranchPullRequests({
             pullRequests: mergedPullRequests,
-            rules: config["release-branches"]
+            rules: config["prerelease-branch-rules"]
           });
           if (matches.length > 1) {
             throw new Error(
@@ -155022,7 +155022,7 @@ var require_index = __commonJS({
         footer: core2.getInput("footer") || void 0,
         prerelease: core2.getInput("prerelease") !== "" ? core2.getInput("prerelease").toLowerCase() === "true" : void 0,
         preReleaseIdentifier: core2.getInput("prerelease-identifier") || void 0,
-        releaseBranches: core2.getInput("release-branches") || void 0,
+        prereleaseBranchRules: core2.getInput("prerelease-branch-rules") || void 0,
         latest: core2.getInput("latest")?.toLowerCase() || void 0,
         attachFiles: core2.getInput("attach-files") || void 0,
         resetFiles: core2.getInput("reset-files").toLowerCase() || "auto",
@@ -155040,7 +155040,7 @@ var require_index = __commonJS({
         ["base-version-override", "baseVersionOverride"],
         ["prerelease", "prerelease"],
         ["prerelease-identifier", "preReleaseIdentifier"],
-        ["release-branches", "releaseBranches"],
+        ["prerelease-branch-rules", "prereleaseBranchRules"],
         ["allow-major-bumps", "allowMajorBumps"]
       ].filter(([, key]) => input[key] !== void 0);
       for (const [, key] of ignored) {
@@ -155064,19 +155064,21 @@ var require_index = __commonJS({
       if (input.preReleaseIdentifier) {
         config["prerelease-identifier"] = input.preReleaseIdentifier;
       }
-      if (input.releaseBranches) {
+      if (input.prereleaseBranchRules) {
         try {
-          const releaseBranches = yaml.parse(input.releaseBranches);
-          config["release-branches"] = Joi.attempt(
-            releaseBranches,
-            releaseBranchesSchema
+          const prereleaseBranchRules = yaml.parse(input.prereleaseBranchRules);
+          config["prerelease-branch-rules"] = Joi.attempt(
+            prereleaseBranchRules,
+            prereleaseBranchRulesSchema
           );
         } catch (error) {
           if (error instanceof Joi.ValidationError) {
-            throw new TypeError(`Invalid release-branches input: ${error.message}`);
+            throw new TypeError(
+              `Invalid prerelease-branch-rules input: ${error.message}`
+            );
           }
           core2.warning(
-            `Failed to parse 'release-branches' input as YAML or JSON list. This input will be ignored. Error: ${error instanceof Error ? error.message : String(error)}`
+            `Failed to parse 'prerelease-branch-rules' input as YAML or JSON list. This input will be ignored. Error: ${error instanceof Error ? error.message : String(error)}`
           );
         }
       }

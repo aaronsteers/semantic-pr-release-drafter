@@ -32,7 +32,7 @@ const {
   releaseTagMatcher,
   findReleaseBranchPullRequests,
 } = require('./lib/release-branches')
-const { releaseBranchesSchema } = require('./lib/schema')
+const { prereleaseBranchRulesSchema } = require('./lib/schema')
 
 module.exports = (app, { getRouter }) => {
   if (!runnerIsActions() && typeof getRouter === 'function') {
@@ -69,7 +69,7 @@ module.exports = (app, { getRouter }) => {
     const ref = process.env['GITHUB_REF'] || context.payload.ref
     const releaseBranch = parseReleaseBranch({
       ref,
-      rules: config['release-branches'],
+      rules: config['prerelease-branch-rules'],
     })
     if (releaseBranch && !releaseBranch.identifier) {
       config.prerelease = false
@@ -240,11 +240,11 @@ module.exports = (app, { getRouter }) => {
     if (
       !releaseBranch &&
       isDefaultBranch &&
-      config['release-branches']?.length > 0
+      config['prerelease-branch-rules']?.length > 0
     ) {
       const matches = findReleaseBranchPullRequests({
         pullRequests: mergedPullRequests,
-        rules: config['release-branches'],
+        rules: config['prerelease-branch-rules'],
       })
       if (matches.length > 1) {
         throw new Error(
@@ -669,7 +669,8 @@ function getInput() {
         ? core.getInput('prerelease').toLowerCase() === 'true'
         : undefined,
     preReleaseIdentifier: core.getInput('prerelease-identifier') || undefined,
-    releaseBranches: core.getInput('release-branches') || undefined,
+    prereleaseBranchRules:
+      core.getInput('prerelease-branch-rules') || undefined,
     latest: core.getInput('latest')?.toLowerCase() || undefined,
     attachFiles: core.getInput('attach-files') || undefined,
     resetFiles: core.getInput('reset-files').toLowerCase() || 'auto',
@@ -706,7 +707,7 @@ function neutralizeIgnoredPreparedReleaseInputs(input) {
     ['base-version-override', 'baseVersionOverride'],
     ['prerelease', 'prerelease'],
     ['prerelease-identifier', 'preReleaseIdentifier'],
-    ['release-branches', 'releaseBranches'],
+    ['prerelease-branch-rules', 'prereleaseBranchRules'],
     ['allow-major-bumps', 'allowMajorBumps'],
   ].filter(([, key]) => input[key] !== undefined)
   for (const [, key] of ignored) {
@@ -740,19 +741,21 @@ function updateConfigFromInput(config, input) {
     config['prerelease-identifier'] = input.preReleaseIdentifier
   }
 
-  if (input.releaseBranches) {
+  if (input.prereleaseBranchRules) {
     try {
-      const releaseBranches = yaml.parse(input.releaseBranches)
-      config['release-branches'] = Joi.attempt(
-        releaseBranches,
-        releaseBranchesSchema
+      const prereleaseBranchRules = yaml.parse(input.prereleaseBranchRules)
+      config['prerelease-branch-rules'] = Joi.attempt(
+        prereleaseBranchRules,
+        prereleaseBranchRulesSchema
       )
     } catch (error) {
       if (error instanceof Joi.ValidationError) {
-        throw new TypeError(`Invalid release-branches input: ${error.message}`)
+        throw new TypeError(
+          `Invalid prerelease-branch-rules input: ${error.message}`
+        )
       }
       core.warning(
-        `Failed to parse 'release-branches' input as YAML or JSON list. This input will be ignored. Error: ${
+        `Failed to parse 'prerelease-branch-rules' input as YAML or JSON list. This input will be ignored. Error: ${
           error instanceof Error ? error.message : String(error)
         }`
       )

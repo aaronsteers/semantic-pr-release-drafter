@@ -733,11 +733,11 @@ prerelease-identifier: 'alpha' # will create a prerelease with version number x.
 ## Release branches (long-running release candidates)
 
 Long-running release candidate branches can opt into branch-name-driven release
-tracks with `release-branches`. The preferred form matches a literal branch
+tracks with `prerelease-branch-rules`. The preferred form matches a literal branch
 prefix; `prerelease-identifier` is optional for stable version floors:
 
 ```yml
-release-branches:
+prerelease-branch-rules:
   - branch-prefix: release-candidate/
     prerelease-identifier: rc
 ```
@@ -766,7 +766,7 @@ For patterns that cannot be expressed as a prefix, use a regular expression
 with a named `version` capture group:
 
 ```yml
-release-branches:
+prerelease-branch-rules:
   - branch-pattern: '^rc-(?<version>\d+(\.\d+){0,2})$'
     prerelease-identifier: rc
 ```

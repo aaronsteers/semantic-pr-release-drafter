@@ -37,7 +37,7 @@ const releaseBranchConfig = `template: |
   # What's Changed
 
   $CHANGES
-release-branches:
+prerelease-branch-rules:
   - branch-prefix: release-candidate/
     prerelease-identifier: rc
 `
@@ -371,7 +371,7 @@ describe('release-drafter', () => {
       })
     })
 
-    describe('with release-branches', () => {
+    describe('with prerelease-branch-rules', () => {
       it('rejects a conflicting top-level prerelease identifier', async () => {
         getReleaseBranchConfigMock(
           `${releaseBranchConfig}prerelease-identifier: beta\n`
@@ -627,7 +627,7 @@ describe('release-drafter', () => {
 
       it('updates an existing stable draft for a stable floor rule', async () => {
         getReleaseBranchConfigMock(
-          `template: |\n  $CHANGES\nrelease-branches:\n  - branch-prefix: release-candidate/\n`
+          `template: |\n  $CHANGES\nprerelease-branch-rules:\n  - branch-prefix: release-candidate/\n`
         )
         configureReleaseBranchEnvironment(releaseBranchRef)
 
@@ -667,7 +667,7 @@ describe('release-drafter', () => {
 
       it('forces stable semantics for a stable floor rule', async () => {
         getReleaseBranchConfigMock(
-          `prerelease: true\ntemplate: |\n  $CHANGES\nrelease-branches:\n  - branch-prefix: release-candidate/\n`
+          `prerelease: true\ntemplate: |\n  $CHANGES\nprerelease-branch-rules:\n  - branch-prefix: release-candidate/\n`
         )
         configureReleaseBranchEnvironment(releaseBranchRef)
 
@@ -794,7 +794,7 @@ describe('release-drafter', () => {
       it('enables release branches from the action input', async () => {
         getConfigMock()
         const restoreInputEnvironment = mockedEnv({
-          'INPUT_RELEASE-BRANCHES':
+          'INPUT_PRERELEASE-BRANCH-RULES':
             '[{ branch-prefix: release-candidate/, prerelease-identifier: rc }]',
         })
         configureReleaseBranchEnvironment(releaseBranchRef)
@@ -847,7 +847,7 @@ describe('release-drafter', () => {
       it('rejects invalid release branch rules from the action input', async () => {
         getConfigMock()
         const restoreInputEnvironment = mockedEnv({
-          'INPUT_RELEASE-BRANCHES':
+          'INPUT_PRERELEASE-BRANCH-RULES':
             '[{ branch-prefix: release-candidate/, branch-pattern: "^rc-(?<version>\\\\d+)$" }]',
         })
         configureReleaseBranchEnvironment(releaseBranchRef)
@@ -859,7 +859,7 @@ describe('release-drafter', () => {
               payload: releaseBranchPayload,
             })
           ).rejects.toThrow(
-            'Invalid release-branches input: "[0]" contains a conflict between exclusive peers [branch-prefix, branch-pattern]'
+            'Invalid prerelease-branch-rules input: "[0]" contains a conflict between exclusive peers [branch-prefix, branch-pattern]'
           )
         } finally {
           restoreInputEnvironment()
@@ -1364,7 +1364,7 @@ describe('release-drafter', () => {
       })
     })
 
-    it('does not request headRefName when release-branches is disabled', async () => {
+    it('does not request headRefName when prerelease-branch-rules is disabled', async () => {
       getConfigMock()
       configureReleaseBranchEnvironment('refs/heads/master')
 
@@ -5583,7 +5583,7 @@ describe('release-drafter', () => {
         let restoreEnvironment = mockedEnv({
           'INPUT_PREPARED-RELEASE-ID': '11691725',
           INPUT_COMMITISH: 'refs/heads/some-other-branch',
-          'INPUT_RELEASE-BRANCHES':
+          'INPUT_PRERELEASE-BRANCH-RULES':
             '[{ branch-prefix: release-candidate/, prerelease-identifier: rc }]',
         })
         const setFailedSpy = jest
@@ -5642,7 +5642,7 @@ describe('release-drafter', () => {
           expect.stringContaining('commitish')
         )
         expect(warningSpy).toHaveBeenCalledWith(
-          expect.stringContaining('release-branches')
+          expect.stringContaining('prerelease-branch-rules')
         )
         expect(setFailedSpy).not.toHaveBeenCalled()
         expect.assertions(5)

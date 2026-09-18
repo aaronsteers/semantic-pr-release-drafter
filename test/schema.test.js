@@ -24,7 +24,7 @@ const validConfigs = [
   [
     {
       template,
-      'release-branches': [
+      'prerelease-branch-rules': [
         {
           'branch-prefix': 'release-candidate/',
           'prerelease-identifier': 'rc',
@@ -102,18 +102,18 @@ describe('schema', () => {
   })
 
   it('defines release branch rules', () => {
-    expect(schemaJson.properties['release-branches']).toMatchObject({
+    expect(schemaJson.properties['prerelease-branch-rules']).toMatchObject({
       type: 'array',
     })
     expect(
-      schemaJson.properties['release-branches'].items.properties[
+      schemaJson.properties['prerelease-branch-rules'].items.properties[
         'branch-pattern'
       ]
     ).toMatchObject({
       pattern: '\\(\\?<version>',
     })
     expect(
-      schemaJson.properties['release-branches'].items.properties[
+      schemaJson.properties['prerelease-branch-rules'].items.properties[
         'branch-prefix'
       ]
     ).toMatchObject({
@@ -124,7 +124,7 @@ describe('schema', () => {
   it('rejects release branch patterns without a version group', () => {
     const { error } = schema(context).validate({
       template,
-      'release-branches': [{ 'branch-pattern': '^rc-(\\d+)$' }],
+      'prerelease-branch-rules': [{ 'branch-pattern': '^rc-(\\d+)$' }],
     })
     expect(error).toBeDefined()
   })
@@ -132,7 +132,7 @@ describe('schema', () => {
   it('requires exactly one release branch matcher', () => {
     const { error } = schema(context).validate({
       template,
-      'release-branches': [
+      'prerelease-branch-rules': [
         {
           'branch-prefix': 'release/',
           'branch-pattern': '^release-(?<version>\\d+)$',

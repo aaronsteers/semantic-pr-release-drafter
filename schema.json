@@ -74,7 +74,7 @@
       "type": "string",
       "default": ""
     },
-    "release-branches": {
+    "prerelease-branch-rules": {
       "type": "array",
       "default": [],
       "items": {

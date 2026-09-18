@@ -775,8 +775,11 @@ After the release branch pull request is merged into the default branch, the
 merged PR's head branch sets a floor for the stable draft at the branch's GA
 version (`v1.0.0`). Rebase-merge is recommended because the release commits
 then appear natively in the default branch history. Squash-merge is also
-supported: the action expands the merged PR's commits and removes the
-redundant squash commit from the notes.
+supported for multi-commit release-branch PRs: the action expands the merged
+PR's commits and removes the redundant squash commit from the notes. One-commit
+PRs are never expanded, and expanded entries use the PR numbers from their
+own conventional commit `(#N)` suffixes rather than the wrapper release-branch
+PR.
 Lineage detection on the default branch only sees merged PRs that survive
 `include-paths` filtering, so a release-branch PR touching no included path
 will not set the GA floor.

@@ -752,7 +752,8 @@ the version computed from commits, so:
 
 - after `v0.36.0`, the first release is `v1.0.0-rc.1`;
 - after `v1.0.0-rc.2`, the next release is `v1.0.0-rc.3`;
-- after an out-of-band `v1.0.1`, a `fix:` commit produces `v1.0.2-rc.0`.
+- after an out-of-band `v1.0.1`, a `fix:` commit produces `v1.0.2-rc.0`;
+- commit types never widen the bump on the track: a `feat!:` after `v1.0.0-rc.2` still produces `v1.0.0-rc.3`.
 
 On a release-branch prerelease track the bump type is always `prerelease`;
 commit types do not move major/minor/patch.

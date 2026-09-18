@@ -780,6 +780,8 @@ PR's commits and removes the redundant squash commit from the notes. One-commit
 PRs are never expanded, and expanded entries use the PR numbers from their
 own conventional commit `(#N)` suffixes rather than the wrapper release-branch
 PR.
+On the default branch, entries from a merged release-branch PR link their own
+`(#N)` PR numbers rather than the wrapper PR for both rebase and squash merges.
 Lineage detection on the default branch only sees merged PRs that survive
 `include-paths` filtering, so a release-branch PR touching no included path
 will not set the GA floor.

@@ -154477,6 +154477,18 @@ var require_release_branches = __commonJS({
       if (!identifier) return parsed.prerelease.length === 0;
       return parsed.prerelease.length === 2 && String(parsed.prerelease[0]) === identifier && typeof parsed.prerelease[1] === "number";
     };
+    var releaseTrackBaseMatcher = ({ tagPrefix, version: version2, identifier }) => {
+      const trackMatcher = releaseTagMatcher({ tagPrefix, version: version2, identifier });
+      const major = semver.major(version2);
+      return (tagName) => {
+        if (trackMatcher(tagName)) return true;
+        let normalizedTag = stripReleaseTagPrefix({ tagName, tagPrefix });
+        if (normalizedTag === null) return false;
+        if (!tagPrefix) normalizedTag = normalizedTag.replace(/^v/, "");
+        const parsed = semver.parse(normalizedTag);
+        return Boolean(parsed) && parsed.major <= major && parsed.prerelease.length === 0;
+      };
+    };
     var findReleaseBranchPullRequests = ({ pullRequests, rules }) => {
       const matches = [];
       const branches = /* @__PURE__ */ new Set();
@@ -154501,6 +154513,7 @@ var require_release_branches = __commonJS({
     module2.exports = {
       parseReleaseBranch,
       releaseTagMatcher,
+      releaseTrackBaseMatcher,
       stripReleaseTagPrefix,
       findReleaseBranchPullRequests
     };
@@ -154542,6 +154555,7 @@ var require_index = __commonJS({
     var {
       parseReleaseBranch,
       releaseTagMatcher,
+      releaseTrackBaseMatcher,
       findReleaseBranchPullRequests
     } = require_release_branches();
     var { prereleaseBranchRulesSchema } = require_schema6();
@@ -154642,9 +154656,14 @@ var require_index = __commonJS({
               tagPrefix,
               tagMatcher
             });
+            const baseMatcher = releaseTrackBaseMatcher({
+              tagPrefix,
+              version: releaseBranch.version,
+              identifier: releaseBranch.identifier
+            });
             releasesResult.lastRelease = sortReleases(
               releasesResult.releases.filter(
-                (release) => !release.draft && (!tagPrefix || release.tag_name.startsWith(tagPrefix))
+                (release) => !release.draft && baseMatcher(release.tag_name)
               ),
               tagPrefix
             ).at(-1);
@@ -154768,7 +154787,7 @@ var require_index = __commonJS({
           config.latest = configuredLatest;
           prerelease = false;
           latest = config.latest;
-          if (releasesResult) {
+          if (releasesResult && !preparedRelease) {
             draftRelease = sortReleases(
               releasesResult.releases.filter(
                 (release) => release.draft && !release.prerelease && (!tagPrefix || release.tag_name.startsWith(tagPrefix))

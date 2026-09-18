@@ -515,6 +515,58 @@ describe('release-drafter', () => {
         })
       })
 
+      it('uses the release track before a newer stable major release', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const publishedTrackRelease = releaseBranchRelease({
+          tag_name: 'v1.0.0-rc.1',
+          created_at: '2024-01-15T00:00:00Z',
+        })
+        const newerStableRelease = releaseBranchRelease({
+          tag_name: 'v2.0.0',
+          created_at: '2024-02-01T00:00:00Z',
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [newerStableRelease, publishedTrackRelease])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.since).toBe(publishedTrackRelease.created_at)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(
+            200,
+            releaseBranchGraphqlPayload([
+              releaseBranchCommit({
+                oid: 'release-branch-track-rc2',
+                message: 'fix: release candidate fix',
+              }),
+            ])
+          )
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.0-rc.2')
+              expect(body.prerelease).toBe(true)
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0-rc.2' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
       it('increments after the highest published prerelease without changing the base version', async () => {
         getReleaseBranchConfigMock()
         configureReleaseBranchEnvironment(releaseBranchRef)
@@ -1017,6 +1069,68 @@ describe('release-drafter', () => {
           name: 'push',
           payload: releaseBranchMergePayload,
         })
+      })
+
+      it('keeps the prepared release authoritative during GA promotion', async () => {
+        const restoreInputEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '62',
+        })
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        const publishedRelease = releaseBranchRelease({
+          id: 10,
+          tag_name: 'v0.36.0',
+        })
+        const preparedRelease = releaseBranchRelease({
+          id: 62,
+          tag_name: 'v1.0.0',
+          draft: true,
+          prerelease: false,
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [publishedRelease])
+          .get('/repos/toolmantim/release-drafter-test-project/releases/62')
+          .reply(200, preparedRelease)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.withHeadRefName).toBe(true)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(200, mockMergedReleaseBranch())
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/pulls/101/commits'
+          )
+          .query({ per_page: '100' })
+          .reply(200, expandedCommits)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/62',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.0')
+              expect(body.prerelease).toBe(false)
+              return true
+            }
+          )
+          .reply(200, preparedRelease)
+
+        try {
+          await probot.receive({
+            name: 'push',
+            payload: releaseBranchMergePayload,
+          })
+        } finally {
+          restoreInputEnvironment()
+        }
       })
 
       it('selects a stable draft instead of an rc draft during GA promotion', async () => {

@@ -1,6 +1,7 @@
 const {
   parseReleaseBranch,
   releaseTagMatcher,
+  releaseTrackBaseMatcher,
   stripReleaseTagPrefix,
   findReleaseBranchPullRequests,
 } = require('../lib/release-branches')
@@ -105,6 +106,31 @@ describe('release branches', () => {
     expect(matcher('v1.0.1')).toBe(true)
     expect(matcher('v1.0.0')).toBe(true)
     expect(matcher('v1.0.0-rc.1')).toBe(false)
+  })
+
+  test('matches release-track tags and stable tags at or below the track major', () => {
+    const matcher = releaseTrackBaseMatcher({
+      tagPrefix: '',
+      version: '1.0.0',
+      identifier: 'rc',
+    })
+    expect(matcher('v1.0.0-rc.3')).toBe(true)
+    expect(matcher('v1.0.1')).toBe(true)
+    expect(matcher('v1.5.0')).toBe(true)
+    expect(matcher('v2.0.0')).toBe(false)
+    expect(matcher('v2.0.1-rc.0')).toBe(false)
+    expect(matcher('v1.0.0-beta.1')).toBe(false)
+    expect(matcher('v0.9.0')).toBe(true)
+  })
+
+  test('matches stable tags with a required release tag prefix', () => {
+    const matcher = releaseTrackBaseMatcher({
+      tagPrefix: 'foo-',
+      version: '1.0.0',
+      identifier: 'rc',
+    })
+    expect(matcher('foo-v1.0.1')).toBe(true)
+    expect(matcher('bar-v1.0.1')).toBe(false)
   })
 
   test('matches numeric prerelease identifiers', () => {

@@ -782,7 +782,9 @@ will not set the GA floor.
 
 When `include-paths` is configured, squash-expanded commits are not
 path-filtered. Prefer rebase-merge for release branches in path-filtered
-repositories.
+repositories. Default-branch lineage detection only inspects PRs within
+`pull-request-limit`, so keep that limit above the number of PRs merged per
+release.
 
 ## Projects that don't use Semantic Versioning
 

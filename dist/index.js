@@ -147505,7 +147505,7 @@ var require_schema6 = __commonJS({
     var { validateReplacers } = require_template2();
     var merge = require_cjs();
     var releaseBranchRule = Joi.object({
-      "branch-prefix": Joi.string(),
+      "branch-prefix": Joi.string().min(1),
       "branch-pattern": Joi.string().pattern(/\(\?<version>/).custom((value, helpers) => {
         try {
           new RegExp(value);
@@ -150511,7 +150511,7 @@ var require_releases = __commonJS({
       filterByCommitish,
       includePreReleases,
       tagPrefix,
-      tagPattern
+      tagMatcher
     }) => {
       let releaseCount = 0;
       let releases = await context.octokit.paginate(
@@ -150535,8 +150535,8 @@ var require_releases = __commonJS({
         (r) => targetCommitishName === r.target_commitish.replace(headRefRegex, "")
       ) : releases;
       let filteredReleases = commitishFilteredReleases;
-      if (tagPattern) {
-        filteredReleases = releases.filter((r) => tagPattern.test(r.tag_name));
+      if (tagMatcher) {
+        filteredReleases = releases.filter((r) => tagMatcher(r.tag_name));
       } else if (tagPrefix) {
         filteredReleases = commitishFilteredReleases.filter(
           (r) => r.tag_name.startsWith(tagPrefix)
@@ -150804,6 +150804,7 @@ var require_releases = __commonJS({
       return updateReleaseParameters;
     }
     exports2.findReleases = findReleases;
+    exports2.sortReleases = sortReleases;
     exports2.getReleaseById = getReleaseById;
     exports2.generateChangeLog = generateChangeLog;
     exports2.generateReleaseInfo = generateReleaseInfo;
@@ -154372,7 +154373,6 @@ var require_assets = __commonJS({
 var require_release_branches = __commonJS({
   "lib/release-branches.js"(exports2, module2) {
     var semver = require_semver4();
-    var regexEscape = require_escape_string_regexp();
     var core2 = require_core();
     var parseVersionSuffix = ({ branch, suffix }) => {
       const normalizedSuffix = suffix?.replace(/^v/, "");
@@ -154426,11 +154426,20 @@ var require_release_branches = __commonJS({
       }
       return tagName;
     };
-    var releaseTagPattern = ({ tagPrefix, version: version2, identifier }) => new RegExp(
-      identifier ? `^${tagPrefix ? regexEscape(tagPrefix) : "v?"}${regexEscape(
-        version2
-      )}-${regexEscape(identifier)}\\.(\\d+)$` : `^${tagPrefix ? regexEscape(tagPrefix) : "v?"}${regexEscape(version2)}$`
-    );
+    var releaseTagMatcher = ({ tagPrefix, version: version2, identifier }) => (tagName) => {
+      let normalizedTag = stripReleaseTagPrefix({ tagName, tagPrefix });
+      if (normalizedTag === null) return false;
+      if (!tagPrefix) normalizedTag = normalizedTag.replace(/^v/, "");
+      const parsed = semver.parse(normalizedTag);
+      const floor = semver.parse(
+        identifier ? `${version2}-${identifier}.0` : version2
+      );
+      if (!parsed || !floor || parsed.major !== floor.major || !semver.gte(parsed, floor)) {
+        return false;
+      }
+      if (!identifier) return parsed.prerelease.length === 0;
+      return parsed.prerelease.length === 2 && parsed.prerelease[0] === identifier && typeof parsed.prerelease[1] === "number";
+    };
     var findReleaseBranchPullRequests = ({ pullRequests, rules }) => {
       const matches = [];
       const branches = /* @__PURE__ */ new Set();
@@ -154454,7 +154463,7 @@ var require_release_branches = __commonJS({
     };
     module2.exports = {
       parseReleaseBranch,
-      releaseTagPattern,
+      releaseTagMatcher,
       stripReleaseTagPrefix,
       findReleaseBranchPullRequests
     };
@@ -154468,6 +154477,7 @@ var require_index = __commonJS({
     var { isTriggerableReference } = require_triggerable_reference();
     var {
       findReleases,
+      sortReleases,
       getReleaseById,
       generateReleaseInfo,
       createRelease,
@@ -154494,7 +154504,7 @@ var require_index = __commonJS({
     var Joi = require_lib14();
     var {
       parseReleaseBranch,
-      releaseTagPattern,
+      releaseTagMatcher,
       findReleaseBranchPullRequests
     } = require_release_branches();
     var { releaseBranchesSchema } = require_schema6();
@@ -154520,12 +154530,15 @@ var require_index = __commonJS({
         if (!config) return;
         updateConfigFromInput(config, input);
         const tagPrefix = getEffectiveTagPrefix(config);
+        const configuredLatest = input.latest || config.latest;
         const ref = process.env["GITHUB_REF"] || context.payload.ref;
         const releaseBranch = parseReleaseBranch({
           ref,
           rules: config["release-branches"]
         });
-        if (releaseBranch?.identifier) {
+        if (releaseBranch && !releaseBranch.identifier) {
+          config.prerelease = false;
+        } else if (releaseBranch?.identifier) {
           const configuredIdentifier = config["prerelease-identifier"];
           if (configuredIdentifier && configuredIdentifier !== releaseBranch.identifier) {
             throw new Error(
@@ -154580,7 +154593,7 @@ var require_index = __commonJS({
           mergedPullRequests = localGitResult.pullRequests;
         } else {
           if (releaseBranch) {
-            const tagPattern = releaseTagPattern({
+            const tagMatcher = releaseTagMatcher({
               tagPrefix,
               version: releaseBranch.version,
               identifier: releaseBranch.identifier
@@ -154590,16 +154603,14 @@ var require_index = __commonJS({
               targetCommitish,
               includePreReleases: Boolean(releaseBranch.identifier),
               tagPrefix,
-              tagPattern
+              tagMatcher
             });
-            const allReleasesResult = await findReleases({
-              context,
-              targetCommitish,
-              includePreReleases: true,
-              filterByCommitish: false,
+            releasesResult.lastRelease = sortReleases(
+              releasesResult.releases.filter(
+                (release) => !release.draft && (!tagPrefix || release.tag_name.startsWith(tagPrefix))
+              ),
               tagPrefix
-            });
-            releasesResult.lastRelease = allReleasesResult.lastRelease;
+            ).at(-1);
           } else {
             releasesResult = await findReleases({
               context,
@@ -154697,7 +154708,7 @@ var require_index = __commonJS({
         }
         if (releaseBranchMergeVersion) {
           config.prerelease = false;
-          config.latest = input.latest || config.latest;
+          config.latest = configuredLatest;
           prerelease = false;
           latest = config.latest;
         }

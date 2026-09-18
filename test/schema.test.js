@@ -112,6 +112,13 @@ describe('schema', () => {
     ).toMatchObject({
       pattern: '\\(\\?<version>',
     })
+    expect(
+      schemaJson.properties['release-branches'].items.properties[
+        'branch-prefix'
+      ]
+    ).toMatchObject({
+      minLength: 1,
+    })
   })
 
   it('rejects release branch patterns without a version group', () => {

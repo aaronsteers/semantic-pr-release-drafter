@@ -2,6 +2,7 @@ const { getConfig } = require('./lib/config')
 const { isTriggerableReference } = require('./lib/triggerable-reference')
 const {
   findReleases,
+  sortReleases,
   getReleaseById,
   generateReleaseInfo,
   createRelease,
@@ -28,7 +29,7 @@ const yaml = require('yaml')
 const Joi = require('joi')
 const {
   parseReleaseBranch,
-  releaseTagPattern,
+  releaseTagMatcher,
   findReleaseBranchPullRequests,
 } = require('./lib/release-branches')
 const { releaseBranchesSchema } = require('./lib/schema')
@@ -64,12 +65,15 @@ module.exports = (app, { getRouter }) => {
     updateConfigFromInput(config, input)
 
     const tagPrefix = getEffectiveTagPrefix(config)
+    const configuredLatest = input.latest || config.latest
     const ref = process.env['GITHUB_REF'] || context.payload.ref
     const releaseBranch = parseReleaseBranch({
       ref,
       rules: config['release-branches'],
     })
-    if (releaseBranch?.identifier) {
+    if (releaseBranch && !releaseBranch.identifier) {
+      config.prerelease = false
+    } else if (releaseBranch?.identifier) {
       const configuredIdentifier = config['prerelease-identifier']
       if (
         configuredIdentifier &&
@@ -150,7 +154,7 @@ module.exports = (app, { getRouter }) => {
     } else {
       // Standard GitHub API mode
       if (releaseBranch) {
-        const tagPattern = releaseTagPattern({
+        const tagMatcher = releaseTagMatcher({
           tagPrefix,
           version: releaseBranch.version,
           identifier: releaseBranch.identifier,
@@ -160,16 +164,16 @@ module.exports = (app, { getRouter }) => {
           targetCommitish,
           includePreReleases: Boolean(releaseBranch.identifier),
           tagPrefix,
-          tagPattern,
+          tagMatcher,
         })
-        const allReleasesResult = await findReleases({
-          context,
-          targetCommitish,
-          includePreReleases: true,
-          filterByCommitish: false,
-          tagPrefix,
-        })
-        releasesResult.lastRelease = allReleasesResult.lastRelease
+        releasesResult.lastRelease = sortReleases(
+          releasesResult.releases.filter(
+            (release) =>
+              !release.draft &&
+              (!tagPrefix || release.tag_name.startsWith(tagPrefix))
+          ),
+          tagPrefix
+        ).at(-1)
       } else {
         releasesResult = await findReleases({
           context,
@@ -296,7 +300,7 @@ module.exports = (app, { getRouter }) => {
     }
     if (releaseBranchMergeVersion) {
       config.prerelease = false
-      config.latest = input.latest || config.latest
+      config.latest = configuredLatest
       prerelease = false
       latest = config.latest
     }

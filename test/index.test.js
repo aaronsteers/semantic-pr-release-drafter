@@ -398,9 +398,6 @@ describe('release-drafter', () => {
           .get('/repos/toolmantim/release-drafter-test-project/releases')
           .query(true)
           .reply(200, [])
-          .get('/repos/toolmantim/release-drafter-test-project/releases')
-          .query(true)
-          .reply(200, [])
 
         nock('https://api.github.com')
           .post('/graphql', (body) =>
@@ -443,9 +440,6 @@ describe('release-drafter', () => {
         ]
 
         nock('https://api.github.com')
-          .get('/repos/toolmantim/release-drafter-test-project/releases')
-          .query(true)
-          .reply(200, [])
           .get('/repos/toolmantim/release-drafter-test-project/releases')
           .query(true)
           .reply(200, [stableRelease])
@@ -503,9 +497,6 @@ describe('release-drafter', () => {
         nock('https://api.github.com')
           .get('/repos/toolmantim/release-drafter-test-project/releases')
           .query(true)
-          .reply(200, [publishedRelease])
-          .get('/repos/toolmantim/release-drafter-test-project/releases')
-          .query(true)
           .reply(200, [olderStableRelease, publishedRelease])
 
         nock('https://api.github.com')
@@ -555,9 +546,6 @@ describe('release-drafter', () => {
           .get('/repos/toolmantim/release-drafter-test-project/releases')
           .query(true)
           .reply(200, [draftRelease, publishedRelease])
-          .get('/repos/toolmantim/release-drafter-test-project/releases')
-          .query(true)
-          .reply(200, [publishedRelease])
 
         nock('https://api.github.com')
           .post('/graphql', (body) => {
@@ -612,9 +600,6 @@ describe('release-drafter', () => {
           .get('/repos/toolmantim/release-drafter-test-project/releases')
           .query(true)
           .reply(200, [draftRelease])
-          .get('/repos/toolmantim/release-drafter-test-project/releases')
-          .query(true)
-          .reply(200, [])
 
         nock('https://api.github.com')
           .post('/graphql', (body) =>
@@ -628,6 +613,86 @@ describe('release-drafter', () => {
             (body) => {
               expect(body.tag_name).toBe('v1.0.0')
               expect(body.prerelease).toBe(false)
+              return true
+            }
+          )
+          .reply(200, draftRelease)
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('forces stable semantics for a stable floor rule', async () => {
+        getReleaseBranchConfigMock(
+          `prerelease: true\ntemplate: |\n  $CHANGES\nrelease-branches:\n  - branch-prefix: release-candidate/\n`
+        )
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, releaseBranchGraphqlPayload([]))
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.0')
+              expect(body.prerelease).toBe(false)
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('tracks an advanced release branch draft above the computed floor', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const publishedRelease = releaseBranchRelease({
+          tag_name: 'v1.0.1',
+          created_at: '2024-03-01T00:00:00Z',
+        })
+        const draftRelease = releaseBranchRelease({
+          tag_name: 'v1.0.2-rc.0',
+          id: 56,
+          draft: true,
+          prerelease: true,
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [draftRelease, publishedRelease])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            expect(body.variables.since).toBe(publishedRelease.created_at)
+            return body.query.includes(
+              'query findCommitsWithAssociatedPullRequests'
+            )
+          })
+          .reply(200, releaseBranchGraphqlPayload([]))
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/56',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.2-rc.0')
+              expect(body.prerelease).toBe(true)
               return true
             }
           )
@@ -655,9 +720,6 @@ describe('release-drafter', () => {
         ]
 
         nock('https://api.github.com')
-          .get('/repos/toolmantim/release-drafter-test-project/releases')
-          .query(true)
-          .reply(200, [])
           .get('/repos/toolmantim/release-drafter-test-project/releases')
           .query(true)
           .reply(200, [stableRelease])
@@ -700,9 +762,6 @@ describe('release-drafter', () => {
           tag_name: 'v0.36.0',
         })
         nock('https://api.github.com')
-          .get('/repos/toolmantim/release-drafter-test-project/releases')
-          .query(true)
-          .reply(200, [])
           .get('/repos/toolmantim/release-drafter-test-project/releases')
           .query(true)
           .reply(200, [stableRelease])
@@ -928,6 +987,27 @@ describe('release-drafter', () => {
             expect(body.tag_name).toBe('v1.0.0')
             expect(body.prerelease).toBe(false)
             expect(body.make_latest).toBe('false')
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('preserves configured latest true when forcing stable semantics', async () => {
+        getReleaseBranchConfigMock(
+          `prerelease: true\nlatest: 'true'\n${releaseBranchConfig}`
+        )
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch(),
+          expectBody: (body) => {
+            expect(body.tag_name).toBe('v1.0.0')
+            expect(body.prerelease).toBe(false)
+            expect(body.make_latest).toBe('true')
           },
         })
 

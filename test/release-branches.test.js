@@ -1,6 +1,6 @@
 const {
   parseReleaseBranch,
-  releaseTagPattern,
+  releaseTagMatcher,
   stripReleaseTagPrefix,
   findReleaseBranchPullRequests,
 } = require('../lib/release-branches')
@@ -75,24 +75,36 @@ describe('release branches', () => {
     })
   })
 
-  test('creates a release tag pattern', () => {
-    const pattern = releaseTagPattern({
+  test('matches release tags above the branch floor', () => {
+    const matcher = releaseTagMatcher({
       tagPrefix: '',
       version: '1.0.0',
       identifier: 'rc',
     })
-    expect('v1.0.0-rc.3').toMatch(pattern)
-    expect('1.0.0-rc.3').toMatch(pattern)
-    expect('v1.0.0-rc.3-foo').not.toMatch(pattern)
-    expect('v1.0.1-rc.1').not.toMatch(pattern)
+    expect(matcher('v1.0.2-rc.0')).toBe(true)
+    expect(matcher('v1.0.0-rc.3')).toBe(true)
+    expect(matcher('v2.0.0-rc.0')).toBe(false)
+    expect(matcher('v1.0.0-beta.1')).toBe(false)
+    expect(matcher('v1.0.0')).toBe(false)
+    expect(matcher('v0.9.0-rc.1')).toBe(false)
 
-    const packagePattern = releaseTagPattern({
+    const packageMatcher = releaseTagMatcher({
       tagPrefix: 'package-a/v',
       version: '1.0.0',
       identifier: 'rc',
     })
-    expect('package-a/v1.0.0-rc.2').toMatch(packagePattern)
-    expect('v1.0.0-rc.9').not.toMatch(packagePattern)
+    expect(packageMatcher('package-a/v1.0.0-rc.2')).toBe(true)
+    expect(packageMatcher('v1.0.0-rc.9')).toBe(false)
+  })
+
+  test('matches stable tags above the branch floor', () => {
+    const matcher = releaseTagMatcher({
+      tagPrefix: '',
+      version: '1.0.0',
+    })
+    expect(matcher('v1.0.1')).toBe(true)
+    expect(matcher('v1.0.0')).toBe(true)
+    expect(matcher('v1.0.0-rc.1')).toBe(false)
   })
 
   test('strips a required release tag prefix', () => {

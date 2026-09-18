@@ -50,13 +50,11 @@ inputs:
       A string indicating an identifier (alpha, beta, rc, etc), to increment the prerelease version.
     required: false
     default: ''
-  release-branch-types:
+  release-branches:
     description: |
-      A YAML or JSON map of release branch prefixes to prerelease identifiers,
-      such as `{ release-candidate: rc }`. When set, branches like
-      `release-candidate/v1` produce prerelease releases such as `v1.0.0-rc.1`,
-      and merging that branch into the default branch pins the corresponding GA
-      version.
+      A YAML or JSON list of release-branch rules. Each rule can use a
+      `branch-prefix` or `branch-pattern`, with an optional
+      `prerelease-identifier`, to set a version floor for matching branches.
     required: false
     default: ''
   commitish:

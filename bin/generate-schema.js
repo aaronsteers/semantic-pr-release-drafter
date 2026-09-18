@@ -16,11 +16,6 @@ const jsonSchema = {
   ...originalSchema,
 }
 
-const releaseBranchTypesSchema = jsonSchema.properties['release-branch-types']
-releaseBranchTypesSchema.additionalProperties = { type: 'string' }
-delete releaseBranchTypesSchema.properties
-delete releaseBranchTypesSchema.patternProperties
-
 exports.jsonSchema = jsonSchema
 
 // template is only required after deep merged, should not be required in the JSON schema

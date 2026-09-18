@@ -24,7 +24,13 @@ const validConfigs = [
   [
     {
       template,
-      'release-branch-types': { 'release-candidate': 'rc', hotfix: 'beta' },
+      'release-branches': [
+        {
+          'branch-prefix': 'release-candidate/',
+          'prerelease-identifier': 'rc',
+        },
+        { 'branch-pattern': '^rc-(?<version>\\d+)$' },
+      ],
     },
   ],
 ]
@@ -95,10 +101,31 @@ describe('schema', () => {
     expect(jsonSchema).toMatchObject(schemaJson)
   })
 
-  it('allows arbitrary string-valued release branch types', () => {
-    expect(schemaJson.properties['release-branch-types']).toMatchObject({
-      additionalProperties: { type: 'string' },
+  it('defines release branch rules', () => {
+    expect(schemaJson.properties['release-branches']).toMatchObject({
+      type: 'array',
     })
+  })
+
+  it('rejects release branch patterns without a version group', () => {
+    const { error } = schema(context).validate({
+      template,
+      'release-branches': [{ 'branch-pattern': '^rc-(\\d+)$' }],
+    })
+    expect(error).toBeDefined()
+  })
+
+  it('requires exactly one release branch matcher', () => {
+    const { error } = schema(context).validate({
+      template,
+      'release-branches': [
+        {
+          'branch-prefix': 'release/',
+          'branch-pattern': '^release-(?<version>\\d+)$',
+        },
+      ],
+    })
+    expect(error).toBeDefined()
   })
 
   describe('validateSchema', () => {

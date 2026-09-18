@@ -28,7 +28,6 @@ const yaml = require('yaml')
 const {
   parseReleaseBranch,
   releaseTagPattern,
-  stripReleaseTagPrefix,
   findReleaseBranchPullRequests,
 } = require('./lib/release-branches')
 
@@ -66,10 +65,9 @@ module.exports = (app, { getRouter }) => {
     const ref = process.env['GITHUB_REF'] || context.payload.ref
     const releaseBranch = parseReleaseBranch({
       ref,
-      types: config['release-branch-types'],
-      tagPrefix,
+      rules: config['release-branches'],
     })
-    if (releaseBranch) {
+    if (releaseBranch?.identifier) {
       config.prerelease = true
       config['prerelease-identifier'] = releaseBranch.identifier
     }
@@ -153,33 +151,14 @@ module.exports = (app, { getRouter }) => {
           tagPrefix,
           tagPattern,
         })
-        if (!releasesResult.lastRelease) {
-          const fallbackResult = await findReleases({
-            context,
-            targetCommitish,
-            includePreReleases: false,
-            filterByCommitish: false,
-            tagPrefix,
-          })
-          releasesResult.lastRelease = fallbackResult.lastRelease
-        }
-
-        const stableRelease = releasesResult.releases.find((release) => {
-          if (release.draft || release.prerelease) return false
-          const tag = stripReleaseTagPrefix({
-            tagName: release.tag_name,
-            tagPrefix,
-          })
-          if (tag === null) return false
-          return tagPrefix
-            ? tag === releaseBranch.version
-            : tag.replace(/^v/, '') === releaseBranch.version
+        const allReleasesResult = await findReleases({
+          context,
+          targetCommitish,
+          includePreReleases: true,
+          filterByCommitish: false,
+          tagPrefix,
         })
-        if (stableRelease) {
-          throw new Error(
-            `Release branch ${releaseBranch.prefix} targets ${releaseBranch.version}, but stable release ${stableRelease.tag_name} already exists.`
-          )
-        }
+        releasesResult.lastRelease = allReleasesResult.lastRelease
       } else {
         releasesResult = await findReleases({
           context,
@@ -246,19 +225,16 @@ module.exports = (app, { getRouter }) => {
     if (
       !releaseBranch &&
       isDefaultBranch &&
-      Object.keys(config['release-branch-types'] || {}).length > 0
+      config['release-branches']?.length > 0
     ) {
       const matches = findReleaseBranchPullRequests({
         pullRequests: mergedPullRequests,
-        types: config['release-branch-types'],
-        tagPrefix,
+        rules: config['release-branches'],
       })
       if (matches.length > 1) {
         throw new Error(
           `Multiple release branches were merged since the last release: ${matches
-            .map(
-              (match) => `${match.prefix}/${match.version} (#${match.number})`
-            )
+            .map((match) => `${match.version} (#${match.number})`)
             .join(', ')}`
         )
       }
@@ -361,41 +337,26 @@ module.exports = (app, { getRouter }) => {
     // - overrideVersion: explicit user input via action arg (always wins, skips calculations)
     // - draftVersion: extracted from draft release (acts as floor vs computed version)
     let overrideVersion = version
+    let floorVersion
     if (releaseBranch && !version && !preparedRelease) {
-      const pattern = releaseTagPattern({
-        tagPrefix,
-        version: releaseBranch.version,
-        identifier: releaseBranch.identifier,
-      })
-      const knownReleases = releasesResult?.releases || []
-      const releaseNumbers = knownReleases
-        .map((release) => ({
-          release,
-          number: Number(pattern.exec(release.tag_name)?.[1] || 0),
-        }))
-        .filter(({ number }) => number > 0)
-      let publishedMax = 0
-      for (const { release, number } of releaseNumbers) {
-        if (!release.draft) publishedMax = Math.max(publishedMax, number)
-      }
-      let draftN = 0
-      for (const { release, number } of releaseNumbers) {
-        if (release.draft) draftN = Math.max(draftN, number)
-      }
-      const nextN = Math.max(publishedMax + 1, draftN)
-      overrideVersion = `${releaseBranch.version}-${releaseBranch.identifier}.${nextN}`
+      floorVersion = releaseBranch.identifier
+        ? `${releaseBranch.version}-${releaseBranch.identifier}.1`
+        : releaseBranch.version
       log({
         context,
-        message: `Pinned release branch version to ${overrideVersion}`,
+        message: `Set release branch version floor to ${floorVersion}`,
       })
-    } else if (!releaseBranch && !version && !preparedRelease) {
-      overrideVersion = releaseBranchMergeVersion || overrideVersion
-      if (releaseBranchMergeVersion) {
-        log({
-          context,
-          message: `Pinned merged release branch version to ${overrideVersion}`,
-        })
-      }
+    } else if (
+      !releaseBranch &&
+      !version &&
+      !preparedRelease &&
+      releaseBranchMergeVersion
+    ) {
+      floorVersion = releaseBranchMergeVersion
+      log({
+        context,
+        message: `Set merged release branch version floor to ${floorVersion}`,
+      })
     }
     let draftVersion
 
@@ -473,6 +434,7 @@ module.exports = (app, { getRouter }) => {
       mergedPullRequests: sortedMergedPullRequests,
       overrideVersion,
       draftVersion,
+      floorVersion,
       tag: effectiveTag,
       name,
       isPreRelease: effectiveIsPreRelease,
@@ -658,7 +620,7 @@ function getInput() {
         ? core.getInput('prerelease').toLowerCase() === 'true'
         : undefined,
     preReleaseIdentifier: core.getInput('prerelease-identifier') || undefined,
-    releaseBranchTypes: core.getInput('release-branch-types') || undefined,
+    releaseBranches: core.getInput('release-branches') || undefined,
     latest: core.getInput('latest')?.toLowerCase() || undefined,
     attachFiles: core.getInput('attach-files') || undefined,
     resetFiles: core.getInput('reset-files').toLowerCase() || 'auto',
@@ -728,26 +690,19 @@ function updateConfigFromInput(config, input) {
     config['prerelease-identifier'] = input.preReleaseIdentifier
   }
 
-  if (input.releaseBranchTypes) {
+  if (input.releaseBranches) {
     try {
-      const releaseBranchTypes = yaml.parse(input.releaseBranchTypes)
-      if (
-        releaseBranchTypes &&
-        typeof releaseBranchTypes === 'object' &&
-        !Array.isArray(releaseBranchTypes) &&
-        Object.values(releaseBranchTypes).every(
-          (identifier) => typeof identifier === 'string'
-        )
-      ) {
-        config['release-branch-types'] = releaseBranchTypes
+      const releaseBranches = yaml.parse(input.releaseBranches)
+      if (Array.isArray(releaseBranches)) {
+        config['release-branches'] = releaseBranches
       } else {
         core.warning(
-          "Failed to parse 'release-branch-types' input as a YAML or JSON map. This input will be ignored."
+          "Failed to parse 'release-branches' input as a YAML or JSON list. This input will be ignored."
         )
       }
     } catch (error) {
       core.warning(
-        `Failed to parse 'release-branch-types' input as YAML or JSON map. This input will be ignored. Error: ${
+        `Failed to parse 'release-branches' input as YAML or JSON list. This input will be ignored. Error: ${
           error instanceof Error ? error.message : String(error)
         }`
       )

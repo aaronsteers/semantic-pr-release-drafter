@@ -733,32 +733,44 @@ prerelease-identifier: 'alpha' # will create a prerelease with version number x.
 ## Release branches (long-running release candidates)
 
 Long-running release candidate branches can opt into branch-name-driven release
-tracks with `release-branch-types`. The map keys are branch prefixes and the
-values are prerelease identifiers:
+tracks with `release-branches`. The preferred form matches a literal branch
+prefix; `prerelease-identifier` is optional for stable version floors:
 
 ```yml
-release-branch-types:
-  release-candidate: rc
+release-branches:
+  - branch-prefix: release-candidate/
+    prerelease-identifier: rc
 ```
 
-A push to `release-candidate/v1` creates or updates a prerelease tagged
-`v1.0.0-rc.N`; `release-candidate/v1.2` and the full
-`release-candidate/v1.2.0` form are also supported. The next prerelease number
-continues from the highest published matching release, while an existing draft
-is preserved if it was manually advanced. For `rc.1`, the last stable release
-is used as the commit-range boundary, so the notes contain changes since the
-last GA release rather than the entire repository history.
+A push to `release-candidate/v1` creates or updates a prerelease at or above
+the version floor `v1.0.0-rc.1`; `release-candidate/v1.2` and the full
+`release-candidate/v1.2.0` form are also supported. The floor is applied to
+the version computed from commits, so:
+
+- after `v0.36.0`, the first release is `v1.0.0-rc.1`;
+- after `v1.0.0-rc.2`, the next release is `v1.0.0-rc.3`;
+- after an out-of-band `v1.0.1`, a `fix:` commit produces `v1.0.2-rc.0`.
+
+An existing draft is preserved if it was manually advanced. For `rc.1`, the
+last release (including prereleases) is used as the commit-range boundary, so
+the notes contain changes since the highest prior release rather than the
+entire repository history.
+
+For patterns that cannot be expressed as a prefix, use a regular expression
+with a named `version` capture group:
+
+```yml
+release-branches:
+  - branch-pattern: '^rc-(?<version>\d+(\.\d+){0,2})$'
+    prerelease-identifier: rc
+```
 
 After the release branch pull request is merged into the default branch, the
-merged PR's head branch pins the stable draft to the branch's GA version
-(`v1.0.0`, not a version bump based on the merge commit). Rebase-merge is
-recommended because the release commits then appear natively in the default
-branch history. Squash-merge is also supported: the action expands the merged
-PR's commits and removes the redundant squash commit from the notes.
-
-As a guardrail, a release branch refuses to run when a published stable release
-already exists for its target version. This prevents a branch from silently
-rewriting an existing GA release.
+merged PR's head branch sets a floor for the stable draft at the branch's GA
+version (`v1.0.0`). Rebase-merge is recommended because the release commits
+then appear natively in the default branch history. Squash-merge is also
+supported: the action expands the merged PR's commits and removes the
+redundant squash commit from the notes.
 
 ### Limitations
 

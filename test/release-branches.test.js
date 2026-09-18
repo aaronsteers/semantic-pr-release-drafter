@@ -6,7 +6,9 @@ const {
 } = require('../lib/release-branches')
 
 describe('release branches', () => {
-  const types = { 'release-candidate': 'rc' }
+  const rules = [
+    { 'branch-prefix': 'release-candidate/', 'prerelease-identifier': 'rc' },
+  ]
 
   describe('parseReleaseBranch', () => {
     test.each([
@@ -15,34 +17,61 @@ describe('release branches', () => {
       ['release-candidate/v1', '1.0.0'],
       ['release-candidate/v1.2', '1.2.0'],
     ])('parses %s', (ref, version) => {
-      expect(parseReleaseBranch({ ref, types })).toEqual({
-        prefix: 'release-candidate',
+      expect(parseReleaseBranch({ ref, rules })).toEqual({
+        rule: rules[0],
         identifier: 'rc',
         version,
       })
     })
 
     test('returns null for an unknown prefix', () => {
-      expect(parseReleaseBranch({ ref: 'other/v1.0.0', types })).toBeNull()
+      expect(parseReleaseBranch({ ref: 'other/v1.0.0', rules })).toBeNull()
     })
 
     test.each(['release-candidate/v1.0.0-rc.1', 'release-candidate/foo1'])(
       'throws for invalid suffix %s',
       (ref) => {
-        expect(() => parseReleaseBranch({ ref, types })).toThrow(
+        expect(() => parseReleaseBranch({ ref, rules })).toThrow(
           `Release branch "${ref}" has an invalid version suffix`
         )
       }
     )
 
-    test('strips a configured tag prefix', () => {
+    test('supports a prefix with a trailing v', () => {
       expect(
         parseReleaseBranch({
-          ref: 'release-candidate/release-v1.2.3',
-          types,
-          tagPrefix: 'release-',
+          ref: 'release-candidate/v1.2.3',
+          rules: [
+            {
+              'branch-prefix': 'release-candidate/v',
+              'prerelease-identifier': 'rc',
+            },
+          ],
         })
       ).toMatchObject({ version: '1.2.3' })
+    })
+
+    test('parses a regex rule with a named version group', () => {
+      expect(
+        parseReleaseBranch({
+          ref: 'refs/heads/rc-v1.2',
+          rules: [
+            {
+              'branch-pattern': '^rc-v(?<version>\\d+(\\.\\d+){0,2})$',
+              'prerelease-identifier': 'rc',
+            },
+          ],
+        })
+      ).toMatchObject({ version: '1.2.0' })
+    })
+
+    test('stable rule returns no prerelease identifier', () => {
+      expect(
+        parseReleaseBranch({
+          ref: 'release/v2',
+          rules: [{ 'branch-prefix': 'release/' }],
+        })
+      ).toMatchObject({ version: '2.0.0', identifier: undefined })
     })
   })
 
@@ -89,10 +118,10 @@ describe('release branches', () => {
       { number: 4, merged: true, headRefName: 'other/v2' },
       { number: 5, merged: true, headRefName: 'release-candidate/foo' },
     ]
-    expect(findReleaseBranchPullRequests({ pullRequests, types })).toEqual([
+    expect(findReleaseBranchPullRequests({ pullRequests, rules })).toEqual([
       {
         number: 1,
-        prefix: 'release-candidate',
+        rule: rules[0],
         identifier: 'rc',
         version: '1.0.0',
       },
@@ -106,18 +135,30 @@ describe('release branches', () => {
           { number: 1, merged: true, headRefName: 'release-candidate/v1' },
           { number: 2, merged: true, headRefName: 'hotfix/v1' },
         ],
-        types: { 'release-candidate': 'rc', hotfix: 'hotfix' },
+        rules: [
+          {
+            'branch-prefix': 'release-candidate/',
+            'prerelease-identifier': 'rc',
+          },
+          { 'branch-prefix': 'hotfix/', 'prerelease-identifier': 'hotfix' },
+        ],
       })
     ).toEqual([
       {
         number: 1,
-        prefix: 'release-candidate',
+        rule: {
+          'branch-prefix': 'release-candidate/',
+          'prerelease-identifier': 'rc',
+        },
         identifier: 'rc',
         version: '1.0.0',
       },
       {
         number: 2,
-        prefix: 'hotfix',
+        rule: {
+          'branch-prefix': 'hotfix/',
+          'prerelease-identifier': 'hotfix',
+        },
         identifier: 'hotfix',
         version: '1.0.0',
       },

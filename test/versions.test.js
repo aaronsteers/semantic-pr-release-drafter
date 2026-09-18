@@ -289,6 +289,36 @@ describe('versions', () => {
 
     expect(versionInfo.$RESOLVED_VERSION.version).toEqual('1.0.0-rc.1')
     expect(versionInfo.$NEXT_PATCH_VERSION.version).toEqual('1.0.0-rc.1')
+    expect(versionInfo.$NEXT_PRERELEASE_VERSION.version).toEqual('1.0.0-rc.1')
+    expect(versionInfo.$NEXT_PRERELEASE_VERSION.template).toEqual('$PRERELEASE')
+  })
+
+  it('uses the configured identifier for the default prerelease version', () => {
+    const versionInfo = getVersionInfo(
+      undefined,
+      '$MAJOR.$MINOR.$PATCH$PRERELEASE',
+      undefined,
+      'prepatch',
+      'v',
+      'beta'
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('0.1.0-beta.0')
+  })
+
+  it('raises the configured default prerelease to a release branch floor', () => {
+    const versionInfo = getVersionInfo(
+      undefined,
+      '$MAJOR.$MINOR.$PATCH$PRERELEASE',
+      undefined,
+      'prepatch',
+      'v',
+      'beta',
+      undefined,
+      '0.1.0-beta.1'
+    )
+
+    expect(versionInfo.$RESOLVED_VERSION.version).toEqual('0.1.0-beta.1')
   })
 
   it('release branch floor applies when no last release exists', () => {

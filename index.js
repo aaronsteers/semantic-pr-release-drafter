@@ -278,29 +278,41 @@ module.exports = (app, { getRouter }) => {
               context.octokit.pulls.listCommits,
               context.repo({ pull_number: match.number, per_page: 100 })
             )
-            if (expandedCommits.length >= 2) {
-              const associatedCommit = associatedInRange[0]
-              const existingOids = new Set(
-                commits
-                  .filter((commit) => commit.oid !== associatedCommit.oid)
-                  .map((commit) => commit.oid)
-              )
-              const replacementCommits = expandedCommits
-                .map((commit) => ({
-                  id: commit.sha,
-                  oid: commit.sha,
-                  committedDate: commit.commit.committer.date,
-                  message: commit.commit.message,
-                  author: {
-                    name: commit.commit.author.name,
-                    user: commit.author ? { login: commit.author.login } : null,
-                  },
-                  associatedPullRequests: { nodes: [] },
-                }))
-                .filter((commit) => !existingOids.has(commit.oid))
+            const associatedCommit = associatedInRange[0]
+            const expandedShas = new Set(
+              expandedCommits.map((commit) => commit.sha)
+            )
+            const isSquashMerge = !expandedShas.has(associatedCommit.oid)
+            const existingOids = new Set(
+              commits
+                .filter(
+                  (commit) =>
+                    !isSquashMerge || commit.oid !== associatedCommit.oid
+                )
+                .map((commit) => commit.oid)
+            )
+            const replacementCommits = expandedCommits
+              .map((commit) => ({
+                id: commit.sha,
+                oid: commit.sha,
+                committedDate: commit.commit.committer.date,
+                message: commit.commit.message,
+                author: {
+                  name: commit.commit.author.name,
+                  user: commit.author ? { login: commit.author.login } : null,
+                },
+                associatedPullRequests: associatedCommit.associatedPullRequests,
+              }))
+              .filter((commit) => !existingOids.has(commit.oid))
+            if (replacementCommits.length > 0) {
               commits = [
                 ...commits.filter(
-                  (commit) => commit.oid !== associatedCommit.oid
+                  (commit) =>
+                    !isSquashMerge ||
+                    !commit.associatedPullRequests.nodes.some(
+                      (pullRequest) => pullRequest.number === match.number
+                    ) ||
+                    expandedShas.has(commit.oid)
                 ),
                 ...replacementCommits,
               ]

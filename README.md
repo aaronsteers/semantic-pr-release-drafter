@@ -754,6 +754,9 @@ the version computed from commits, so:
 - after `v1.0.0-rc.2`, the next release is `v1.0.0-rc.3`;
 - after an out-of-band `v1.0.1`, a `fix:` commit produces `v1.0.2-rc.0`.
 
+On a release-branch prerelease track the bump type is always `prerelease`;
+commit types do not move major/minor/patch.
+
 An existing draft is preserved if it was manually advanced. For `rc.1`, the
 last release (including prereleases) is used as the commit-range boundary, so
 the notes contain changes since the highest prior release rather than the

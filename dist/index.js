@@ -149830,6 +149830,7 @@ var require_versions = __commonJS({
         ["$NEXT_MAJOR_VERSION", template],
         ["$NEXT_MINOR_VERSION", template],
         ["$NEXT_PATCH_VERSION", template],
+        ["$NEXT_PRERELEASE_VERSION", "$PRERELEASE"],
         ["$NEXT_MAJOR_VERSION_MAJOR", "$MAJOR"],
         ["$NEXT_MAJOR_VERSION_MINOR", "$MINOR"],
         ["$NEXT_MAJOR_VERSION_PATCH", "$PATCH"],
@@ -149856,9 +149857,25 @@ var require_versions = __commonJS({
           $RESOLVED_VERSION: { ...defaultVersionInfo.$RESOLVED_VERSION }
         };
         if (isPreVersionKeyIncrement) {
-          resolvedDefaultVersionInfo["$RESOLVED_VERSION"] = {
-            ...defaultVersionInfo["$NEXT_PRERELEASE_VERSION"]
-          };
+          if (preReleaseIdentifier) {
+            const defaultPrerelease = semver.parse(
+              semver.inc("0.1.0-0", "prerelease", true, preReleaseIdentifier)
+            );
+            const nextPrereleaseVersion = {
+              ...defaultVersionInfo.$NEXT_PRERELEASE_VERSION,
+              version: defaultPrerelease.version,
+              preReleaseIdentifier,
+              $PRERELEASE: `-${defaultPrerelease.prerelease.join(".")}`
+            };
+            resolvedDefaultVersionInfo.$NEXT_PRERELEASE_VERSION = nextPrereleaseVersion;
+            resolvedDefaultVersionInfo.$RESOLVED_VERSION = {
+              ...nextPrereleaseVersion
+            };
+          } else {
+            resolvedDefaultVersionInfo.$RESOLVED_VERSION = {
+              ...defaultVersionInfo.$NEXT_PRERELEASE_VERSION
+            };
+          }
         }
         return applyVersionFloor(resolvedDefaultVersionInfo, floorVersion, template);
       }
@@ -150620,7 +150637,7 @@ var require_releases = __commonJS({
       const changeItems = ReleaseChangeLineItems.fromCommits(commits);
       return changeItems.renderWithConfig(config, context);
     };
-    var resolveVersionKeyIncrement = (commits, config, isPreRelease, lastRelease) => {
+    var resolveVersionKeyIncrement = (commits, config, isPreRelease, lastRelease, forcePrereleaseIncrement) => {
       const versionResolver = config["version-resolver"] || {};
       const preOneZeroMinorForBreaking = versionResolver["pre-one-zero-minor-for-breaking"] !== false;
       const noAutoMajor = versionResolver["no-auto-major"] !== false;
@@ -150637,6 +150654,9 @@ var require_releases = __commonJS({
         currentMajor
       });
       core2.debug("versionKeyIncrement: " + versionKeyIncrement);
+      if (forcePrereleaseIncrement) {
+        return "prerelease";
+      }
       const shouldIncrementAsPrerelease = isPreRelease && config["prerelease-identifier"];
       if (!shouldIncrementAsPrerelease) {
         return versionKeyIncrement;
@@ -150681,7 +150701,8 @@ var require_releases = __commonJS({
         commits,
         config,
         isPreRelease,
-        lastRelease
+        lastRelease,
+        Boolean(floorVersion) && isPreRelease && Boolean(config["prerelease-identifier"])
       );
       core2.info(`Version bump type: ${versionKeyIncrement}`);
       const versionInfo = getVersionInfo(
@@ -154707,25 +154728,33 @@ var require_index = __commonJS({
                   context.octokit.pulls.listCommits,
                   context.repo({ pull_number: match.number, per_page: 100 })
                 );
-                if (expandedCommits.length >= 2) {
-                  const associatedCommit = associatedInRange[0];
-                  const existingOids = new Set(
-                    commits.filter((commit) => commit.oid !== associatedCommit.oid).map((commit) => commit.oid)
-                  );
-                  const replacementCommits = expandedCommits.map((commit) => ({
-                    id: commit.sha,
-                    oid: commit.sha,
-                    committedDate: commit.commit.committer.date,
-                    message: commit.commit.message,
-                    author: {
-                      name: commit.commit.author.name,
-                      user: commit.author ? { login: commit.author.login } : null
-                    },
-                    associatedPullRequests: { nodes: [] }
-                  })).filter((commit) => !existingOids.has(commit.oid));
+                const associatedCommit = associatedInRange[0];
+                const expandedShas = new Set(
+                  expandedCommits.map((commit) => commit.sha)
+                );
+                const isSquashMerge = !expandedShas.has(associatedCommit.oid);
+                const existingOids = new Set(
+                  commits.filter(
+                    (commit) => !isSquashMerge || commit.oid !== associatedCommit.oid
+                  ).map((commit) => commit.oid)
+                );
+                const replacementCommits = expandedCommits.map((commit) => ({
+                  id: commit.sha,
+                  oid: commit.sha,
+                  committedDate: commit.commit.committer.date,
+                  message: commit.commit.message,
+                  author: {
+                    name: commit.commit.author.name,
+                    user: commit.author ? { login: commit.author.login } : null
+                  },
+                  associatedPullRequests: associatedCommit.associatedPullRequests
+                })).filter((commit) => !existingOids.has(commit.oid));
+                if (replacementCommits.length > 0) {
                   commits = [
                     ...commits.filter(
-                      (commit) => commit.oid !== associatedCommit.oid
+                      (commit) => !isSquashMerge || !commit.associatedPullRequests.nodes.some(
+                        (pullRequest) => pullRequest.number === match.number
+                      ) || expandedShas.has(commit.oid)
                     ),
                     ...replacementCommits
                   ];

@@ -756,7 +756,7 @@ describe('release-drafter', () => {
         const commits = [
           releaseBranchCommit({
             oid: 'release-branch-rc-after-ga',
-            message: 'fix: release candidate after out-of-band release',
+            message: 'feat: release candidate after out-of-band release',
           }),
         ]
 
@@ -995,7 +995,9 @@ describe('release-drafter', () => {
       }
 
       it('sets the GA version floor and expands squash-merged release commits', async () => {
-        getReleaseBranchConfigMock()
+        getReleaseBranchConfigMock(
+          `${releaseBranchConfig}change-template: '* $TITLE (#$NUMBER)'\n`
+        )
         configureReleaseBranchEnvironment('refs/heads/master')
 
         mockReleaseBranchMergeApi({
@@ -1006,6 +1008,7 @@ describe('release-drafter', () => {
             expect(body.make_latest).not.toBe('false')
             expect(body.body).toContain('Expanded release feature')
             expect(body.body).toContain('Expanded release fix')
+            expect(body.body).toContain('(#101)')
             expect(body.body).not.toContain('Merge release branch')
           },
         })
@@ -1201,6 +1204,71 @@ describe('release-drafter', () => {
             expect(body.tag_name).toBe('v1.0.0')
             expect(body.body.match(/Expanded release feature/g)).toHaveLength(1)
             expect(body.body.match(/Expanded release fix/g)).toHaveLength(1)
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('replaces a one-commit squash merge with its expanded commit', async () => {
+        getReleaseBranchConfigMock(
+          `${releaseBranchConfig}change-template: '* $TITLE (#$NUMBER)'\n`
+        )
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        const expandedCommit = {
+          sha: 'expanded-single-release-commit',
+          commit: {
+            committer: { date: '2024-02-01T00:00:00Z' },
+            author: { name: 'Release Branch Tester' },
+            message: 'fix: expanded single release commit',
+          },
+          author: { login: 'release-branch-tester' },
+        }
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch(),
+          restCommits: [expandedCommit],
+          expectBody: (body) => {
+            expect(body.body).toContain('Expanded single release commit')
+            expect(body.body).toContain('(#101)')
+            expect(body.body).not.toContain('Merge release branch')
+          },
+        })
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchMergePayload,
+        })
+      })
+
+      it('does not replace a one-commit rebase merge with its expanded commit', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment('refs/heads/master')
+
+        const rebaseOid = 'rebase-single-release-commit'
+        const expandedCommit = {
+          sha: rebaseOid,
+          commit: {
+            committer: { date: '2024-02-01T00:00:00Z' },
+            author: { name: 'Release Branch Tester' },
+            message: 'fix: expanded rebase release commit',
+          },
+          author: { login: 'release-branch-tester' },
+        }
+
+        mockReleaseBranchMergeApi({
+          graphqlPayload: mockMergedReleaseBranch({
+            firstOid: rebaseOid,
+            firstMessage: 'fix: rebase release commit',
+          }),
+          restCommits: [expandedCommit],
+          expectBody: (body) => {
+            expect(body.body).toContain('Rebase release commit')
+            expect(body.body).not.toContain('Expanded rebase release commit')
           },
         })
 

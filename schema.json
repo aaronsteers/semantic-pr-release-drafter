@@ -84,7 +84,8 @@
             "type": "string"
           },
           "branch-pattern": {
-            "type": "string"
+            "type": "string",
+            "pattern": "\\(\\?<version>"
           },
           "prerelease-identifier": {
             "type": "string"

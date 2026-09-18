@@ -147506,7 +147506,7 @@ var require_schema6 = __commonJS({
     var merge = require_cjs();
     var releaseBranchRule = Joi.object({
       "branch-prefix": Joi.string(),
-      "branch-pattern": Joi.string().custom((value, helpers) => {
+      "branch-pattern": Joi.string().pattern(/\(\?<version>/).custom((value, helpers) => {
         try {
           new RegExp(value);
         } catch {
@@ -147514,15 +147514,11 @@ var require_schema6 = __commonJS({
             message: "must be a valid regular expression"
           });
         }
-        if (!value.includes("(?<version>")) {
-          return helpers.error("any.custom", {
-            message: 'must contain a named "version" capture group'
-          });
-        }
         return value;
       }),
       "prerelease-identifier": Joi.string().allow("")
     }).xor("branch-prefix", "branch-pattern");
+    var releaseBranchesSchema = Joi.array().items(releaseBranchRule);
     var schema = (context) => {
       const defaultBranch = _.get(
         context,
@@ -147624,6 +147620,8 @@ var require_schema6 = __commonJS({
     };
     exports2.schema = schema;
     exports2.validateSchema = validateSchema;
+    exports2.releaseBranchRule = releaseBranchRule;
+    exports2.releaseBranchesSchema = releaseBranchesSchema;
   }
 });
 
@@ -154493,11 +154491,13 @@ var require_index = __commonJS({
     var { getEffectiveTagPrefix } = require_tag_prefix();
     var semver = require_semver4();
     var yaml = require_dist2();
+    var Joi = require_lib14();
     var {
       parseReleaseBranch,
       releaseTagPattern,
       findReleaseBranchPullRequests
     } = require_release_branches();
+    var { releaseBranchesSchema } = require_schema6();
     module2.exports = (app, { getRouter }) => {
       if (!runnerIsActions() && typeof getRouter === "function") {
         getRouter().get("/healthz", (request, response) => {
@@ -154588,7 +154588,7 @@ var require_index = __commonJS({
             releasesResult = await findReleases({
               context,
               targetCommitish,
-              includePreReleases: true,
+              includePreReleases: Boolean(releaseBranch.identifier),
               tagPrefix,
               tagPattern
             });
@@ -154697,7 +154697,7 @@ var require_index = __commonJS({
         }
         if (releaseBranchMergeVersion) {
           config.prerelease = false;
-          config.latest = input.latest || "true";
+          config.latest = input.latest || config.latest;
           prerelease = false;
           latest = config.latest;
         }
@@ -154990,14 +154990,14 @@ var require_index = __commonJS({
       if (input.releaseBranches) {
         try {
           const releaseBranches = yaml.parse(input.releaseBranches);
-          if (Array.isArray(releaseBranches)) {
-            config["release-branches"] = releaseBranches;
-          } else {
-            core2.warning(
-              "Failed to parse 'release-branches' input as a YAML or JSON list. This input will be ignored."
-            );
-          }
+          config["release-branches"] = Joi.attempt(
+            releaseBranches,
+            releaseBranchesSchema
+          );
         } catch (error) {
+          if (error instanceof Joi.ValidationError) {
+            throw new TypeError(`Invalid release-branches input: ${error.message}`);
+          }
           core2.warning(
             `Failed to parse 'release-branches' input as YAML or JSON list. This input will be ignored. Error: ${error instanceof Error ? error.message : String(error)}`
           );

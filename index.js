@@ -25,11 +25,13 @@ const {
 const { getEffectiveTagPrefix } = require('./lib/tag-prefix')
 const semver = require('semver')
 const yaml = require('yaml')
+const Joi = require('joi')
 const {
   parseReleaseBranch,
   releaseTagPattern,
   findReleaseBranchPullRequests,
 } = require('./lib/release-branches')
+const { releaseBranchesSchema } = require('./lib/schema')
 
 module.exports = (app, { getRouter }) => {
   if (!runnerIsActions() && typeof getRouter === 'function') {
@@ -156,7 +158,7 @@ module.exports = (app, { getRouter }) => {
         releasesResult = await findReleases({
           context,
           targetCommitish,
-          includePreReleases: true,
+          includePreReleases: Boolean(releaseBranch.identifier),
           tagPrefix,
           tagPattern,
         })
@@ -294,7 +296,7 @@ module.exports = (app, { getRouter }) => {
     }
     if (releaseBranchMergeVersion) {
       config.prerelease = false
-      config.latest = input.latest || 'true'
+      config.latest = input.latest || config.latest
       prerelease = false
       latest = config.latest
     }
@@ -702,14 +704,14 @@ function updateConfigFromInput(config, input) {
   if (input.releaseBranches) {
     try {
       const releaseBranches = yaml.parse(input.releaseBranches)
-      if (Array.isArray(releaseBranches)) {
-        config['release-branches'] = releaseBranches
-      } else {
-        core.warning(
-          "Failed to parse 'release-branches' input as a YAML or JSON list. This input will be ignored."
-        )
-      }
+      config['release-branches'] = Joi.attempt(
+        releaseBranches,
+        releaseBranchesSchema
+      )
     } catch (error) {
+      if (error instanceof Joi.ValidationError) {
+        throw new TypeError(`Invalid release-branches input: ${error.message}`)
+      }
       core.warning(
         `Failed to parse 'release-branches' input as YAML or JSON list. This input will be ignored. Error: ${
           error instanceof Error ? error.message : String(error)

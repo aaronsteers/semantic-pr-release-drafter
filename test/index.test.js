@@ -596,6 +596,49 @@ describe('release-drafter', () => {
         })
       })
 
+      it('updates an existing stable draft for a stable floor rule', async () => {
+        getReleaseBranchConfigMock(
+          `template: |\n  $CHANGES\nrelease-branches:\n  - branch-prefix: release-candidate/\n`
+        )
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const draftRelease = releaseBranchRelease({
+          tag_name: 'v1.0.0',
+          id: 55,
+          draft: true,
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [draftRelease])
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, releaseBranchGraphqlPayload([]))
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/55',
+            (body) => {
+              expect(body.tag_name).toBe('v1.0.0')
+              expect(body.prerelease).toBe(false)
+              return true
+            }
+          )
+          .reply(200, draftRelease)
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
       it('raises the release branch floor above an out-of-band stable release', async () => {
         getReleaseBranchConfigMock()
         configureReleaseBranchEnvironment(releaseBranchRef)
@@ -696,6 +739,28 @@ describe('release-drafter', () => {
             name: 'push',
             payload: releaseBranchPayload,
           })
+        } finally {
+          restoreInputEnvironment()
+        }
+      })
+
+      it('rejects invalid release branch rules from the action input', async () => {
+        getConfigMock()
+        const restoreInputEnvironment = mockedEnv({
+          'INPUT_RELEASE-BRANCHES':
+            '[{ branch-prefix: release-candidate/, branch-pattern: "^rc-(?<version>\\\\d+)$" }]',
+        })
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        try {
+          await expect(
+            probot.receive({
+              name: 'push',
+              payload: releaseBranchPayload,
+            })
+          ).rejects.toThrow(
+            'Invalid release-branches input: "[0]" contains a conflict between exclusive peers [branch-prefix, branch-pattern]'
+          )
         } finally {
           restoreInputEnvironment()
         }
@@ -851,8 +916,10 @@ describe('release-drafter', () => {
         })
       })
 
-      it('forces stable semantics when the release branch config enables prereleases', async () => {
-        getReleaseBranchConfigMock(`prerelease: true\n${releaseBranchConfig}`)
+      it('preserves configured latest when forcing stable semantics', async () => {
+        getReleaseBranchConfigMock(
+          `prerelease: true\nlatest: 'false'\n${releaseBranchConfig}`
+        )
         configureReleaseBranchEnvironment('refs/heads/master')
 
         mockReleaseBranchMergeApi({
@@ -860,7 +927,7 @@ describe('release-drafter', () => {
           expectBody: (body) => {
             expect(body.tag_name).toBe('v1.0.0')
             expect(body.prerelease).toBe(false)
-            expect(body.make_latest).not.toBe('false')
+            expect(body.make_latest).toBe('false')
           },
         })
 

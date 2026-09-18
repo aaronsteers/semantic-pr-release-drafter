@@ -79,15 +79,16 @@ const releaseBranchCommit = ({
   message,
   committedDate = '2024-02-01T00:00:00Z',
   associatedPullRequests = [],
+  author = {
+    name: 'Release Branch Tester',
+    user: { login: 'release-branch-tester' },
+  },
 }) => ({
   id: oid,
   oid,
   committedDate,
   message,
-  author: {
-    name: 'Release Branch Tester',
-    user: { login: 'release-branch-tester' },
-  },
+  author,
   associatedPullRequests: { nodes: associatedPullRequests },
 })
 
@@ -136,11 +137,13 @@ const mockMergedReleaseBranch = ({
   firstOid = 'squash-release-commit',
   secondOid,
   firstMessage = 'chore: merge release branch',
+  firstAuthor,
 } = {}) => {
   const nodes = [
     releaseBranchCommit({
       oid: firstOid,
       message: firstMessage,
+      author: firstAuthor,
       associatedPullRequests: [
         releaseBranchPullRequest({
           number: 101,
@@ -992,7 +995,7 @@ describe('release-drafter', () => {
             author: { name: 'Release Branch Tester' },
             message: 'feat: expanded release feature (#69)',
           },
-          author: { login: 'release-branch-tester' },
+          author: { login: 'constituent-author' },
         },
         {
           sha: 'expanded-release-fix',
@@ -1001,7 +1004,7 @@ describe('release-drafter', () => {
             author: { name: 'Release Branch Tester' },
             message: 'fix: expanded release fix (#70)',
           },
-          author: { login: 'release-branch-tester' },
+          author: { login: 'constituent-author' },
         },
       ]
 
@@ -1310,7 +1313,7 @@ describe('release-drafter', () => {
 
       it('does not duplicate commits when the squash PR commits are already present', async () => {
         getReleaseBranchConfigMock(
-          `${releaseBranchConfig}change-template: '* $TITLE ($URL)'\n`
+          `${releaseBranchConfig}change-template: '* $TITLE ($URL) @$AUTHOR'\n`
         )
         configureReleaseBranchEnvironment('refs/heads/master')
 
@@ -1318,11 +1321,19 @@ describe('release-drafter', () => {
           releaseBranchCommit({
             oid: expandedCommits[0].sha,
             message: expandedCommits[0].commit.message,
+            author: {
+              name: 'Constituent Author',
+              user: { login: 'constituent-author' },
+            },
             associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
           }),
           releaseBranchCommit({
             oid: expandedCommits[1].sha,
             message: expandedCommits[1].commit.message,
+            author: {
+              name: 'Constituent Author',
+              user: { login: 'constituent-author' },
+            },
             associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
           }),
         ])
@@ -1342,6 +1353,8 @@ describe('release-drafter', () => {
             expect(body.body).not.toContain(
               'https://github.com/toolmantim/release-drafter-test-project/pull/101'
             )
+            expect(body.body).toContain('@constituent-author')
+            expect(body.body).not.toContain('@release-branch-tester')
           },
         })
 
@@ -1353,7 +1366,7 @@ describe('release-drafter', () => {
 
       it('removes wrapper PR associations from rebase-merged commits', async () => {
         getReleaseBranchConfigMock(
-          `${releaseBranchConfig}change-template: '* $TITLE ($URL)'\n`
+          `${releaseBranchConfig}change-template: '* $TITLE ($URL) @$AUTHOR'\n`
         )
         configureReleaseBranchEnvironment('refs/heads/master')
 
@@ -1361,11 +1374,19 @@ describe('release-drafter', () => {
           releaseBranchCommit({
             oid: 'rebase-release-feature',
             message: 'feat: rebase release feature (#69)',
+            author: {
+              name: 'Constituent Author',
+              user: { login: 'constituent-author' },
+            },
             associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
           }),
           releaseBranchCommit({
             oid: 'rebase-release-fix',
             message: 'fix: rebase release fix (#70)',
+            author: {
+              name: 'Constituent Author',
+              user: { login: 'constituent-author' },
+            },
             associatedPullRequests: [releaseBranchPullRequest({ number: 101 })],
           }),
         ])
@@ -1386,6 +1407,8 @@ describe('release-drafter', () => {
             expect(body.body).not.toContain(
               'https://github.com/toolmantim/release-drafter-test-project/pull/101'
             )
+            expect(body.body).toContain('@constituent-author')
+            expect(body.body).not.toContain('@release-branch-tester')
           },
         })
 
@@ -1432,7 +1455,7 @@ describe('release-drafter', () => {
 
       it('does not expand a one-commit squash merge', async () => {
         getReleaseBranchConfigMock(
-          `${releaseBranchConfig}change-template: '* $TITLE ($URL)'\n`
+          `${releaseBranchConfig}change-template: '* $TITLE ($URL) @$AUTHOR'\n`
         )
         configureReleaseBranchEnvironment('refs/heads/master')
 
@@ -1443,12 +1466,16 @@ describe('release-drafter', () => {
             author: { name: 'Release Branch Tester' },
             message: 'fix: expanded single release commit',
           },
-          author: { login: 'release-branch-tester' },
+          author: { login: 'constituent-author' },
         }
 
         mockReleaseBranchMergeApi({
           graphqlPayload: mockMergedReleaseBranch({
             firstMessage: 'fix: squash release commit (#69)',
+            firstAuthor: {
+              name: 'Constituent Author',
+              user: { login: 'constituent-author' },
+            },
           }),
           restCommits: [expandedCommit],
           expectBody: (body) => {
@@ -1460,6 +1487,8 @@ describe('release-drafter', () => {
             expect(body.body).not.toContain(
               'https://github.com/toolmantim/release-drafter-test-project/pull/101'
             )
+            expect(body.body).toContain('@constituent-author')
+            expect(body.body).not.toContain('@release-branch-tester')
             expect(body.body).not.toContain('Expanded single release commit')
           },
         })
@@ -1472,7 +1501,7 @@ describe('release-drafter', () => {
 
       it('does not replace a one-commit rebase merge with its expanded commit', async () => {
         getReleaseBranchConfigMock(
-          `${releaseBranchConfig}change-template: '* $TITLE ($URL)'\n`
+          `${releaseBranchConfig}change-template: '* $TITLE ($URL) @$AUTHOR'\n`
         )
         configureReleaseBranchEnvironment('refs/heads/master')
 
@@ -1484,13 +1513,17 @@ describe('release-drafter', () => {
             author: { name: 'Release Branch Tester' },
             message: 'fix: expanded rebase release commit',
           },
-          author: { login: 'release-branch-tester' },
+          author: { login: 'constituent-author' },
         }
 
         mockReleaseBranchMergeApi({
           graphqlPayload: mockMergedReleaseBranch({
             firstOid: rebaseOid,
             firstMessage: 'fix: rebase release commit (#69)',
+            firstAuthor: {
+              name: 'Constituent Author',
+              user: { login: 'constituent-author' },
+            },
           }),
           restCommits: [expandedCommit],
           expectBody: (body) => {
@@ -1502,6 +1535,8 @@ describe('release-drafter', () => {
             expect(body.body).not.toContain(
               'https://github.com/toolmantim/release-drafter-test-project/pull/101'
             )
+            expect(body.body).toContain('@constituent-author')
+            expect(body.body).not.toContain('@release-branch-tester')
             expect(body.body).not.toContain('Expanded rebase release commit')
           },
         })

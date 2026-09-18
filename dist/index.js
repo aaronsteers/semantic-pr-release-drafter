@@ -150036,7 +150036,7 @@ var require_semantic_commits = __commonJS({
       }
       /**
        * Create a ReleaseChangeLineItems collection from raw commits.
-       * @param {Array} commits - Array of commit objects with message, id, associatedPullRequests
+       * @param {Array} commits - Array of commit objects with message, id, author, associatedPullRequests
        * @returns {ReleaseChangeLineItems} - Collection of change line items
        */
       static fromCommits(commits) {
@@ -150047,6 +150047,8 @@ var require_semantic_commits = __commonJS({
           let author = null;
           if (pr?.author) {
             author = typeof pr.author === "string" ? pr.author : pr.author.login;
+          } else if (commit.author?.user?.login) {
+            author = commit.author.user.login;
           }
           for (const parsed of parsedResults) {
             const prNumber = pr?.number || parsed.prNumberFromCommit;
@@ -150364,6 +150366,8 @@ ${allItems}
         let author = null;
         if (pr?.author) {
           author = typeof pr.author === "string" ? pr.author : pr.author.login;
+        } else if (commit.author?.user?.login) {
+          author = commit.author.user.login;
         }
         for (const parsed of parsedResults) {
           const prNumber = pr?.number || parsed.prNumberFromCommit;

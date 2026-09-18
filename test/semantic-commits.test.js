@@ -4,6 +4,7 @@ const {
   COMMIT_TYPES,
   TITLE_POST_PROCESSORS,
   applyTitlePostProcessors,
+  parseCommitsToChangeItems,
 } = require('../lib/semantic-commits')
 
 const createMockCommits = (messages) =>
@@ -508,6 +509,44 @@ describe('ReleaseChangeLineItems', () => {
       expect(result).toEqual('## Features\n\n* Add feature (#42)')
     })
 
+    test('falls back to commit author when no merged PR author exists', () => {
+      const commits = [
+        {
+          oid: 'sha1',
+          message: 'feat: use commit author',
+          author: {
+            name: 'Commit Author',
+            user: { login: 'commit-author' },
+          },
+          associatedPullRequests: { nodes: [] },
+        },
+        {
+          oid: 'sha2',
+          message: 'fix: prefer PR author',
+          author: {
+            name: 'Commit Author',
+            user: { login: 'commit-author' },
+          },
+          associatedPullRequests: {
+            nodes: [
+              {
+                merged: true,
+                number: 42,
+                author: { login: 'pr-author' },
+              },
+            ],
+          },
+        },
+      ]
+
+      const collection = ReleaseChangeLineItems.fromCommits(commits)
+
+      expect(collection.map((item) => item.author)).toEqual([
+        'commit-author',
+        'pr-author',
+      ])
+    })
+
     test('renders with commit SHA when available', () => {
       const commits = [
         {
@@ -759,6 +798,46 @@ describe('ReleaseChangeLineItems', () => {
       expect(sentryFeaturesPos).toBeLessThan(sentryUpdatesPos)
       expect(sentryUpdatesPos).toBeLessThan(underHoodPos)
     })
+  })
+})
+
+describe('parseCommitsToChangeItems', () => {
+  test('falls back to commit author while preferring merged PR author', () => {
+    const commits = [
+      {
+        oid: 'sha1',
+        message: 'feat: use commit author',
+        author: {
+          name: 'Commit Author',
+          user: { login: 'commit-author' },
+        },
+        associatedPullRequests: { nodes: [] },
+      },
+      {
+        oid: 'sha2',
+        message: 'fix: prefer PR author',
+        author: {
+          name: 'Commit Author',
+          user: { login: 'commit-author' },
+        },
+        associatedPullRequests: {
+          nodes: [
+            {
+              merged: true,
+              number: 42,
+              author: { login: 'pr-author' },
+            },
+          ],
+        },
+      },
+    ]
+
+    const changeItems = parseCommitsToChangeItems(commits)
+
+    expect(changeItems.map((item) => item.author)).toEqual([
+      'commit-author',
+      'pr-author',
+    ])
   })
 })
 

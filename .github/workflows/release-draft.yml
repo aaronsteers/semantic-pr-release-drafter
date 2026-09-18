@@ -39,20 +39,26 @@ jobs:
             prerelease-branch-rules: |
               - branch-prefix: release-candidate/
                 prerelease-identifier: rc
+          # The dummy projects have no branch rules, so they only run on the
+          # default branch; a release-candidate push would otherwise rewrite
+          # their shared stable drafts.
           - name: dummy-project/dummy-project-a
             config-name: release-drafter-dummy-project-a.yml
             publish: false
             prerelease-branch-rules: ''
+            default-branch-only: true
           - name: dummy-project/dummy-project-b
             config-name: release-drafter-dummy-project-b.yml
             publish: false
             prerelease-branch-rules: ''
+            default-branch-only: true
     name: Draft release (${{ matrix.release.name }})
     steps:
       - uses: actions/checkout@v4
 
       # Use local action (dogfooding)
       - uses: ./
+        if: ${{ !matrix.release.default-branch-only || github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         with:
           config-name: ${{ matrix.release.config-name }}
           publish: ${{ matrix.release.publish }}

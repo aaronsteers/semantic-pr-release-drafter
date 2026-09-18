@@ -150366,6 +150366,8 @@ ${allItems}
         let author = null;
         if (pr?.author) {
           author = typeof pr.author === "string" ? pr.author : pr.author.login;
+        } else if (commit.author?.user?.login) {
+          author = commit.author.user.login;
         }
         for (const parsed of parsedResults) {
           const prNumber = pr?.number || parsed.prNumberFromCommit;

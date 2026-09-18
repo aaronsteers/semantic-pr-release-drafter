@@ -1432,7 +1432,7 @@ describe('release-drafter', () => {
 
       it('does not expand a one-commit squash merge', async () => {
         getReleaseBranchConfigMock(
-          `${releaseBranchConfig}change-template: '* $TITLE (#$NUMBER)'\n`
+          `${releaseBranchConfig}change-template: '* $TITLE ($URL)'\n`
         )
         configureReleaseBranchEnvironment('refs/heads/master')
 
@@ -1447,10 +1447,19 @@ describe('release-drafter', () => {
         }
 
         mockReleaseBranchMergeApi({
-          graphqlPayload: mockMergedReleaseBranch(),
+          graphqlPayload: mockMergedReleaseBranch({
+            firstMessage: 'fix: squash release commit (#69)',
+          }),
           restCommits: [expandedCommit],
           expectBody: (body) => {
-            expect(body.body).toContain('Merge release branch')
+            expect(body.tag_name).toBe('v1.0.0')
+            expect(body.body.match(/Squash release commit/g)).toHaveLength(1)
+            expect(body.body).toContain(
+              'https://github.com/toolmantim/release-drafter-test-project/pull/69'
+            )
+            expect(body.body).not.toContain(
+              'https://github.com/toolmantim/release-drafter-test-project/pull/101'
+            )
             expect(body.body).not.toContain('Expanded single release commit')
           },
         })
@@ -1462,7 +1471,9 @@ describe('release-drafter', () => {
       })
 
       it('does not replace a one-commit rebase merge with its expanded commit', async () => {
-        getReleaseBranchConfigMock()
+        getReleaseBranchConfigMock(
+          `${releaseBranchConfig}change-template: '* $TITLE ($URL)'\n`
+        )
         configureReleaseBranchEnvironment('refs/heads/master')
 
         const rebaseOid = 'rebase-single-release-commit'
@@ -1479,11 +1490,18 @@ describe('release-drafter', () => {
         mockReleaseBranchMergeApi({
           graphqlPayload: mockMergedReleaseBranch({
             firstOid: rebaseOid,
-            firstMessage: 'fix: rebase release commit',
+            firstMessage: 'fix: rebase release commit (#69)',
           }),
           restCommits: [expandedCommit],
           expectBody: (body) => {
-            expect(body.body).toContain('Rebase release commit')
+            expect(body.tag_name).toBe('v1.0.0')
+            expect(body.body.match(/Rebase release commit/g)).toHaveLength(1)
+            expect(body.body).toContain(
+              'https://github.com/toolmantim/release-drafter-test-project/pull/69'
+            )
+            expect(body.body).not.toContain(
+              'https://github.com/toolmantim/release-drafter-test-project/pull/101'
+            )
             expect(body.body).not.toContain('Expanded rebase release commit')
           },
         })

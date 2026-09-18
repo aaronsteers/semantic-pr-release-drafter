@@ -154769,11 +154769,17 @@ var require_index = __commonJS({
                     context,
                     message: "Skipping release branch PR commit expansion because the PR has at most one commit."
                   });
+                  commits = commits.map(
+                    (commit) => commit.oid === associatedCommit.oid ? withoutWrapperAssociation(commit, match.number) : commit
+                  );
                 } else if (!isSquashMerge) {
                   log({
                     context,
                     message: "Skipping release branch PR commit expansion because the in-range commit is already among the PR commits."
                   });
+                  commits = commits.map(
+                    (commit) => commit.oid === associatedCommit.oid ? withoutWrapperAssociation(commit, match.number) : commit
+                  );
                 } else {
                   const existingOids = new Set(
                     commits.filter((commit) => commit.oid !== associatedCommit.oid).map((commit) => commit.oid)

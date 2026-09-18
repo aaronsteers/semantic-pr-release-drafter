@@ -4,17 +4,19 @@ on:
   push:
     branches:
       - main
+      - 'release-candidate/**'
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# Serialize runs so overlapping pushes can't both pick the same draft/version.
+# Serialize runs per branch so overlapping pushes can't both pick the same
+# draft/version while keeping main and release-candidate branches independent.
 # Pushes and manual dispatches use separate groups so a draft-only dispatch
 # can never displace a queued publishing push. Queued pushes may coalesce;
 # the surviving run still covers every commit since the last release.
 concurrency:
-  group: release-drafter-${{ github.event_name }}
+  group: release-drafter-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -31,21 +33,36 @@ jobs:
           - name: semantic-pr-release-drafter
             config-name: release-drafter.yml
             publish: ${{ github.event_name == 'push' }}
+            # Pushes to `release-candidate/vX[.Y[.Z]]` publish `vX.Y.Z-rc.N`
+            # prereleases; merging that branch into main floors the GA release
+            # at `vX.Y.Z`.
+            prerelease-branch-rules: |
+              - branch-prefix: release-candidate/
+                prerelease-identifier: rc
+          # The dummy projects have no branch rules, so they only run on the
+          # default branch; a release-candidate push would otherwise rewrite
+          # their shared stable drafts.
           - name: dummy-project/dummy-project-a
             config-name: release-drafter-dummy-project-a.yml
             publish: false
+            prerelease-branch-rules: ''
+            default-branch-only: true
           - name: dummy-project/dummy-project-b
             config-name: release-drafter-dummy-project-b.yml
             publish: false
+            prerelease-branch-rules: ''
+            default-branch-only: true
     name: Draft release (${{ matrix.release.name }})
     steps:
       - uses: actions/checkout@v4
 
       # Use local action (dogfooding)
       - uses: ./
+        if: ${{ !matrix.release.default-branch-only || github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         with:
           config-name: ${{ matrix.release.config-name }}
           publish: ${{ matrix.release.publish }}
+          prerelease-branch-rules: ${{ matrix.release.prerelease-branch-rules }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # The following config is commented out because it now matches the defaults.

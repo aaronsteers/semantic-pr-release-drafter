@@ -74,6 +74,44 @@
       "type": "string",
       "default": ""
     },
+    "prerelease-branch-rules": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "branch-prefix": {
+            "type": "string",
+            "minLength": 1
+          },
+          "branch-pattern": {
+            "type": "string",
+            "pattern": "\\(\\?<version>"
+          },
+          "prerelease-identifier": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "if": {
+          "propertyNames": {
+            "enum": ["branch-prefix", "branch-pattern"]
+          },
+          "minProperties": 2
+        },
+        "then": false,
+        "else": {
+          "oneOf": [
+            {
+              "required": ["branch-prefix"]
+            },
+            {
+              "required": ["branch-pattern"]
+            }
+          ]
+        }
+      }
+    },
     "latest": {
       "type": "string",
       "default": "true"

@@ -24,6 +24,12 @@ const {
 } = require('./lib/assets')
 const { getEffectiveTagPrefix } = require('./lib/tag-prefix')
 const semver = require('semver')
+const yaml = require('yaml')
+const {
+  parseReleaseBranch,
+  releaseTagPattern,
+  findReleaseBranchPullRequests,
+} = require('./lib/release-branches')
 
 module.exports = (app, { getRouter }) => {
   if (!runnerIsActions() && typeof getRouter === 'function') {
@@ -55,11 +61,25 @@ module.exports = (app, { getRouter }) => {
 
     updateConfigFromInput(config, input)
 
+    const tagPrefix = getEffectiveTagPrefix(config)
+    const releaseBranch = parseReleaseBranch({
+      ref: context.payload.ref || process.env.GITHUB_REF,
+      types: config['release-branch-types'],
+      tagPrefix,
+    })
+    if (releaseBranch) {
+      config.prerelease = true
+      config['prerelease-identifier'] = releaseBranch.identifier
+    }
+    config.latest = config.prerelease
+      ? 'false'
+      : input.latest || config.latest || undefined
+
     // GitHub Actions merge payloads slightly differ, in that their ref points
     // to the PR branch instead of refs/heads/master
     const ref = process.env['GITHUB_REF'] || context.payload.ref
 
-    if (!isTriggerableReference({ ref, context, config })) {
+    if (!releaseBranch && !isTriggerableReference({ ref, context, config })) {
       return
     }
 
@@ -73,8 +93,6 @@ module.exports = (app, { getRouter }) => {
       latest,
       prerelease,
     } = config
-    const tagPrefix = getEffectiveTagPrefix(config)
-
     const shouldIncludePreReleases = Boolean(
       includePreReleases || preReleaseIdentifier
     )
@@ -88,6 +106,8 @@ module.exports = (app, { getRouter }) => {
 
     // Local git mode: use git log instead of GitHub API
     let draftRelease, lastRelease, commits, mergedPullRequests
+    let releasesResult
+    let releaseBranchMergeVersion
     // The already-prepared release resolved via `prepared-release-id`, when the
     // finalize pass targets an earlier `not-ready` draft by its id.
     let preparedRelease = null
@@ -120,13 +140,52 @@ module.exports = (app, { getRouter }) => {
       mergedPullRequests = localGitResult.pullRequests
     } else {
       // Standard GitHub API mode
-      const releasesResult = await findReleases({
-        context,
-        targetCommitish,
-        filterByCommitish,
-        includePreReleases: shouldIncludePreReleases,
-        tagPrefix,
-      })
+      if (releaseBranch) {
+        const tagPattern = releaseTagPattern({
+          tagPrefix,
+          version: releaseBranch.version,
+          identifier: releaseBranch.identifier,
+        })
+        releasesResult = await findReleases({
+          context,
+          targetCommitish,
+          includePreReleases: true,
+          tagPrefix,
+          tagPattern,
+        })
+        if (!releasesResult.lastRelease) {
+          const fallbackResult = await findReleases({
+            context,
+            targetCommitish,
+            includePreReleases: false,
+            filterByCommitish: false,
+            tagPrefix,
+          })
+          releasesResult.lastRelease = fallbackResult.lastRelease
+        }
+
+        const stableRelease = releasesResult.releases.find((release) => {
+          if (release.draft || release.prerelease) return false
+          const tag =
+            tagPrefix && release.tag_name.startsWith(tagPrefix)
+              ? release.tag_name.slice(tagPrefix.length)
+              : release.tag_name
+          return tag.replace(/^v/, '') === releaseBranch.version
+        })
+        if (stableRelease) {
+          throw new Error(
+            `Release branch ${releaseBranch.prefix} targets ${releaseBranch.version}, but stable release ${stableRelease.tag_name} already exists.`
+          )
+        }
+      } else {
+        releasesResult = await findReleases({
+          context,
+          targetCommitish,
+          filterByCommitish,
+          includePreReleases: shouldIncludePreReleases,
+          tagPrefix,
+        })
+      }
       draftRelease = releasesResult.draftRelease
       lastRelease = releasesResult.lastRelease
 
@@ -158,7 +217,7 @@ module.exports = (app, { getRouter }) => {
       const pinnedSha = resolveTargetSha({
         targetCommitish,
         hasExplicitCommitish,
-        filterByCommitish,
+        filterByCommitish: releaseBranch ? false : filterByCommitish,
         finalizeRelease: preparedRelease,
       })
       if (pinnedSha) {
@@ -174,6 +233,65 @@ module.exports = (app, { getRouter }) => {
       })
       commits = commitsResult.commits
       mergedPullRequests = commitsResult.pullRequests
+    }
+
+    if (
+      !releaseBranch &&
+      Object.keys(config['release-branch-types'] || {}).length > 0
+    ) {
+      const matches = findReleaseBranchPullRequests({
+        pullRequests: mergedPullRequests,
+        types: config['release-branch-types'],
+        tagPrefix,
+      })
+      if (matches.length > 1) {
+        throw new Error(
+          `Multiple release branches were merged since the last release: ${matches
+            .map(
+              (match) => `${match.prefix}/${match.version} (#${match.number})`
+            )
+            .join(', ')}`
+        )
+      }
+      if (matches.length === 1) {
+        const match = matches[0]
+        releaseBranchMergeVersion = match.version
+        if (localGitRoot) {
+          log({
+            context,
+            message:
+              'Skipping release branch PR commit expansion in local git mode.',
+          })
+        } else {
+          const expandedCommits = await context.octokit.paginate(
+            context.octokit.pulls.listCommits,
+            context.repo({ pull_number: match.number, per_page: 100 })
+          )
+          const existingOids = new Set(commits.map((commit) => commit.oid))
+          const appendedCommits = expandedCommits
+            .map((commit) => ({
+              id: commit.sha,
+              oid: commit.sha,
+              committedDate: commit.commit.committer.date,
+              message: commit.commit.message,
+              author: {
+                name: commit.commit.author.name,
+                user: commit.author ? { login: commit.author.login } : null,
+              },
+              associatedPullRequests: { nodes: [] },
+            }))
+            .filter((commit) => !existingOids.has(commit.oid))
+          if (appendedCommits.length > 0) {
+            commits.push(...appendedCommits)
+            commits = commits.filter(
+              (commit) =>
+                !commit.associatedPullRequests.nodes.some(
+                  (pullRequest) => pullRequest.number === match.number
+                )
+            )
+          }
+        }
+      }
     }
 
     const sortedMergedPullRequests = sortPullRequests(
@@ -223,6 +341,39 @@ module.exports = (app, { getRouter }) => {
     // - overrideVersion: explicit user input via action arg (always wins, skips calculations)
     // - draftVersion: extracted from draft release (acts as floor vs computed version)
     let overrideVersion = version
+    if (releaseBranch && !version && !preparedRelease) {
+      const pattern = releaseTagPattern({
+        tagPrefix,
+        version: releaseBranch.version,
+        identifier: releaseBranch.identifier,
+      })
+      const releaseNumbers = releasesResult.releases
+        .map((release) => ({
+          release,
+          number: Number(pattern.exec(release.tag_name)?.[1] || 0),
+        }))
+        .filter(({ number }) => number > 0)
+      let publishedMax = 0
+      for (const { release, number } of releaseNumbers) {
+        if (!release.draft) publishedMax = Math.max(publishedMax, number)
+      }
+      const draftN =
+        releaseNumbers.find(({ release }) => release.draft)?.number || 0
+      const nextN = Math.max(publishedMax + 1, draftN)
+      overrideVersion = `${releaseBranch.version}-${releaseBranch.identifier}.${nextN}`
+      log({
+        context,
+        message: `Pinned release branch version to ${overrideVersion}`,
+      })
+    } else if (!releaseBranch && !version && !preparedRelease) {
+      overrideVersion = releaseBranchMergeVersion || overrideVersion
+      if (releaseBranchMergeVersion) {
+        log({
+          context,
+          message: `Pinned merged release branch version to ${overrideVersion}`,
+        })
+      }
+    }
     let draftVersion
 
     if (draftRelease) {
@@ -484,6 +635,7 @@ function getInput() {
         ? core.getInput('prerelease').toLowerCase() === 'true'
         : undefined,
     preReleaseIdentifier: core.getInput('prerelease-identifier') || undefined,
+    releaseBranchTypes: core.getInput('release-branch-types') || undefined,
     latest: core.getInput('latest')?.toLowerCase() || undefined,
     attachFiles: core.getInput('attach-files') || undefined,
     resetFiles: core.getInput('reset-files').toLowerCase() || 'auto',
@@ -553,16 +705,38 @@ function updateConfigFromInput(config, input) {
     config['prerelease-identifier'] = input.preReleaseIdentifier
   }
 
+  if (input.releaseBranchTypes) {
+    try {
+      const releaseBranchTypes = yaml.parse(input.releaseBranchTypes)
+      if (
+        releaseBranchTypes &&
+        typeof releaseBranchTypes === 'object' &&
+        !Array.isArray(releaseBranchTypes) &&
+        Object.values(releaseBranchTypes).every(
+          (identifier) => typeof identifier === 'string'
+        )
+      ) {
+        config['release-branch-types'] = releaseBranchTypes
+      } else {
+        core.warning(
+          "Failed to parse 'release-branch-types' input as a YAML or JSON map. This input will be ignored."
+        )
+      }
+    } catch (error) {
+      core.warning(
+        `Failed to parse 'release-branch-types' input as YAML or JSON map. This input will be ignored. Error: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      )
+    }
+  }
+
   if (input.allowMajorBumps !== undefined) {
     if (!config['version-resolver']) {
       config['version-resolver'] = {}
     }
     config['version-resolver']['no-auto-major'] = !input.allowMajorBumps
   }
-
-  config.latest = config.prerelease
-    ? 'false'
-    : input.latest || config.latest || undefined
 }
 
 function setActionOutput(

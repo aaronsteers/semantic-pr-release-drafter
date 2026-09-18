@@ -21,6 +21,7 @@ const validConfigs = [
   [{ template, footer: 'I am on bottm' }],
   [{ template, header: 'I am on top', footer: 'I am on bottm' }],
   [{ template, 'pull-request-limit': 49 }],
+  [{ template, 'release-branch-types': { 'release-candidate': 'rc' } }],
 ]
 
 const invalidConfigs = [

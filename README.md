@@ -730,6 +730,36 @@ Using `prerelease-identifier` automatically enable `include-prereleases`.
 prerelease-identifier: 'alpha' # will create a prerelease with version number x.x.x-alpha.x
 ```
 
+## Release branches (long-running release candidates)
+
+Long-running release candidate branches can opt into branch-name-driven release
+tracks with `release-branch-types`. The map keys are branch prefixes and the
+values are prerelease identifiers:
+
+```yml
+release-branch-types:
+  release-candidate: rc
+```
+
+A push to `release-candidate/v1` creates or updates a prerelease tagged
+`v1.0.0-rc.N`; `release-candidate/v1.2` and the full
+`release-candidate/v1.2.0` form are also supported. The next prerelease number
+continues from the highest published matching release, while an existing draft
+is preserved if it was manually advanced. For `rc.1`, the last stable release
+is used as the commit-range boundary, so the notes contain changes since the
+last GA release rather than the entire repository history.
+
+After the release branch pull request is merged into the default branch, the
+merged PR's head branch pins the stable draft to the branch's GA version
+(`v1.0.0`, not a version bump based on the merge commit). Rebase-merge is
+recommended because the release commits then appear natively in the default
+branch history. Squash-merge is also supported: the action expands the merged
+PR's commits and removes the redundant squash commit from the notes.
+
+As a guardrail, a release branch refuses to run when a published stable release
+already exists for its target version. This prevents a branch from silently
+rewriting an existing GA release.
+
 ## Projects that don't use Semantic Versioning
 
 If your project doesn't follow [Semantic Versioning](https://semver.org) you can still use Release Drafter, but you may want to set the `version-template` option to customize how the `$NEXT_{PATCH,MINOR,MAJOR}_VERSION` environment variables are generated.

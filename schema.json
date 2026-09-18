@@ -74,6 +74,12 @@
       "type": "string",
       "default": ""
     },
+    "release-branch-types": {
+      "type": "object",
+      "default": {},
+      "properties": {},
+      "additionalProperties": false
+    },
     "latest": {
       "type": "string",
       "default": "true"

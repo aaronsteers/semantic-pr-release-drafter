@@ -117,6 +117,54 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+### Auto-publish on merge with a floating major version tag
+
+A complete, checkout-free workflow for repos that publish a GitHub Action: every push to `main` publishes the release and moves the floating `v<major>` tag (e.g. `v1`) to the released commit, while manual runs only refresh the draft. This replaces the separate tag-triggered "update major tags" workflow that many Action repos carry.
+
+```yaml
+name: Release Drafter
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Draft or Publish Release
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or publish release
+        id: release-drafter
+        uses: aaronsteers/semantic-pr-release-drafter@v2
+        with:
+          # Pushes to main publish immediately; manual dispatches only refresh the draft.
+          publish: ${{ github.event_name == 'push' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Move major version tag
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAJOR_TAG: v${{ steps.release-drafter.outputs.major-version }}
+          TARGET_SHA: ${{ steps.release-drafter.outputs.resolved-sha }}
+        run: |
+          if gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$MAJOR_TAG" -f sha="$TARGET_SHA" -F force=true; then
+            echo "Moved $MAJOR_TAG -> $TARGET_SHA"
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$MAJOR_TAG" -f sha="$TARGET_SHA"
+            echo "Created $MAJOR_TAG -> $TARGET_SHA"
+          fi
+```
+
 ### Find Repos Using this Action
 
 Looking for real-world examples? Here are two ways to find how others have integrated this action into their workflows:

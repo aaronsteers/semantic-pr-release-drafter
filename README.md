@@ -119,7 +119,7 @@ jobs:
 
 ### Auto-publish on every merge to `main`
 
-Every push to `main` publishes the release immediately, while manual `workflow_dispatch` runs only refresh the draft.
+Every push to `main` publishes the release immediately. A manual `workflow_dispatch` run also publishes unless the `dry-run` input is checked, in which case it only computes the next version.
 
 ```yaml
 name: Release Drafter
@@ -129,6 +129,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Compute the next version without creating or publishing a release
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -144,8 +149,8 @@ jobs:
       - name: Create or publish release
         uses: aaronsteers/semantic-pr-release-drafter@v2
         with:
-          # Pushes to main publish immediately; manual dispatches only refresh the draft.
-          publish: ${{ github.event_name == 'push' }}
+          publish: true
+          dry-run: ${{ inputs.dry-run || false }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```

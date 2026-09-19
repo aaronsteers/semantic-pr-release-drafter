@@ -135,7 +135,7 @@ permissions:
 
 jobs:
   release:
-    name: Release Drafter
+    name: Create Release
     permissions:
       contents: write
       pull-requests: write

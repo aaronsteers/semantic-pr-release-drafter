@@ -211,6 +211,28 @@ describe('releases', () => {
       expect(body).toContain('Newer change')
     })
 
+    it('does not generate a GA-relative changelog when the template does not use it', () => {
+      // generateChangeLog logs per parsed item; skipping it keeps GA runs quiet.
+      const args = {
+        ...baseArgs,
+        config: releaseInfoConfig({
+          template: 'RC: $PREVIOUS_TAG\n$CHANGES\n',
+        }),
+        gaBaseline: {
+          lastRelease: { tag_name: 'v0.71.0' },
+          commits: [releaseInfoCommit('fix: older change', 10)],
+          mergedPullRequests: [],
+        },
+      }
+      const withoutBaseline = generateReleaseInfo({
+        ...args,
+        gaBaseline: undefined,
+      })
+      const withBaseline = generateReleaseInfo(args)
+      expect(withBaseline.body).toBe(withoutBaseline.body)
+      expect(withBaseline.body).not.toContain('Older change')
+    })
+
     it('uses release-track-template only on a release track', () => {
       const config = releaseInfoConfig({
         template: 'BASE $CHANGES',

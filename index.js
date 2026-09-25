@@ -782,6 +782,11 @@ function updateConfigFromInput(config, input) {
   }
 
   if (input.titleSource) {
+    if (!['pr-title', 'commit'].includes(input.titleSource)) {
+      throw new TypeError(
+        `Invalid title-source input: "${input.titleSource}" (expected "pr-title" or "commit")`
+      )
+    }
     config['title-source'] = input.titleSource
   }
 

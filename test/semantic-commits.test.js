@@ -882,6 +882,53 @@ describe('title-source', () => {
     expect(items.items[0].description).toBe('add thing')
   })
 
+  it('pr-title parses only the PR title for merge-commit shaped messages', () => {
+    const items = ReleaseChangeLineItems.fromCommits(
+      [
+        commitWithPr(
+          'Merge pull request #5 from x\n\nfeat: old subject',
+          'fix: new subject'
+        ),
+      ],
+      { titleSource: 'pr-title' }
+    )
+    expect(items.items).toHaveLength(1)
+    expect(items.items[0].type).toBe('fix')
+    expect(items.items[0].description).toBe('new subject')
+  })
+
+  it('pr-title yields one item per PR and folds BREAKING CHANGE: footers', () => {
+    const items = ReleaseChangeLineItems.fromCommits(
+      [
+        commitWithPr('feat: first commit', 'feat: pull request title'),
+        commitWithPr('feat: second commit', 'feat: pull request title'),
+        commitWithPr(
+          'feat: third commit\n\nBREAKING CHANGE: api removed',
+          'feat: pull request title'
+        ),
+      ],
+      { titleSource: 'pr-title' }
+    )
+    expect(items.items).toHaveLength(1)
+    expect(items.items[0].description).toBe('pull request title')
+    expect(items.items[0].breaking).toBe(true)
+  })
+
+  it('commit yields an item per commit for the same PR', () => {
+    const items = ReleaseChangeLineItems.fromCommits(
+      [
+        commitWithPr('feat: first commit', 'feat: pull request title'),
+        commitWithPr('feat: second commit', 'feat: pull request title'),
+        commitWithPr(
+          'feat: third commit\n\nBREAKING CHANGE: api removed',
+          'feat: pull request title'
+        ),
+      ],
+      { titleSource: 'commit' }
+    )
+    expect(items.items).toHaveLength(3)
+  })
+
   it('pr-title falls back to the commit message with no merged PR', () => {
     const commit = commitWithPr('feat: add thing', 'fix: retitled fix')
     commit.associatedPullRequests.nodes[0].merged = false

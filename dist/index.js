@@ -150040,7 +150040,10 @@ var require_semantic_commits = __commonJS({
             `Using PR #${pr.number} title for line item (differs from commit subject)`
           );
         }
-        return [pr.title, ...bodyLines].join("\n");
+        return [
+          pr.title,
+          ...bodyLines.filter((line) => line.includes("BREAKING CHANGE:"))
+        ].join("\n");
       }
       return commit.message;
     };
@@ -150055,8 +150058,20 @@ var require_semantic_commits = __commonJS({
        */
       static fromCommits(commits, { titleSource = "commit" } = {}) {
         const items = [];
+        const seenPrs = /* @__PURE__ */ new Map();
         for (const commit of commits) {
           const pr = commit.associatedPullRequests?.nodes?.find((p) => p.merged);
+          if (titleSource === "pr-title" && pr && seenPrs.has(pr.number)) {
+            if (commit.message.includes("BREAKING CHANGE:")) {
+              for (const item of seenPrs.get(pr.number)) {
+                item.breaking = true;
+              }
+            }
+            core2.info(
+              `  Commit ${commit.oid || commit.id} folded into PR #${pr.number} (one entry per pull request)`
+            );
+            continue;
+          }
           const parsedResults = parseSemanticCommit(
             messageForParsing(commit, pr, titleSource)
           );
@@ -150080,6 +150095,9 @@ var require_semantic_commits = __commonJS({
             });
             items.push(item);
             core2.info(`  Parsed change item: ${JSON.stringify(item)}`);
+          }
+          if (titleSource === "pr-title" && pr) {
+            seenPrs.set(pr.number, items.slice(items.length - parsedResults.length));
           }
         }
         return new _ReleaseChangeLineItems(items);
@@ -155130,6 +155148,11 @@ var require_index = __commonJS({
         config.footer = input.footer;
       }
       if (input.titleSource) {
+        if (!["pr-title", "commit"].includes(input.titleSource)) {
+          throw new TypeError(
+            `Invalid title-source input: "${input.titleSource}" (expected "pr-title" or "commit")`
+          );
+        }
         config["title-source"] = input.titleSource;
       }
       if (input.prerelease !== void 0) {

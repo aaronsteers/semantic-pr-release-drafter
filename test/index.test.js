@@ -1816,11 +1816,14 @@ describe('release-drafter', () => {
       const retitledCommitsFixture = JSON.parse(
         JSON.stringify(graphqlCommitsMergeCommit)
       )
-      const fixTypoNode =
-        retitledCommitsFixture.data.repository.object.history.nodes.find(
-          (node) => node.message === 'Fix typo'
-        )
-      fixTypoNode.associatedPullRequests.nodes[0].title = 'fix: retitled change'
+      for (const node of retitledCommitsFixture.data.repository.object.history
+        .nodes) {
+        for (const pr of node.associatedPullRequests?.nodes || []) {
+          if (pr.number === 5) {
+            pr.title = 'fix: retitled change'
+          }
+        }
+      }
 
       it('builds line items from the current PR title by default', async () => {
         getConfigMock()
@@ -1867,7 +1870,7 @@ describe('release-drafter', () => {
           .get(
             '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
           )
-          .reply(200, [])
+          .reply(200, [release2Payload, releasePayload, release3Payload])
 
         nock('https://api.github.com')
           .post('/graphql', (body) =>
@@ -1880,6 +1883,56 @@ describe('release-drafter', () => {
             '/repos/toolmantim/release-drafter-test-project/releases',
             (body) => {
               expect(body.body).not.toContain('Retitled change')
+              expect(body.tag_name).toBe('v2.1.0')
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(2)
+
+        restoreInputEnvironment()
+      })
+
+      it('resolves the version bump from retitled PR titles', async () => {
+        // Retitle the feat: PRs to fix: — the resolved bump drops from
+        // minor (v2.1.0) to patch (v2.0.1).
+        const patchCommitsFixture = JSON.parse(
+          JSON.stringify(graphqlCommitsMergeCommit)
+        )
+        for (const node of patchCommitsFixture.data.repository.object.history
+          .nodes) {
+          for (const pr of node.associatedPullRequests?.nodes || []) {
+            if (pr.merged && pr.title.startsWith('feat:')) {
+              pr.title = pr.title.replace('feat:', 'fix:')
+            }
+          }
+        }
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [release2Payload, releasePayload, release3Payload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, patchCommitsFixture)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.tag_name).toBe('v2.0.1')
               return true
             }
           )
@@ -1891,8 +1944,26 @@ describe('release-drafter', () => {
         })
 
         expect.assertions(1)
+      })
 
-        restoreInputEnvironment()
+      it('rejects an invalid title-source input', async () => {
+        getConfigMock()
+        const restoreInputEnvironment = mockedEnv({
+          'INPUT_TITLE-SOURCE': 'typo',
+        })
+
+        try {
+          await expect(
+            probot.receive({
+              name: 'push',
+              payload: pushPayload,
+            })
+          ).rejects.toThrow(
+            'Invalid title-source input: "typo" (expected "pr-title" or "commit")'
+          )
+        } finally {
+          restoreInputEnvironment()
+        }
       })
     })
 
@@ -3561,23 +3632,19 @@ describe('release-drafter', () => {
 
                   ## ✨ New Features
 
-                  * Adjust parameters (https://github.com/toolmantim/release-drafter-test-project/pull/7) 
                   * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/7) 
                   * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/6) 
 
                   ## 🐛 Bug Fixes
 
-                  * Fixed another bug (https://github.com/toolmantim/release-drafter-test-project/pull/8) 
                   * Fixed a bug (https://github.com/toolmantim/release-drafter-test-project/pull/8) 
 
                   ## 📖 Documentation
 
-                  * Fix typo (https://github.com/toolmantim/release-drafter-test-project/pull/10) 
                   * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/10) 
 
                   ## ⚙️ Under the Hood
 
-                  * Update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9) 
                   * Update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/9)
 
                   <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
@@ -3760,34 +3827,23 @@ describe('release-drafter', () => {
 
                   ## ✨ New Features
 
+                  * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
                   * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/24) 
                   * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/23) 
-                  * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
                   ## 🐛 Bug Fixes
 
-                  * Fixed another bug (https://github.com/toolmantim/release-drafter-test-project/pull/25) 
                   * Fixed a bug (https://github.com/toolmantim/release-drafter-test-project/pull/25) 
 
                   ## 📖 Documentation
 
-                  <details>
-                  <summary>3 changes</summary>
-
                   * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/28) 
-                  * Fix typo (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
                   * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5) 
-                  </details>
 
                   ## ⚙️ Under the Hood
 
-                  <details>
-                  <summary>3 changes</summary>
-
                   * Update dependencies (https://github.com/toolmantim/release-drafter-test-project/pull/27) 
-                  * Update Mongoose to 5.5.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
-                  * Update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4) 
-                  </details>
+                  * Update Express to 4.16.4 (https://github.com/toolmantim/release-drafter-test-project/pull/4)
 
                   <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
                   ",
@@ -4145,7 +4201,9 @@ describe('release-drafter', () => {
             expect(body).toMatchInlineSnapshot(`
               Object {
                 "body": "# What's Changed
-              * No changes
+              ## 📖 Documentation
+
+              * Add documentation (https://github.com/toolmantim/release-drafter-test-project/pull/5)
 
               <!-- Release drafted at 2024-12-31 4:00pm Pacific -->
               ",

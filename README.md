@@ -592,7 +592,7 @@ Changes are automatically categorized based on semantic commit types. The defaul
 - **Documentation** - `docs:` commits
 - **Maintenance** - `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`, `style:` commits
 
-By default (`title-source: pr-title`), line items are parsed from the merged PR's _current_ title, so a miscategorized or unclear squash-commit subject can be corrected durably by editing the PR title — handy for long-lived release drafts that regenerate on every push. Set `title-source: commit` to parse only the commit subject. In both modes the commit body is still scanned for `BREAKING CHANGE:` footers, and commits with no merged PR use the commit message.
+By default (`title-source: pr-title`), line items are parsed from the merged PR's _current_ title, so a miscategorized or unclear squash-commit subject can be corrected durably by editing the PR title — handy for long-lived release drafts that regenerate on every push. Set `title-source: commit` to parse only the commit subject. In both modes the commit body is still scanned for `BREAKING CHANGE:` footers, and commits with no merged PR use the commit message. In `pr-title` mode each merged PR yields a single entry even when it landed as multiple commits (merge or rebase merges).
 
 You can customize category titles in your `release-drafter.yml` using the `categories` option with `commit-types` instead of `labels`:
 

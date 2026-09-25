@@ -22,7 +22,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "🙅‍♂️ Forking PR 🙅‍♂️",
+                    "title": "feat: add alien technology",
                     "number": 1,
                     "url": "https://github.com/jetersen/release-drafter-test-repo/pull/1",
                     "body": "No thanks to forking PRs",
@@ -59,7 +59,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Add documentation",
+                    "title": "docs: add documentation",
                     "number": 28,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/28",
                     "body": "✍️ writing docs all day",
@@ -85,7 +85,7 @@
                     "headRefName": "add-documentation"
                   },
                   {
-                    "title": "🙅‍♂️ Forking PR 🙅‍♂️",
+                    "title": "feat: add alien technology",
                     "number": 1,
                     "url": "https://github.com/jetersen/release-drafter-test-repo/pull/1",
                     "body": "No thanks to forking PRs",
@@ -122,7 +122,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Update dependencies",
+                    "title": "chore: update dependencies",
                     "number": 27,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/27",
                     "body": "📦 Package time! 📦",
@@ -144,7 +144,7 @@
                     "headRefName": "chore/update-dependencies"
                   },
                   {
-                    "title": "🙅‍♂️ Forking PR 🙅‍♂️",
+                    "title": "feat: add alien technology",
                     "number": 1,
                     "url": "https://github.com/jetersen/release-drafter-test-repo/pull/1",
                     "body": "No thanks to forking PRs",
@@ -181,7 +181,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "fix: fixed another bug",
+                    "title": "fix: fixed a bug",
                     "number": 25,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/25",
                     "body": "🐛 squashing",
@@ -210,7 +210,7 @@
                     "headRefName": "fix/bug-fixes"
                   },
                   {
-                    "title": "fix: fixed another bug",
+                    "title": "feat: add alien technology",
                     "number": 1,
                     "url": "https://github.com/jetersen/release-drafter-test-repo/pull/1",
                     "body": "No thanks to forking PRs",
@@ -276,7 +276,7 @@
                     "headRefName": "fix/bug-fixes"
                   },
                   {
-                    "title": "fix: fixed a bug",
+                    "title": "feat: add alien technology",
                     "number": 1,
                     "url": "https://github.com/jetersen/release-drafter-test-repo/pull/1",
                     "body": "No thanks to forking PRs",
@@ -313,7 +313,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "feat: add big feature",
+                    "title": "feat: add big feature (#24)",
                     "number": 24,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/24",
                     "body": "![I'm kind of a big deal](https://media.giphy.com/media/9LFBOD8a1Ip2M/giphy.gif)",
@@ -342,7 +342,7 @@
                     "headRefName": "feature/big-feature"
                   },
                   {
-                    "title": "feat: add big feature",
+                    "title": "feat: add alien technology",
                     "number": 1,
                     "url": "https://github.com/jetersen/release-drafter-test-repo/pull/1",
                     "body": "No thanks to forking PRs",
@@ -379,7 +379,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Add alien technology",
+                    "title": "feat: add alien technology",
                     "number": 23,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/23",
                     "body": "Space invasion 👾",
@@ -408,7 +408,7 @@
                     "headRefName": "feature/alien-technology"
                   },
                   {
-                    "title": "🙅‍♂️ Forking PR 🙅‍♂️",
+                    "title": "feat: add alien technology",
                     "number": 1,
                     "url": "https://github.com/jetersen/release-drafter-test-repo/pull/1",
                     "body": "No thanks to forking PRs",
@@ -445,7 +445,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "docs: fix typo",
+                    "title": "docs: add documentation",
                     "number": 5,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/5",
                     "body": "✍️ writing docs all day",
@@ -527,7 +527,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "chore: update Mongoose to 5.5.4",
+                    "title": "chore: update Express to 4.16.4",
                     "number": 4,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/4",
                     "body": "📦 Package time! 📦",

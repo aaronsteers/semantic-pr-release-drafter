@@ -155112,7 +155112,6 @@ var require_index = __commonJS({
         ["base-version-override", "baseVersionOverride"],
         ["prerelease", "prerelease"],
         ["prerelease-identifier", "preReleaseIdentifier"],
-        ["prerelease-branch-rules", "prereleaseBranchRules"],
         ["allow-major-bumps", "allowMajorBumps"]
       ].filter(([, key]) => input[key] !== void 0);
       for (const [, key] of ignored) {

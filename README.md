@@ -390,6 +390,7 @@ The following options can be set in your `.github/release-drafter.yml` file or p
 | -------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `template`                 | Required | The template for the body of the draft release. Use [template variables](#template-variables) to insert values.                                                                                                                                          |
 | `header`                   | Optional | Will be prepended to `template`. Use [template variables](#template-variables) to insert values.                                                                                                                                                         |
+| `release-track-template`   | Optional | Used instead of `template` when the run is on a prerelease release track (`prerelease-branch-rules` with `prerelease-identifier`). Same variables as `template`, including `$CHANGES_SINCE_GA` and `$PREVIOUS_GA_TAG`. |
 | `footer`                   | Optional | Will be appended to `template`. Use [template variables](#template-variables) to insert values.                                                                                                                                                          |
 | `category-template`        | Optional | The template to use for each category. Use [category template variables](#category-template-variables) to insert values. Default: `"## $TITLE"`.                                                                                                         |
 | `name-template`            | Optional | The template for the name of the draft release. For example: `"v$NEXT_PATCH_VERSION"`.                                                                                                                                                                   |
@@ -425,6 +426,8 @@ You can use any of the following variables in your `template`, `header` and `foo
 | `$CHANGES`            | The markdown list of pull requests that have been merged.                                                                 |
 | `$CONTRIBUTORS`       | A comma separated list of contributors to this release (pull request authors, commit authors, and commit committers).     |
 | `$PREVIOUS_TAG`       | The previous releases’s tag.                                                                                              |
+| `$CHANGES_SINCE_GA`   | On a prerelease release track, the changelog since the previous GA (non-prerelease) release; otherwise identical to `$CHANGES`. |
+| `$PREVIOUS_GA_TAG`    | On a prerelease release track, the previous GA release's tag; otherwise identical to `$PREVIOUS_TAG`.                          |
 | `$REPOSITORY`         | Current Repository.                                                                                                       |
 | `$OWNER`              | Current Repository Owner.                                                                                                 |
 | `$TAG_PREFIX`         | The effective tag prefix from configured `tag-prefix` or derived from `tag-template`, such as `v` or `dummy-project-a/v`. |
@@ -761,6 +764,26 @@ An existing draft is preserved if it was manually advanced. For `rc.1`, the
 last release (including prereleases) is used as the commit-range boundary, so
 the notes contain changes since the highest prior release rather than the
 entire repository history.
+
+On a prerelease release track, `$CHANGES`/`$PREVIOUS_TAG` are relative to the
+previous RC. The GA-relative pair `$CHANGES_SINCE_GA`/`$PREVIOUS_GA_TAG`
+renders the notes since the previous GA release — i.e. what the notes will
+look like once the RC is promoted. `release-track-template` can use both so
+the RC draft shows the full GA-relative list with the RC-to-RC list collapsed:
+
+```yml
+release-track-template: |
+  ## What's Changed since $PREVIOUS_GA_TAG
+
+  $CHANGES_SINCE_GA
+
+  <details>
+  <summary>Changes since $PREVIOUS_TAG</summary>
+
+  $CHANGES
+
+  </details>
+```
 
 For patterns that cannot be expressed as a prefix, use a regular expression
 with a named `version` capture group:

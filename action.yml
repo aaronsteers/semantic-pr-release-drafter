@@ -72,6 +72,15 @@ inputs:
       A string that would be added after the template body.
     required: false
     default: ''
+  release-track-template:
+    description: |
+      The template for the release body used instead of `template` when the run
+      is on a prerelease release track (`prerelease-branch-rules` with a
+      `prerelease-identifier`). Supports the same placeholders as `template`,
+      including `$CHANGES_SINCE_GA` and `$PREVIOUS_GA_TAG`.
+      This will override any `release-track-template` specified in your config file.
+    required: false
+    default: ''
   name-template:
     description: |
       The template for the release name. Supports placeholders like $RESOLVED_VERSION.

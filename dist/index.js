@@ -147591,6 +147591,7 @@ var require_schema6 = __commonJS({
         "category-template": Joi.string().allow("").default(DEFAULT_CONFIG["category-template"]),
         header: Joi.string().allow("").default(DEFAULT_CONFIG.header),
         template: Joi.string().required(),
+        "release-track-template": Joi.string().allow(""),
         footer: Joi.string().allow("").default(DEFAULT_CONFIG.footer),
         _extends: Joi.string()
       }).rename("branches", "references", {
@@ -150681,16 +150682,29 @@ var require_releases = __commonJS({
       isPreRelease,
       latest,
       shouldDraft,
-      targetCommitish
+      targetCommitish,
+      isReleaseTrack,
+      gaBaseline
     }) => {
       const { owner, repo } = context.repo();
       const tagPrefix = getEffectiveTagPrefix(config);
-      let body = config["header"] + config.template + config["footer"];
+      const bodyTemplate = isReleaseTrack && config["release-track-template"] ? config["release-track-template"] : config.template;
+      const gaLastRelease = gaBaseline?.lastRelease ?? lastRelease;
+      const gaCommits = gaBaseline?.commits ?? commits;
+      const gaMergedPullRequests = gaBaseline?.mergedPullRequests ?? mergedPullRequests;
+      let body = config["header"] + bodyTemplate + config["footer"];
       body = template(
         body,
         {
           $PREVIOUS_TAG: lastRelease ? lastRelease.tag_name : "",
+          $PREVIOUS_GA_TAG: gaLastRelease ? gaLastRelease.tag_name : "",
           $CHANGES: generateChangeLog(mergedPullRequests, commits, config, context),
+          $CHANGES_SINCE_GA: generateChangeLog(
+            gaMergedPullRequests,
+            gaCommits,
+            config,
+            context
+          ),
           $CONTRIBUTORS: contributorsSentence({
             commits,
             pullRequests: mergedPullRequests,
@@ -154638,7 +154652,9 @@ var require_index = __commonJS({
         } = input;
         let draftRelease, lastRelease, commits, mergedPullRequests;
         let releasesResult;
+        let gaBaseline;
         let releaseBranchMergeVersion;
+        let gaRelease;
         let preparedRelease = null;
         let resolvedSha;
         if (localGitRoot) {
@@ -154679,6 +154695,12 @@ var require_index = __commonJS({
             releasesResult.lastRelease = sortReleases(
               releasesResult.releases.filter(
                 (release) => !release.draft && baseMatcher(release.tag_name)
+              ),
+              tagPrefix
+            ).at(-1);
+            gaRelease = sortReleases(
+              releasesResult.releases.filter(
+                (release) => !release.draft && !release.prerelease && baseMatcher(release.tag_name)
               ),
               tagPrefix
             ).at(-1);
@@ -154725,6 +154747,31 @@ var require_index = __commonJS({
           });
           commits = commitsResult.commits;
           mergedPullRequests = commitsResult.pullRequests;
+          if (releaseBranch?.identifier && gaRelease && gaRelease.id !== lastRelease?.id) {
+            core2.info(`Previous GA release: ${gaRelease.tag_name}`);
+            gaBaseline = { lastRelease: gaRelease };
+            const {
+              header,
+              "release-track-template": releaseTrackTemplate,
+              template: bodyTemplate,
+              footer
+            } = config;
+            const renderedTemplateText = header + (releaseTrackTemplate || bodyTemplate) + footer;
+            if (renderedTemplateText.includes("$CHANGES_SINCE_GA")) {
+              const gaCommitsResult = await findCommitsWithAssociatedPullRequests({
+                context,
+                targetCommitish,
+                lastRelease: gaRelease,
+                config
+              });
+              gaBaseline.commits = gaCommitsResult.commits;
+              gaBaseline.mergedPullRequests = sortPullRequests(
+                gaCommitsResult.pullRequests,
+                config["sort-by"],
+                config["sort-direction"]
+              );
+            }
+          }
         }
         const defaultBranch = context.payload.repository?.default_branch;
         const isDefaultBranch = !defaultBranch || ref === defaultBranch || ref === `refs/heads/${defaultBranch}`;
@@ -154931,7 +154978,9 @@ var require_index = __commonJS({
           isPreRelease: effectiveIsPreRelease,
           latest,
           shouldDraft,
-          targetCommitish
+          targetCommitish,
+          isReleaseTrack: Boolean(releaseBranch?.identifier),
+          gaBaseline
         });
         if (notReady) {
           const bannerMessage = typeof notReady === "string" ? notReady : "This release draft is still being prepared. Do not publish until this banner is removed.";
@@ -155069,6 +155118,7 @@ var require_index = __commonJS({
         commitish: core2.getInput("commitish") || void 0,
         header: core2.getInput("header") || void 0,
         footer: core2.getInput("footer") || void 0,
+        releaseTrackTemplate: core2.getInput("release-track-template") || void 0,
         prerelease: core2.getInput("prerelease") !== "" ? core2.getInput("prerelease").toLowerCase() === "true" : void 0,
         preReleaseIdentifier: core2.getInput("prerelease-identifier") || void 0,
         prereleaseBranchRules: core2.getInput("prerelease-branch-rules") || void 0,
@@ -155105,6 +155155,9 @@ var require_index = __commonJS({
       }
       if (input.footer) {
         config.footer = input.footer;
+      }
+      if (input.releaseTrackTemplate) {
+        config["release-track-template"] = input.releaseTrackTemplate;
       }
       if (input.prerelease !== void 0) {
         config.prerelease = input.prerelease;

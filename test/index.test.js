@@ -622,6 +622,152 @@ describe('release-drafter', () => {
         })
       })
 
+      it('renders GA-relative variables from a second commit-range fetch', async () => {
+        getReleaseBranchConfigMock(
+          `release-track-template: |\n  ## Since $PREVIOUS_GA_TAG\n\n  $CHANGES_SINCE_GA\n\n  ## Since $PREVIOUS_TAG\n\n  $CHANGES\n${releaseBranchConfig}`
+        )
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const gaRelease = releaseBranchRelease({
+          tag_name: 'v0.71.0',
+          id: 100,
+          created_at: '2024-01-01T00:00:00Z',
+        })
+        const trackRelease = releaseBranchRelease({
+          tag_name: 'v1.0.0-rc.3',
+          id: 101,
+          prerelease: true,
+          created_at: '2024-02-01T00:00:00Z',
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [trackRelease, gaRelease])
+
+        // Primary range: since the previous RC on the track.
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            if (
+              !body.query.includes(
+                'query findCommitsWithAssociatedPullRequests'
+              )
+            ) {
+              return false
+            }
+            return body.variables.since === trackRelease.created_at
+          })
+          .reply(
+            200,
+            releaseBranchGraphqlPayload([
+              releaseBranchCommit({
+                oid: 'rc-range-commit',
+                message: 'fix: rc range change',
+                committedDate: '2024-03-01T00:00:00Z',
+              }),
+            ])
+          )
+
+        // GA-relative range: since the previous GA release.
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            if (
+              !body.query.includes(
+                'query findCommitsWithAssociatedPullRequests'
+              )
+            ) {
+              return false
+            }
+            return body.variables.since === gaRelease.created_at
+          })
+          .reply(
+            200,
+            releaseBranchGraphqlPayload([
+              releaseBranchCommit({
+                oid: 'ga-range-commit',
+                message: 'feat: ga range change',
+                committedDate: '2024-01-15T00:00:00Z',
+              }),
+            ])
+          )
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.body).toContain('v0.71.0')
+              expect(body.body).toContain('v1.0.0-rc.3')
+              expect(body.body).toContain('Ga range change')
+              expect(body.body).toContain('Rc range change')
+              return true
+            }
+          )
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0-rc.4' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+      })
+
+      it('skips the extra commit-range fetch when the template does not use GA-relative changes', async () => {
+        getReleaseBranchConfigMock()
+        configureReleaseBranchEnvironment(releaseBranchRef)
+
+        const gaRelease = releaseBranchRelease({
+          tag_name: 'v0.71.0',
+          id: 100,
+          created_at: '2024-01-01T00:00:00Z',
+        })
+        const trackRelease = releaseBranchRelease({
+          tag_name: 'v1.0.0-rc.3',
+          id: 101,
+          prerelease: true,
+          created_at: '2024-02-01T00:00:00Z',
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [trackRelease, gaRelease])
+
+        let commitsQueryCount = 0
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            if (
+              !body.query.includes(
+                'query findCommitsWithAssociatedPullRequests'
+              )
+            ) {
+              return false
+            }
+            commitsQueryCount += 1
+            expect(body.variables.since).toBe(trackRelease.created_at)
+            return true
+          })
+          .reply(
+            200,
+            releaseBranchGraphqlPayload([
+              releaseBranchCommit({
+                oid: 'rc-range-commit',
+                message: 'fix: rc range change',
+                committedDate: '2024-03-01T00:00:00Z',
+              }),
+            ])
+          )
+
+        nock('https://api.github.com')
+          .post('/repos/toolmantim/release-drafter-test-project/releases')
+          .reply(200, releaseBranchRelease({ tag_name: 'v1.0.0-rc.4' }))
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+
+        expect(commitsQueryCount).toBe(1)
+      })
+
       it('preserves a manually advanced draft prerelease number', async () => {
         getReleaseBranchConfigMock()
         configureReleaseBranchEnvironment(releaseBranchRef)

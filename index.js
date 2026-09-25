@@ -710,6 +710,7 @@ function getInput() {
     commitish: core.getInput('commitish') || undefined,
     header: core.getInput('header') || undefined,
     footer: core.getInput('footer') || undefined,
+    titleSource: core.getInput('title-source') || undefined,
     prerelease:
       core.getInput('prerelease') !== ''
         ? core.getInput('prerelease').toLowerCase() === 'true'
@@ -778,6 +779,15 @@ function updateConfigFromInput(config, input) {
 
   if (input.footer) {
     config.footer = input.footer
+  }
+
+  if (input.titleSource) {
+    if (!['pr-title', 'commit'].includes(input.titleSource)) {
+      throw new TypeError(
+        `Invalid title-source input: "${input.titleSource}" (expected "pr-title" or "commit")`
+      )
+    }
+    config['title-source'] = input.titleSource
   }
 
   if (input.prerelease !== undefined) {

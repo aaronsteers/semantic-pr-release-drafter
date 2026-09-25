@@ -18,6 +18,21 @@ const createMockCommits = (messages) =>
     },
   }))
 
+const commitWithPr = (message, title) => ({
+  oid: 'sha1',
+  message,
+  associatedPullRequests: {
+    nodes: [
+      {
+        merged: true,
+        number: 7,
+        title,
+        author: { login: 'pr-author' },
+      },
+    ],
+  },
+})
+
 describe('ReleaseChangeLineItem', () => {
   describe('constructor and properties', () => {
     test.each([
@@ -838,6 +853,179 @@ describe('parseCommitsToChangeItems', () => {
       'commit-author',
       'pr-author',
     ])
+  })
+})
+
+describe('title-source', () => {
+  it('pr-title parses the PR title and keeps BREAKING CHANGE: footers from the body', () => {
+    const items = ReleaseChangeLineItems.fromCommits(
+      [
+        commitWithPr(
+          'feat: add thing\n\nBREAKING CHANGE: api removed',
+          'fix: retitled fix'
+        ),
+      ],
+      { titleSource: 'pr-title' }
+    )
+    expect(items.items[0].type).toBe('fix')
+    expect(items.items[0].description).toBe('retitled fix')
+    expect(items.items[0].breaking).toBe(true)
+    expect(items.items[0].prNumber).toBe(7)
+  })
+
+  it('commit ignores the PR title', () => {
+    const items = ReleaseChangeLineItems.fromCommits(
+      [commitWithPr('feat: add thing', 'fix: retitled fix')],
+      { titleSource: 'commit' }
+    )
+    expect(items.items[0].type).toBe('feat')
+    expect(items.items[0].description).toBe('add thing')
+  })
+
+  it('pr-title parses only the PR title for merge-commit shaped messages', () => {
+    const items = ReleaseChangeLineItems.fromCommits(
+      [
+        commitWithPr(
+          'Merge pull request #5 from x\n\nfeat: old subject',
+          'fix: new subject'
+        ),
+      ],
+      { titleSource: 'pr-title' }
+    )
+    expect(items.items).toHaveLength(1)
+    expect(items.items[0].type).toBe('fix')
+    expect(items.items[0].description).toBe('new subject')
+  })
+
+  it('pr-title yields one item per PR and folds BREAKING CHANGE: footers', () => {
+    const items = ReleaseChangeLineItems.fromCommits(
+      [
+        commitWithPr('feat: first commit', 'feat: pull request title'),
+        commitWithPr('feat: second commit', 'feat: pull request title'),
+        commitWithPr(
+          'feat: third commit\n\nBREAKING CHANGE: api removed',
+          'feat: pull request title'
+        ),
+      ],
+      { titleSource: 'pr-title' }
+    )
+    expect(items.items).toHaveLength(1)
+    expect(items.items[0].description).toBe('pull request title')
+    expect(items.items[0].breaking).toBe(true)
+  })
+
+  it('commit yields an item per commit for the same PR', () => {
+    const items = ReleaseChangeLineItems.fromCommits(
+      [
+        commitWithPr('feat: first commit', 'feat: pull request title'),
+        commitWithPr('feat: second commit', 'feat: pull request title'),
+        commitWithPr(
+          'feat: third commit\n\nBREAKING CHANGE: api removed',
+          'feat: pull request title'
+        ),
+      ],
+      { titleSource: 'commit' }
+    )
+    expect(items.items).toHaveLength(3)
+  })
+
+  it('skips merged PRs based in a different repository when repoNameWithOwner is set', () => {
+    const commit = {
+      oid: 'sha1',
+      message: 'feat: add big feature',
+      associatedPullRequests: {
+        nodes: [
+          {
+            merged: true,
+            number: 9,
+            title: 'Fork sync',
+            author: { login: 'forker' },
+            baseRepository: { nameWithOwner: 'someone/fork' },
+          },
+          {
+            merged: true,
+            number: 5,
+            title: 'fix: real title',
+            author: { login: 'pr-author' },
+            baseRepository: { nameWithOwner: 'owner/repo' },
+          },
+        ],
+      },
+    }
+    const items = ReleaseChangeLineItems.fromCommits([commit], {
+      titleSource: 'pr-title',
+      repoNameWithOwner: 'owner/repo',
+    })
+    expect(items.items).toHaveLength(1)
+    expect(items.items[0].type).toBe('fix')
+    expect(items.items[0].description).toBe('real title')
+    expect(items.items[0].prNumber).toBe(5)
+  })
+
+  it('falls back to the commit message when only cross-repo PRs are associated', () => {
+    const commit = {
+      oid: 'sha1',
+      message: 'feat: add big feature (#12)',
+      associatedPullRequests: {
+        nodes: [
+          {
+            merged: true,
+            number: 9,
+            title: 'Fork sync',
+            author: { login: 'forker' },
+            baseRepository: { nameWithOwner: 'someone/fork' },
+          },
+        ],
+      },
+    }
+    const items = ReleaseChangeLineItems.fromCommits([commit], {
+      titleSource: 'pr-title',
+      repoNameWithOwner: 'owner/repo',
+    })
+    expect(items.items).toHaveLength(1)
+    expect(items.items[0].type).toBe('feat')
+    expect(items.items[0].description).toBe('add big feature')
+    expect(items.items[0].prNumber).toBe(12)
+  })
+
+  it('uses the first merged PR regardless of base repository when repoNameWithOwner is unset', () => {
+    const commit = {
+      oid: 'sha1',
+      message: 'feat: add big feature',
+      associatedPullRequests: {
+        nodes: [
+          {
+            merged: true,
+            number: 9,
+            title: 'fix: fork sync',
+            author: { login: 'forker' },
+            baseRepository: { nameWithOwner: 'someone/fork' },
+          },
+          {
+            merged: true,
+            number: 5,
+            title: 'feat: real title',
+            author: { login: 'pr-author' },
+            baseRepository: { nameWithOwner: 'owner/repo' },
+          },
+        ],
+      },
+    }
+    const items = ReleaseChangeLineItems.fromCommits([commit], {
+      titleSource: 'pr-title',
+    })
+    expect(items.items[0].type).toBe('fix')
+    expect(items.items[0].prNumber).toBe(9)
+  })
+
+  it('pr-title falls back to the commit message with no merged PR', () => {
+    const commit = commitWithPr('feat: add thing', 'fix: retitled fix')
+    commit.associatedPullRequests.nodes[0].merged = false
+    const items = ReleaseChangeLineItems.fromCommits([commit], {
+      titleSource: 'pr-title',
+    })
+    expect(items.items[0].type).toBe('feat')
+    expect(items.items[0].description).toBe('add thing')
   })
 })
 

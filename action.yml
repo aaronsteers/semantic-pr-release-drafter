@@ -72,6 +72,17 @@ inputs:
       A string that would be added after the template body.
     required: false
     default: ''
+  title-source:
+    description: |
+      The source used to build each changelog line item's title:
+      'pr-title' (default) parses the merged pull request's current title, so a
+      miscategorized or unclear squash-commit subject can be corrected once by
+      retitling the PR; 'commit' parses the commit subject only.
+      Falls back to the commit subject when no merged pull request is
+      associated with the commit or its title is unavailable.
+      This will override any `title-source` specified in your config file.
+    required: false
+    default: ''
   name-template:
     description: |
       The template for the release name. Supports placeholders like $RESOLVED_VERSION.

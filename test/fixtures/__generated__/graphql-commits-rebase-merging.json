@@ -22,7 +22,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Add documentation",
+                    "title": "docs: add documentation",
                     "number": 10,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/10",
                     "body": "✍️ writing docs all day",
@@ -63,7 +63,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Add documentation",
+                    "title": "docs: add documentation",
                     "number": 10,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/10",
                     "body": "✍️ writing docs all day",
@@ -104,7 +104,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Update dependencies",
+                    "title": "chore: update Express to 4.16.4",
                     "number": 9,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/9",
                     "body": "📦 Package time! 📦",
@@ -141,7 +141,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Update dependencies",
+                    "title": "chore: update Express to 4.16.4",
                     "number": 9,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/9",
                     "body": "📦 Package time! 📦",
@@ -178,7 +178,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Bug fixes",
+                    "title": "fix: fixed a bug",
                     "number": 8,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/8",
                     "body": "🐛 squashing",
@@ -222,7 +222,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Bug fixes",
+                    "title": "fix: fixed a bug",
                     "number": 8,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/8",
                     "body": "🐛 squashing",
@@ -266,7 +266,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Add big feature",
+                    "title": "feat: add big feature",
                     "number": 7,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/7",
                     "body": "![I'm kind of a big deal](https://media.giphy.com/media/9LFBOD8a1Ip2M/giphy.gif)",
@@ -310,7 +310,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Add big feature",
+                    "title": "feat: add big feature",
                     "number": 7,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/7",
                     "body": "![I'm kind of a big deal](https://media.giphy.com/media/9LFBOD8a1Ip2M/giphy.gif)",
@@ -354,7 +354,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "👽 Add alien technology",
+                    "title": "feat: add alien technology",
                     "number": 6,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/6",
                     "body": "Space invasion 👾",

@@ -740,8 +740,10 @@ function getInput() {
  * (rather than only warning) is what makes the no-op real — otherwise they
  * would still flow through `updateConfigFromInput`. (`filter-by-commitish` is a
  * repo config-file option, not an action input, so it is handled where the
- * release is targeted.) Returns the names of the neutralized inputs, or `[]`
- * when `prepared-release-id` is not set.
+ * release is targeted.) `prerelease-branch-rules` is deliberately not
+ * neutralized: it only selects the baseline release for the commit range,
+ * which the prepared release does not freeze. Returns the names of the
+ * neutralized inputs, or `[]` when `prepared-release-id` is not set.
  */
 function neutralizeIgnoredPreparedReleaseInputs(input) {
   if (!input.preparedReleaseId) return []
@@ -753,7 +755,6 @@ function neutralizeIgnoredPreparedReleaseInputs(input) {
     ['base-version-override', 'baseVersionOverride'],
     ['prerelease', 'prerelease'],
     ['prerelease-identifier', 'preReleaseIdentifier'],
-    ['prerelease-branch-rules', 'prereleaseBranchRules'],
     ['allow-major-bumps', 'allowMajorBumps'],
   ].filter(([, key]) => input[key] !== undefined)
   for (const [, key] of ignored) {

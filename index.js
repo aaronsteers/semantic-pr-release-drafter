@@ -135,7 +135,12 @@ module.exports = (app, { getRouter }) => {
     // Local git mode: use git log instead of GitHub API
     let draftRelease, lastRelease, commits, mergedPullRequests
     let releasesResult
+    // Optional GA-relative changelog input for generateReleaseInfo.
+    let gaBaseline
     let releaseBranchMergeVersion
+    // On a release track, the previous GA (non-prerelease) release on the same
+    // track — used to render the GA-relative changelog variables.
+    let gaRelease
     // The already-prepared release resolved via `prepared-release-id`, when the
     // finalize pass targets an earlier `not-ready` draft by its id.
     let preparedRelease = null
@@ -189,6 +194,15 @@ module.exports = (app, { getRouter }) => {
         releasesResult.lastRelease = sortReleases(
           releasesResult.releases.filter(
             (release) => !release.draft && baseMatcher(release.tag_name)
+          ),
+          tagPrefix
+        ).at(-1)
+        gaRelease = sortReleases(
+          releasesResult.releases.filter(
+            (release) =>
+              !release.draft &&
+              !release.prerelease &&
+              baseMatcher(release.tag_name)
           ),
           tagPrefix
         ).at(-1)
@@ -248,6 +262,42 @@ module.exports = (app, { getRouter }) => {
       })
       commits = commitsResult.commits
       mergedPullRequests = commitsResult.pullRequests
+
+      // GA-relative baseline for $CHANGES_SINCE_GA/$PREVIOUS_GA_TAG. When the
+      // track baseline already is the GA (first RC) or no GA exists, the
+      // variables fall back to the primary range in generateReleaseInfo.
+      if (
+        releaseBranch?.identifier &&
+        gaRelease &&
+        gaRelease.id !== lastRelease?.id
+      ) {
+        core.info(`Previous GA release: ${gaRelease.tag_name}`)
+        gaBaseline = { lastRelease: gaRelease }
+        // Only pay for the extra commit-range fetch when the rendered template
+        // actually uses $CHANGES_SINCE_GA.
+        const {
+          header,
+          'release-track-template': releaseTrackTemplate,
+          template: bodyTemplate,
+          footer,
+        } = config
+        const renderedTemplateText =
+          header + (releaseTrackTemplate || bodyTemplate) + footer
+        if (renderedTemplateText.includes('$CHANGES_SINCE_GA')) {
+          const gaCommitsResult = await findCommitsWithAssociatedPullRequests({
+            context,
+            targetCommitish,
+            lastRelease: gaRelease,
+            config,
+          })
+          gaBaseline.commits = gaCommitsResult.commits
+          gaBaseline.mergedPullRequests = sortPullRequests(
+            gaCommitsResult.pullRequests,
+            config['sort-by'],
+            config['sort-direction']
+          )
+        }
+      }
     }
 
     const defaultBranch = context.payload.repository?.default_branch
@@ -536,6 +586,8 @@ module.exports = (app, { getRouter }) => {
       latest,
       shouldDraft,
       targetCommitish,
+      isReleaseTrack: Boolean(releaseBranch?.identifier),
+      gaBaseline,
     })
 
     // Apply not-ready banner when truthy
@@ -710,6 +762,7 @@ function getInput() {
     commitish: core.getInput('commitish') || undefined,
     header: core.getInput('header') || undefined,
     footer: core.getInput('footer') || undefined,
+    releaseTrackTemplate: core.getInput('release-track-template') || undefined,
     prerelease:
       core.getInput('prerelease') !== ''
         ? core.getInput('prerelease').toLowerCase() === 'true'
@@ -778,6 +831,10 @@ function updateConfigFromInput(config, input) {
 
   if (input.footer) {
     config.footer = input.footer
+  }
+
+  if (input.releaseTrackTemplate) {
+    config['release-track-template'] = input.releaseTrackTemplate
   }
 
   if (input.prerelease !== undefined) {

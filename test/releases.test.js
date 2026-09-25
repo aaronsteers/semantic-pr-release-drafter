@@ -1,5 +1,15 @@
-const { generateChangeLog, findReleases } = require('../lib/releases')
+const {
+  generateChangeLog,
+  generateReleaseInfo,
+  findReleases,
+} = require('../lib/releases')
 const { DEFAULT_CONFIG } = require('../lib/default-config')
+
+const fakeContext = {
+  repo: () => ({ owner: 'test', repo: 'repo' }),
+  payload: { repository: { full_name: 'test/repo' } },
+  log: { info() {}, warn() {} },
+}
 
 // Helper to create commits with semantic messages and associated PRs
 const createCommit = (message, prNumber, author = null, commitSha = null) => ({
@@ -58,6 +68,16 @@ const baseConfig = {
     { title: 'Chores', 'commit-types': ['chore'] },
   ],
 }
+
+const releaseInfoConfig = (overrides = {}) => ({
+  ...baseConfig,
+  ...overrides,
+})
+
+const releaseInfoCommit = (message, prNumber) => ({
+  ...createCommit(message, prNumber),
+  author: { name: 'Test', user: { login: 'ghost' } },
+})
 
 describe('releases', () => {
   describe('generateChangeLog', () => {
@@ -142,6 +162,96 @@ describe('releases', () => {
     it('returns no-changes-template for empty commits', () => {
       const changelog = generateChangeLog(pullRequests, [], baseConfig)
       expect(changelog).toEqual('* No changes')
+    })
+  })
+
+  describe('generateReleaseInfo', () => {
+    const baseArgs = {
+      context: fakeContext,
+      commits: [releaseInfoCommit('feat: newer change', 11)],
+      mergedPullRequests: [],
+      lastRelease: { tag_name: 'v1.0.0-rc.3' },
+      isPreRelease: true,
+      shouldDraft: true,
+      targetCommitish: 'refs/heads/release-candidate/v1',
+    }
+
+    it('mirrors $CHANGES/$PREVIOUS_TAG when no gaBaseline is given', () => {
+      const { body } = generateReleaseInfo({
+        ...baseArgs,
+        config: releaseInfoConfig({
+          template:
+            'GA: $PREVIOUS_GA_TAG\n$CHANGES_SINCE_GA\nRC: $PREVIOUS_TAG\n$CHANGES\n',
+        }),
+      })
+      expect(body).toContain('GA: v1.0.0-rc.3')
+      expect(body).toContain('RC: v1.0.0-rc.3')
+      expect(body).toContain('Newer change')
+    })
+
+    it('renders $CHANGES_SINCE_GA/$PREVIOUS_GA_TAG from gaBaseline when given', () => {
+      const { body } = generateReleaseInfo({
+        ...baseArgs,
+        config: releaseInfoConfig({
+          template:
+            'GA: $PREVIOUS_GA_TAG\n$CHANGES_SINCE_GA\nRC: $PREVIOUS_TAG\n$CHANGES\n',
+        }),
+        gaBaseline: {
+          lastRelease: { tag_name: 'v0.71.0' },
+          commits: [
+            releaseInfoCommit('feat: newer change', 11),
+            releaseInfoCommit('fix: older change', 10),
+          ],
+          mergedPullRequests: [],
+        },
+      })
+      expect(body).toContain('GA: v0.71.0')
+      expect(body).toContain('RC: v1.0.0-rc.3')
+      expect(body).toContain('Older change')
+      expect(body).toContain('Newer change')
+    })
+
+    it('does not generate a GA-relative changelog when the template does not use it', () => {
+      // generateChangeLog logs per parsed item; skipping it keeps GA runs quiet.
+      const args = {
+        ...baseArgs,
+        config: releaseInfoConfig({
+          template: 'RC: $PREVIOUS_TAG\n$CHANGES\n',
+        }),
+        gaBaseline: {
+          lastRelease: { tag_name: 'v0.71.0' },
+          commits: [releaseInfoCommit('fix: older change', 10)],
+          mergedPullRequests: [],
+        },
+      }
+      const withoutBaseline = generateReleaseInfo({
+        ...args,
+        gaBaseline: undefined,
+      })
+      const withBaseline = generateReleaseInfo(args)
+      expect(withBaseline.body).toBe(withoutBaseline.body)
+      expect(withBaseline.body).not.toContain('Older change')
+    })
+
+    it('uses release-track-template only on a release track', () => {
+      const config = releaseInfoConfig({
+        template: 'BASE $CHANGES',
+        'release-track-template': 'TRACK $CHANGES',
+      })
+      const onTrack = generateReleaseInfo({
+        ...baseArgs,
+        config,
+        isReleaseTrack: true,
+      })
+      expect(onTrack.body).toContain('TRACK')
+      expect(onTrack.body).not.toContain('BASE')
+      const offTrack = generateReleaseInfo({
+        ...baseArgs,
+        config,
+        isReleaseTrack: false,
+      })
+      expect(offTrack.body).toContain('BASE')
+      expect(offTrack.body).not.toContain('TRACK')
     })
   })
 

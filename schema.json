@@ -269,6 +269,9 @@
     "template": {
       "type": "string"
     },
+    "release-track-template": {
+      "type": "string"
+    },
     "footer": {
       "type": "string",
       "default": "_See also: [Full Release Notes ($RESOLVED_MAJOR_TAG.x family)](https://github.com/$OWNER/$REPOSITORY/releases?q=tag:$RESOLVED_MAJOR_TAG) | [Full Changelog ($PREVIOUS_TAG...$RESOLVED_TAG)](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG)_"

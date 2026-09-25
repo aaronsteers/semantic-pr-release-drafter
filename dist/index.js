@@ -150032,6 +150032,9 @@ var require_semantic_commits = __commonJS({
         return this.commitSha ? this.commitSha.slice(0, 7) : null;
       }
     };
+    var mergedPullRequestFor = (commit, repoNameWithOwner) => commit.associatedPullRequests?.nodes?.find(
+      (p) => p.merged && (!repoNameWithOwner || !p.baseRepository?.nameWithOwner || p.baseRepository.nameWithOwner === repoNameWithOwner)
+    );
     var messageForParsing = (commit, pr, titleSource) => {
       if (titleSource === "pr-title" && pr?.title) {
         const [subject, ...bodyLines] = commit.message.split("\n");
@@ -150056,11 +150059,11 @@ var require_semantic_commits = __commonJS({
        * @param {Array} commits - Array of commit objects with message, id, author, associatedPullRequests
        * @returns {ReleaseChangeLineItems} - Collection of change line items
        */
-      static fromCommits(commits, { titleSource = "commit" } = {}) {
+      static fromCommits(commits, { titleSource = "commit", repoNameWithOwner } = {}) {
         const items = [];
         const seenPrs = /* @__PURE__ */ new Map();
         for (const commit of commits) {
-          const pr = commit.associatedPullRequests?.nodes?.find((p) => p.merged);
+          const pr = mergedPullRequestFor(commit, repoNameWithOwner);
           if (titleSource === "pr-title" && pr && seenPrs.has(pr.number)) {
             if (commit.message.includes("BREAKING CHANGE:")) {
               for (const item of seenPrs.get(pr.number)) {
@@ -150392,10 +150395,10 @@ ${allItems}
       }
       return results;
     };
-    var parseCommitsToChangeItems = (commits, { titleSource = "commit" } = {}) => {
+    var parseCommitsToChangeItems = (commits, { titleSource = "commit", repoNameWithOwner } = {}) => {
       const changeItems = [];
       for (const commit of commits) {
-        const pr = commit.associatedPullRequests?.nodes?.find((p) => p.merged);
+        const pr = mergedPullRequestFor(commit, repoNameWithOwner);
         const parsedResults = parseSemanticCommit(
           messageForParsing(commit, pr, titleSource)
         );
@@ -150674,12 +150677,15 @@ var require_releases = __commonJS({
       }
     };
     var generateChangeLog = (mergedPullRequests, commits, config, context) => {
+      const { owner, repo } = context ? context.repo() : {};
+      const repoNameWithOwner = owner && repo ? `${owner}/${repo}` : void 0;
       const changeItems = ReleaseChangeLineItems.fromCommits(commits, {
-        titleSource: config["title-source"]
+        titleSource: config["title-source"],
+        repoNameWithOwner
       });
       return changeItems.renderWithConfig(config, context);
     };
-    var resolveVersionKeyIncrement = (commits, config, isPreRelease, lastRelease, forcePrereleaseIncrement) => {
+    var resolveVersionKeyIncrement = (commits, config, isPreRelease, lastRelease, forcePrereleaseIncrement, repoNameWithOwner) => {
       const versionResolver = config["version-resolver"] || {};
       const preOneZeroMinorForBreaking = versionResolver["pre-one-zero-minor-for-breaking"] !== false;
       const noAutoMajor = versionResolver["no-auto-major"] !== false;
@@ -150697,7 +150703,7 @@ var require_releases = __commonJS({
           noAutoMajor,
           currentMajor
         },
-        { titleSource: config["title-source"] }
+        { titleSource: config["title-source"], repoNameWithOwner }
       );
       core2.debug("versionKeyIncrement: " + versionKeyIncrement);
       if (forcePrereleaseIncrement) {
@@ -150748,7 +150754,8 @@ var require_releases = __commonJS({
         config,
         isPreRelease,
         lastRelease,
-        Boolean(floorVersion) && isPreRelease && Boolean(config["prerelease-identifier"])
+        Boolean(floorVersion) && isPreRelease && Boolean(config["prerelease-identifier"]),
+        `${owner}/${repo}`
       );
       core2.info(`Version bump type: ${versionKeyIncrement}`);
       const versionInfo = getVersionInfo(

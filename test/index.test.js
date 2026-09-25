@@ -3827,9 +3827,9 @@ describe('release-drafter', () => {
 
                   ## ✨ New Features
 
-                  * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
                   * Add big feature (https://github.com/toolmantim/release-drafter-test-project/pull/24) 
                   * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/23) 
+                  * Add alien technology (https://github.com/toolmantim/release-drafter-test-project/pull/1) 
 
                   ## 🐛 Bug Fixes
 

@@ -929,6 +929,95 @@ describe('title-source', () => {
     expect(items.items).toHaveLength(3)
   })
 
+  it('skips merged PRs based in a different repository when repoNameWithOwner is set', () => {
+    const commit = {
+      oid: 'sha1',
+      message: 'feat: add big feature',
+      associatedPullRequests: {
+        nodes: [
+          {
+            merged: true,
+            number: 9,
+            title: 'Fork sync',
+            author: { login: 'forker' },
+            baseRepository: { nameWithOwner: 'someone/fork' },
+          },
+          {
+            merged: true,
+            number: 5,
+            title: 'fix: real title',
+            author: { login: 'pr-author' },
+            baseRepository: { nameWithOwner: 'owner/repo' },
+          },
+        ],
+      },
+    }
+    const items = ReleaseChangeLineItems.fromCommits([commit], {
+      titleSource: 'pr-title',
+      repoNameWithOwner: 'owner/repo',
+    })
+    expect(items.items).toHaveLength(1)
+    expect(items.items[0].type).toBe('fix')
+    expect(items.items[0].description).toBe('real title')
+    expect(items.items[0].prNumber).toBe(5)
+  })
+
+  it('falls back to the commit message when only cross-repo PRs are associated', () => {
+    const commit = {
+      oid: 'sha1',
+      message: 'feat: add big feature (#12)',
+      associatedPullRequests: {
+        nodes: [
+          {
+            merged: true,
+            number: 9,
+            title: 'Fork sync',
+            author: { login: 'forker' },
+            baseRepository: { nameWithOwner: 'someone/fork' },
+          },
+        ],
+      },
+    }
+    const items = ReleaseChangeLineItems.fromCommits([commit], {
+      titleSource: 'pr-title',
+      repoNameWithOwner: 'owner/repo',
+    })
+    expect(items.items).toHaveLength(1)
+    expect(items.items[0].type).toBe('feat')
+    expect(items.items[0].description).toBe('add big feature')
+    expect(items.items[0].prNumber).toBe(12)
+  })
+
+  it('uses the first merged PR regardless of base repository when repoNameWithOwner is unset', () => {
+    const commit = {
+      oid: 'sha1',
+      message: 'feat: add big feature',
+      associatedPullRequests: {
+        nodes: [
+          {
+            merged: true,
+            number: 9,
+            title: 'fix: fork sync',
+            author: { login: 'forker' },
+            baseRepository: { nameWithOwner: 'someone/fork' },
+          },
+          {
+            merged: true,
+            number: 5,
+            title: 'feat: real title',
+            author: { login: 'pr-author' },
+            baseRepository: { nameWithOwner: 'owner/repo' },
+          },
+        ],
+      },
+    }
+    const items = ReleaseChangeLineItems.fromCommits([commit], {
+      titleSource: 'pr-title',
+    })
+    expect(items.items[0].type).toBe('fix')
+    expect(items.items[0].prNumber).toBe(9)
+  })
+
   it('pr-title falls back to the commit message with no merged PR', () => {
     const commit = commitWithPr('feat: add thing', 'fix: retitled fix')
     commit.associatedPullRequests.nodes[0].merged = false

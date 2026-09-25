@@ -151108,7 +151108,6 @@ var require_local_git = __commonJS({
     var { execSync } = require("node:child_process");
     var path = require("node:path");
     var { log } = require_log3();
-    var { parseSemanticCommit } = require_semantic_commits();
     var getTimestampFromRef = (localGitRoot, ref) => {
       try {
         const timestamp = execSync(`git log -1 --format=%aI ${ref}`, {
@@ -151163,8 +151162,7 @@ var require_local_git = __commonJS({
         const prMatch = message.match(/\(#(\d+)\)\s*$/);
         const prNumber = prMatch ? Number.parseInt(prMatch[1], 10) : "";
         const messageWithoutPr = prMatch ? message.replace(/\s*\(#\d+\)\s*$/, "") : message;
-        const parsedResults = parseSemanticCommit(messageWithoutPr);
-        const title = parsedResults.length > 0 ? parsedResults[0].description : messageWithoutPr;
+        const title = messageWithoutPr;
         const mockPr = {
           title,
           number: prNumber,

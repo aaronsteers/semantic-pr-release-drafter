@@ -5845,10 +5845,13 @@ describe('release-drafter', () => {
         restoreEnvironment()
       })
 
-      it('warns but ignores commitish and release branches alongside prepared-release-id', async () => {
+      it('warns but ignores commitish alongside prepared-release-id', async () => {
         // `commitish` is the subtle case: it flows through updateConfigFromInput
         // and would otherwise shift the commit range used to regenerate the
         // changelog. Neutralizing it keeps the prepared release authoritative.
+        // `prerelease-branch-rules` stays active: it only selects the baseline
+        // release for the commit range, which the prepared release does not
+        // freeze, so it must NOT be warned about or neutralized.
         let restoreEnvironment = mockedEnv({
           'INPUT_PREPARED-RELEASE-ID': '11691725',
           INPUT_COMMITISH: 'refs/heads/some-other-branch',
@@ -5890,7 +5893,7 @@ describe('release-drafter', () => {
             expect(body.variables.targetCommitish).not.toBe(
               'refs/heads/some-other-branch'
             )
-            expect(body.variables.withHeadRefName).toBe(false)
+            expect(body.variables.withHeadRefName).toBe(true)
             return true
           })
           .reply(200, graphqlCommitsMergeCommit)
@@ -5910,11 +5913,89 @@ describe('release-drafter', () => {
         expect(warningSpy).toHaveBeenCalledWith(
           expect.stringContaining('commitish')
         )
-        expect(warningSpy).toHaveBeenCalledWith(
+        expect(warningSpy).not.toHaveBeenCalledWith(
           expect.stringContaining('prerelease-branch-rules')
         )
         expect(setFailedSpy).not.toHaveBeenCalled()
         expect.assertions(5)
+
+        warningSpy.mockRestore()
+        setFailedSpy.mockRestore()
+        restoreEnvironment()
+      })
+
+      it('keeps prerelease-branch-rules active for release-track baseline selection on finalize', async () => {
+        let restoreEnvironment = mockedEnv({
+          'INPUT_PREPARED-RELEASE-ID': '11691725',
+          'INPUT_PRERELEASE-BRANCH-RULES':
+            '- branch-prefix: release-candidate/\n  prerelease-identifier: rc',
+          GITHUB_REF: releaseBranchRef,
+          GITHUB_SHA: releaseBranchSha,
+        })
+        const setFailedSpy = jest
+          .spyOn(core, 'setFailed')
+          .mockImplementation(() => {})
+        const warningSpy = jest
+          .spyOn(core, 'warning')
+          .mockImplementation(() => {})
+
+        getConfigMock()
+
+        const gaRelease = releaseBranchRelease({
+          tag_name: 'v0.71.0',
+          id: 100,
+          created_at: '2024-01-01T00:00:00Z',
+        })
+        const trackRelease = releaseBranchRelease({
+          tag_name: 'v1.0.0-rc.3',
+          id: 101,
+          prerelease: true,
+          created_at: '2024-02-01T00:00:00Z',
+        })
+
+        nock('https://api.github.com')
+          .get('/repos/toolmantim/release-drafter-test-project/releases')
+          .query(true)
+          .reply(200, [trackRelease, gaRelease])
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) => {
+            if (
+              !body.query.includes(
+                'query findCommitsWithAssociatedPullRequests'
+              )
+            ) {
+              return false
+            }
+            // The release-track baseline (latest matching prerelease) must win
+            // over the later-created GA release.
+            expect(body.variables.since).toBe(trackRelease.created_at)
+            return true
+          })
+          .reply(200, graphqlCommitsMergeCommit)
+
+        nock('https://api.github.com')
+          .patch(
+            '/repos/toolmantim/release-drafter-test-project/releases/11691725'
+          )
+          .reply(200, releaseDrafterFixture)
+
+        await probot.receive({
+          name: 'push',
+          payload: releaseBranchPayload,
+        })
+
+        expect(warningSpy).not.toHaveBeenCalledWith(
+          expect.stringContaining('prerelease-branch-rules')
+        )
+        expect(setFailedSpy).not.toHaveBeenCalled()
+        expect.assertions(3)
 
         warningSpy.mockRestore()
         setFailedSpy.mockRestore()

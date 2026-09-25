@@ -390,7 +390,7 @@ The following options can be set in your `.github/release-drafter.yml` file or p
 | -------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `template`                 | Required | The template for the body of the draft release. Use [template variables](#template-variables) to insert values.                                                                                                                                          |
 | `header`                   | Optional | Will be prepended to `template`. Use [template variables](#template-variables) to insert values.                                                                                                                                                         |
-| `release-track-template`   | Optional | Used instead of `template` when the run is on a prerelease release track (`prerelease-branch-rules` with `prerelease-identifier`). Same variables as `template`, including `$CHANGES_SINCE_GA` and `$PREVIOUS_GA_TAG`. |
+| `release-track-template`   | Optional | Used instead of `template` when the run is on a prerelease release track (`prerelease-branch-rules` with `prerelease-identifier`). Same variables as `template`, including `$CHANGES_SINCE_GA` and `$PREVIOUS_GA_TAG`.                                   |
 | `footer`                   | Optional | Will be appended to `template`. Use [template variables](#template-variables) to insert values.                                                                                                                                                          |
 | `category-template`        | Optional | The template to use for each category. Use [category template variables](#category-template-variables) to insert values. Default: `"## $TITLE"`.                                                                                                         |
 | `name-template`            | Optional | The template for the name of the draft release. For example: `"v$NEXT_PATCH_VERSION"`.                                                                                                                                                                   |
@@ -421,18 +421,18 @@ Release Drafter also supports [Probot Config](https://github.com/probot/probot-c
 
 You can use any of the following variables in your `template`, `header` and `footer`:
 
-| Variable              | Description                                                                                                               |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `$CHANGES`            | The markdown list of pull requests that have been merged.                                                                 |
-| `$CONTRIBUTORS`       | A comma separated list of contributors to this release (pull request authors, commit authors, and commit committers).     |
-| `$PREVIOUS_TAG`       | The previous releases’s tag.                                                                                              |
+| Variable              | Description                                                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `$CHANGES`            | The markdown list of pull requests that have been merged.                                                                       |
+| `$CONTRIBUTORS`       | A comma separated list of contributors to this release (pull request authors, commit authors, and commit committers).           |
+| `$PREVIOUS_TAG`       | The previous releases’s tag.                                                                                                    |
 | `$CHANGES_SINCE_GA`   | On a prerelease release track, the changelog since the previous GA (non-prerelease) release; otherwise identical to `$CHANGES`. |
-| `$PREVIOUS_GA_TAG`    | On a prerelease release track, the previous GA release's tag; otherwise identical to `$PREVIOUS_TAG`.                          |
-| `$REPOSITORY`         | Current Repository.                                                                                                       |
-| `$OWNER`              | Current Repository Owner.                                                                                                 |
-| `$TAG_PREFIX`         | The effective tag prefix from configured `tag-prefix` or derived from `tag-template`, such as `v` or `dummy-project-a/v`. |
-| `$RESOLVED_TAG`       | The resolved tag for the release after rendering `tag-template`.                                                          |
-| `$RESOLVED_MAJOR_TAG` | The effective tag prefix plus the resolved major version, such as `v1` or `dummy-project-a/v0`.                           |
+| `$PREVIOUS_GA_TAG`    | On a prerelease release track, the previous GA release's tag; otherwise identical to `$PREVIOUS_TAG`.                           |
+| `$REPOSITORY`         | Current Repository.                                                                                                             |
+| `$OWNER`              | Current Repository Owner.                                                                                                       |
+| `$TAG_PREFIX`         | The effective tag prefix from configured `tag-prefix` or derived from `tag-template`, such as `v` or `dummy-project-a/v`.       |
+| `$RESOLVED_TAG`       | The resolved tag for the release after rendering `tag-template`.                                                                |
+| `$RESOLVED_MAJOR_TAG` | The effective tag prefix plus the resolved major version, such as `v1` or `dummy-project-a/v0`.                                 |
 
 ## Category Template Variables
 

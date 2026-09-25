@@ -181,7 +181,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Bug fixes",
+                    "title": "fix: fixed another bug",
                     "number": 25,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/25",
                     "body": "🐛 squashing",
@@ -210,7 +210,7 @@
                     "headRefName": "fix/bug-fixes"
                   },
                   {
-                    "title": "🙅‍♂️ Forking PR 🙅‍♂️",
+                    "title": "fix: fixed another bug",
                     "number": 1,
                     "url": "https://github.com/jetersen/release-drafter-test-repo/pull/1",
                     "body": "No thanks to forking PRs",
@@ -247,7 +247,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Bug fixes",
+                    "title": "fix: fixed a bug",
                     "number": 25,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/25",
                     "body": "🐛 squashing",
@@ -276,7 +276,7 @@
                     "headRefName": "fix/bug-fixes"
                   },
                   {
-                    "title": "🙅‍♂️ Forking PR 🙅‍♂️",
+                    "title": "fix: fixed a bug",
                     "number": 1,
                     "url": "https://github.com/jetersen/release-drafter-test-repo/pull/1",
                     "body": "No thanks to forking PRs",
@@ -313,7 +313,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Add big feature",
+                    "title": "feat: add big feature",
                     "number": 24,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/24",
                     "body": "![I'm kind of a big deal](https://media.giphy.com/media/9LFBOD8a1Ip2M/giphy.gif)",
@@ -342,7 +342,7 @@
                     "headRefName": "feature/big-feature"
                   },
                   {
-                    "title": "🙅‍♂️ Forking PR 🙅‍♂️",
+                    "title": "feat: add big feature",
                     "number": 1,
                     "url": "https://github.com/jetersen/release-drafter-test-repo/pull/1",
                     "body": "No thanks to forking PRs",
@@ -445,7 +445,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Add documentation",
+                    "title": "docs: fix typo",
                     "number": 5,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/5",
                     "body": "✍️ writing docs all day",
@@ -486,7 +486,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Add documentation",
+                    "title": "docs: add documentation",
                     "number": 5,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/5",
                     "body": "✍️ writing docs all day",
@@ -527,7 +527,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Update dependencies",
+                    "title": "chore: update Mongoose to 5.5.4",
                     "number": 4,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/4",
                     "body": "📦 Package time! 📦",
@@ -564,7 +564,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "Update dependencies",
+                    "title": "chore: update Express to 4.16.4",
                     "number": 4,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/4",
                     "body": "📦 Package time! 📦",
@@ -601,7 +601,7 @@
               "associatedPullRequests": {
                 "nodes": [
                   {
-                    "title": "👽 Add alien technology",
+                    "title": "feat: add alien technology",
                     "number": 1,
                     "url": "https://github.com/toolmantim/release-drafter-test-project/pull/1",
                     "body": "Space invasion 👾",

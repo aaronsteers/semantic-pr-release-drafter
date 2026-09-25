@@ -18,6 +18,21 @@ const createMockCommits = (messages) =>
     },
   }))
 
+const commitWithPr = (message, title) => ({
+  oid: 'sha1',
+  message,
+  associatedPullRequests: {
+    nodes: [
+      {
+        merged: true,
+        number: 7,
+        title,
+        author: { login: 'pr-author' },
+      },
+    ],
+  },
+})
+
 describe('ReleaseChangeLineItem', () => {
   describe('constructor and properties', () => {
     test.each([
@@ -838,6 +853,43 @@ describe('parseCommitsToChangeItems', () => {
       'commit-author',
       'pr-author',
     ])
+  })
+})
+
+describe('title-source', () => {
+  it('pr-title parses the PR title and keeps BREAKING CHANGE: footers from the body', () => {
+    const items = ReleaseChangeLineItems.fromCommits(
+      [
+        commitWithPr(
+          'feat: add thing\n\nBREAKING CHANGE: api removed',
+          'fix: retitled fix'
+        ),
+      ],
+      { titleSource: 'pr-title' }
+    )
+    expect(items.items[0].type).toBe('fix')
+    expect(items.items[0].description).toBe('retitled fix')
+    expect(items.items[0].breaking).toBe(true)
+    expect(items.items[0].prNumber).toBe(7)
+  })
+
+  it('commit ignores the PR title', () => {
+    const items = ReleaseChangeLineItems.fromCommits(
+      [commitWithPr('feat: add thing', 'fix: retitled fix')],
+      { titleSource: 'commit' }
+    )
+    expect(items.items[0].type).toBe('feat')
+    expect(items.items[0].description).toBe('add thing')
+  })
+
+  it('pr-title falls back to the commit message with no merged PR', () => {
+    const commit = commitWithPr('feat: add thing', 'fix: retitled fix')
+    commit.associatedPullRequests.nodes[0].merged = false
+    const items = ReleaseChangeLineItems.fromCommits([commit], {
+      titleSource: 'pr-title',
+    })
+    expect(items.items[0].type).toBe('feat')
+    expect(items.items[0].description).toBe('add thing')
   })
 })
 

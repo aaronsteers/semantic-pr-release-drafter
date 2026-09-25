@@ -147370,6 +147370,7 @@ var require_default_config = __commonJS({
       "tag-prefix": "",
       "change-template": "* $TITLE ($URL) $SHA",
       "change-title-escapes": "",
+      "title-source": "pr-title",
       "no-changes-template": "* No changes",
       "version-template": "$MAJOR.$MINOR.$PATCH$PRERELEASE",
       "version-resolver": {
@@ -147531,6 +147532,7 @@ var require_schema6 = __commonJS({
           DEFAULT_CONFIG["change-template"]
         ),
         "change-title-escapes": Joi.string().allow("").default(DEFAULT_CONFIG["change-title-escapes"]),
+        "title-source": Joi.string().valid("pr-title", "commit").default(DEFAULT_CONFIG["title-source"]),
         "no-changes-template": Joi.string().default(
           DEFAULT_CONFIG["no-changes-template"]
         ),
@@ -150030,6 +150032,18 @@ var require_semantic_commits = __commonJS({
         return this.commitSha ? this.commitSha.slice(0, 7) : null;
       }
     };
+    var messageForParsing = (commit, pr, titleSource) => {
+      if (titleSource === "pr-title" && pr?.title) {
+        const [subject, ...bodyLines] = commit.message.split("\n");
+        if (pr.title !== subject) {
+          core2.info(
+            `Using PR #${pr.number} title for line item (differs from commit subject)`
+          );
+        }
+        return [pr.title, ...bodyLines].join("\n");
+      }
+      return commit.message;
+    };
     var ReleaseChangeLineItems = class _ReleaseChangeLineItems {
       constructor(items = []) {
         this.items = items;
@@ -150039,11 +150053,13 @@ var require_semantic_commits = __commonJS({
        * @param {Array} commits - Array of commit objects with message, id, author, associatedPullRequests
        * @returns {ReleaseChangeLineItems} - Collection of change line items
        */
-      static fromCommits(commits) {
+      static fromCommits(commits, { titleSource = "commit" } = {}) {
         const items = [];
         for (const commit of commits) {
-          const parsedResults = parseSemanticCommit(commit.message);
           const pr = commit.associatedPullRequests?.nodes?.find((p) => p.merged);
+          const parsedResults = parseSemanticCommit(
+            messageForParsing(commit, pr, titleSource)
+          );
           let author = null;
           if (pr?.author) {
             author = typeof pr.author === "string" ? pr.author : pr.author.login;
@@ -150358,11 +150374,13 @@ ${allItems}
       }
       return results;
     };
-    var parseCommitsToChangeItems = (commits) => {
+    var parseCommitsToChangeItems = (commits, { titleSource = "commit" } = {}) => {
       const changeItems = [];
       for (const commit of commits) {
-        const parsedResults = parseSemanticCommit(commit.message);
         const pr = commit.associatedPullRequests?.nodes?.find((p) => p.merged);
+        const parsedResults = parseSemanticCommit(
+          messageForParsing(commit, pr, titleSource)
+        );
         let author = null;
         if (pr?.author) {
           author = typeof pr.author === "string" ? pr.author : pr.author.login;
@@ -150417,8 +150435,8 @@ ${allItems}
       }
       return maxBump;
     };
-    var resolveVersionBumpFromCommits = (commits, config = {}) => {
-      const changeItems = parseCommitsToChangeItems(commits);
+    var resolveVersionBumpFromCommits = (commits, config = {}, options2 = {}) => {
+      const changeItems = parseCommitsToChangeItems(commits, options2);
       return resolveVersionBumpFromChangeItems(changeItems, config);
     };
     var categorizeChangeItemsByType = (changeItems) => {
@@ -150638,7 +150656,9 @@ var require_releases = __commonJS({
       }
     };
     var generateChangeLog = (mergedPullRequests, commits, config, context) => {
-      const changeItems = ReleaseChangeLineItems.fromCommits(commits);
+      const changeItems = ReleaseChangeLineItems.fromCommits(commits, {
+        titleSource: config["title-source"]
+      });
       return changeItems.renderWithConfig(config, context);
     };
     var resolveVersionKeyIncrement = (commits, config, isPreRelease, lastRelease, forcePrereleaseIncrement) => {
@@ -150652,11 +150672,15 @@ var require_releases = __commonJS({
           currentMajor = Number.parseInt(match[1], 10);
         }
       }
-      const versionKeyIncrement = resolveVersionBumpFromCommits(commits, {
-        preOneZeroMinorForBreaking,
-        noAutoMajor,
-        currentMajor
-      });
+      const versionKeyIncrement = resolveVersionBumpFromCommits(
+        commits,
+        {
+          preOneZeroMinorForBreaking,
+          noAutoMajor,
+          currentMajor
+        },
+        { titleSource: config["title-source"] }
+      );
       core2.debug("versionKeyIncrement: " + versionKeyIncrement);
       if (forcePrereleaseIncrement) {
         return "prerelease";
@@ -155069,6 +155093,7 @@ var require_index = __commonJS({
         commitish: core2.getInput("commitish") || void 0,
         header: core2.getInput("header") || void 0,
         footer: core2.getInput("footer") || void 0,
+        titleSource: core2.getInput("title-source") || void 0,
         prerelease: core2.getInput("prerelease") !== "" ? core2.getInput("prerelease").toLowerCase() === "true" : void 0,
         preReleaseIdentifier: core2.getInput("prerelease-identifier") || void 0,
         prereleaseBranchRules: core2.getInput("prerelease-branch-rules") || void 0,
@@ -155106,6 +155131,9 @@ var require_index = __commonJS({
       }
       if (input.footer) {
         config.footer = input.footer;
+      }
+      if (input.titleSource) {
+        config["title-source"] = input.titleSource;
       }
       if (input.prerelease !== void 0) {
         config.prerelease = input.prerelease;

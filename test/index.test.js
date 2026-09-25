@@ -1810,6 +1810,92 @@ describe('release-drafter', () => {
       })
     })
 
+    describe('with title-source', () => {
+      // The "Fix typo" commit's subject is not semantic, but its merged PR's
+      // current title is — retitling the PR fixes the line item durably.
+      const retitledCommitsFixture = JSON.parse(
+        JSON.stringify(graphqlCommitsMergeCommit)
+      )
+      const fixTypoNode =
+        retitledCommitsFixture.data.repository.object.history.nodes.find(
+          (node) => node.message === 'Fix typo'
+        )
+      fixTypoNode.associatedPullRequests.nodes[0].title = 'fix: retitled change'
+
+      it('builds line items from the current PR title by default', async () => {
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, retitledCommitsFixture)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.body).toContain('Retitled change')
+              expect(body.body).toContain('Bug Fixes')
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(2)
+      })
+
+      it('uses only the commit subject with title-source: commit', async () => {
+        const restoreInputEnvironment = mockedEnv({
+          'INPUT_TITLE-SOURCE': 'commit',
+        })
+
+        getConfigMock()
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, retitledCommitsFixture)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.body).not.toContain('Retitled change')
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
+
+        restoreInputEnvironment()
+      })
+    })
+
     describe('with past releases', () => {
       it('creates a new draft listing the changes', async () => {
         getConfigMock()

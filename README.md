@@ -398,6 +398,7 @@ The following options can be set in your `.github/release-drafter.yml` file or p
 | `version-template`         | Optional | The template to use when calculating the next version number for the release. Useful for projects that don't use semantic versioning. Default: `"$MAJOR.$MINOR.$PATCH"`                                                                                  |
 | `change-template`          | Optional | The template to use for each merged pull request. Use [change template variables](#change-template-variables) to insert values. Default: `"* $TITLE (#$NUMBER) @$AUTHOR"`.                                                                               |
 | `change-title-escapes`     | Optional | Characters to escape in `$TITLE` when inserting into `change-template` so that they are not interpreted as Markdown format characters. Default: `""`                                                                                                     |
+| `title-source`             | Optional | Source of each changelog line item's title: `pr-title` parses the merged PR's current title, `commit` parses the commit subject. Default: `"pr-title"` |
 | `no-changes-template`      | Optional | The template to use for when there’s no changes. Default: `"* No changes"`.                                                                                                                                                                              |
 | `references`               | Optional | The references to listen for configuration updates to `.github/release-drafter.yml`. Refer to [References](#references) to learn more about this                                                                                                         |
 | `categories`               | Optional | Categorize pull requests using commit types. Refer to [Categorize Changes](#categorize-changes) to learn more about this option.                                                                                                                         |
@@ -590,6 +591,8 @@ Changes are automatically categorized based on semantic commit types. The defaul
 - **Bug Fixes** - `fix:` commits
 - **Documentation** - `docs:` commits
 - **Maintenance** - `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`, `style:` commits
+
+By default (`title-source: pr-title`), line items are parsed from the merged PR's *current* title, so a miscategorized or unclear squash-commit subject can be corrected durably by editing the PR title — handy for long-lived RC drafts that regenerate on every push. Set `title-source: commit` to parse only the commit subject. In both modes the commit body is still scanned for `BREAKING CHANGE:` footers, and commits with no merged PR use the commit message.
 
 You can customize category titles in your `release-drafter.yml` using the `categories` option with `commit-types` instead of `labels`:
 

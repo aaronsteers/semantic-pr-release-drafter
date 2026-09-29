@@ -18,6 +18,11 @@
       "type": "string",
       "default": ""
     },
+    "title-source": {
+      "type": "string",
+      "default": "pr-title",
+      "enum": ["pr-title", "commit"]
+    },
     "no-changes-template": {
       "type": "string",
       "default": "'* No changes'"

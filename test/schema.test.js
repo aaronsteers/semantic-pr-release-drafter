@@ -66,6 +66,7 @@ const invalidConfigs = [
   ],
   [{ replacers: [{ search: '123', replace: 123 }] }, 'must be a string'],
   [{ commitish: false }, 'must be a string'],
+  [{ 'title-source': 'invalid' }, 'must be one of'],
   [{ 'pull-request-limit': 'forty nine' }, 'must be a number'],
 ]
 

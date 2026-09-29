@@ -33,6 +33,7 @@ inputs:
   publish:
     description: |
       A boolean indicating whether the release being created or updated should be immediately published.
+      When there are no new commits since the last release, publish is skipped (see the `skipped` output); pass `version` to force a release.
     required: false
     default: ''
   latest:
@@ -310,3 +311,6 @@ outputs:
       finalize: that release is targeted by a deterministic point-read, so
       commitish-based selection is moot and the pin is still applied. Outputs
       are only emitted when running in GitHub Actions.
+  skipped:
+    description: |
+      "true" when publish was skipped because there were no new commits since the last release; otherwise "false"

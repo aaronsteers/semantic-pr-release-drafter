@@ -4623,6 +4623,85 @@ describe('release-drafter', () => {
       })
     })
 
+    describe('publish with no new commits', () => {
+      it('skips publishing and sets skipped=true when there are no new commits', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          INPUT_PUBLISH: 'true',
+          GITHUB_ACTIONS: 'true',
+        })
+        const setOutput = jest.spyOn(core, 'setOutput')
+
+        getConfigMock('config.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsEmpty)
+
+        // No POST /releases mock is registered: if publish is not skipped the
+        // request has no matching nock and the run fails.
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutput).toHaveBeenCalledWith('skipped', 'true')
+        expect(setOutput).not.toHaveBeenCalledWith('id', expect.anything())
+
+        restoreEnvironment_()
+      })
+
+      it('still publishes when a version override is given', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          INPUT_PUBLISH: 'true',
+          INPUT_VERSION: '9.9.9',
+          GITHUB_ACTIONS: 'true',
+        })
+
+        getConfigMock('config.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsEmpty)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.tag_name).toBe('v9.9.9')
+              expect(body.draft).toBe(false)
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(2)
+
+        restoreEnvironment_()
+      })
+    })
+
     describe('with input prerelease: true', () => {
       it('marks the created draft as prerelease', async () => {
         return overridesTest(

@@ -34,6 +34,7 @@ inputs:
     description: |
       A boolean indicating whether the release being created or updated should be immediately published.
       When there are no new commits since the last release, publish is skipped (see the `skipped` output); pass `version` (or `tag`/`name`) to force a release.
+      Categories with `release-trigger: false` (or `hidden: true`) don't count as new changes for this purpose.
     required: false
     default: ''
   latest:

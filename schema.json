@@ -204,8 +204,40 @@
       "items": {
         "type": "object",
         "properties": {
+          "hidden": {
+            "type": "boolean",
+            "description": "Omit items in this category from the rendered release notes. Implies `release-trigger: false`.",
+            "default": false
+          },
           "title": {
-            "type": "string"
+            "type": "string",
+            "oneOf": [
+              {
+                "type": [
+                  "array",
+                  "boolean",
+                  "number",
+                  "object",
+                  "string",
+                  "null"
+                ]
+              },
+              {
+                "type": [
+                  "array",
+                  "boolean",
+                  "number",
+                  "object",
+                  "string",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "release-trigger": {
+            "type": "boolean",
+            "description": "Whether items in this category by themselves justify an auto-release when `publish: true`.",
+            "default": true
           },
           "collapse-after": {
             "type": "integer",
@@ -231,7 +263,6 @@
             }
           }
         },
-        "required": ["title"],
         "additionalProperties": false
       }
     },

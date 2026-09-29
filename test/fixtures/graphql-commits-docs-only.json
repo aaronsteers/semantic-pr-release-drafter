@@ -1,0 +1,32 @@
+{
+  "data": {
+    "repository": {
+      "object": {
+        "history": {
+          "totalCount": 1,
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": null
+          },
+          "nodes": [
+            {
+              "id": "MDY6Q29tbWl0MTM4NzMyNDgxOmFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQ==",
+              "oid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "committedDate": "2024-02-01T00:00:00Z",
+              "message": "docs: update installation guide",
+              "author": {
+                "name": "Timon van Spronsen",
+                "user": {
+                  "login": "TimonVS"
+                }
+              },
+              "associatedPullRequests": {
+                "nodes": []
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

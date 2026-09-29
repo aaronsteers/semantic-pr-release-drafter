@@ -22,6 +22,8 @@ const graphqlCommitsMergeCommit = require('./fixtures/__generated__/graphql-comm
 const graphqlNullIncludePathMergeCommit = require('./fixtures/__generated__/graphql-include-null-path-merge-commit.json')
 const graphqlIncludePathMergeCommit = require('./fixtures/__generated__/graphql-include-path-src-5.md-merge-commit.json')
 const graphqlCommitsEmpty = require('./fixtures/graphql-commits-empty.json')
+const graphqlCommitsDocsOnly = require('./fixtures/graphql-commits-docs-only.json')
+const graphqlCommitsDocsAndFix = require('./fixtures/graphql-commits-docs-and-fix.json')
 const releaseDrafterFixture = require('./fixtures/release-draft.json')
 const graphqlCommitsOverlappingLabel = require('./fixtures/__generated__/graphql-commits-overlapping-label.json')
 const graphqlCommitsRebaseMerging = require('./fixtures/__generated__/graphql-commits-rebase-merging.json')
@@ -4806,6 +4808,122 @@ describe('release-drafter', () => {
             (body) => {
               expect(body.tag_name).toBe('v9.9.9')
               expect(body.draft).toBe(false)
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(2)
+
+        restoreEnvironment_()
+      })
+
+      it('skips publish when changes are only in a release-trigger: false category', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          INPUT_PUBLISH: 'true',
+          GITHUB_ACTIONS: 'true',
+        })
+        const setOutput = jest.spyOn(core, 'setOutput')
+
+        getConfigMock('config-with-non-triggering-docs.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsDocsOnly)
+
+        // No POST /releases mock: the docs-only range has no triggering changes.
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutput).toHaveBeenCalledWith('skipped', 'true')
+        expect(setOutput).not.toHaveBeenCalledWith('id', expect.anything())
+
+        restoreEnvironment_()
+      })
+
+      it('still drafts a release listing non-triggering changes', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          GITHUB_ACTIONS: 'true',
+        })
+        const setOutput = jest.spyOn(core, 'setOutput')
+
+        getConfigMock('config-with-non-triggering-docs.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsDocsOnly)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.draft).toBe(true)
+              expect(body.body).toContain('Update installation guide')
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutput).not.toHaveBeenCalledWith('skipped', 'true')
+
+        restoreEnvironment_()
+      })
+
+      it('publishes when a triggering change is mixed with non-triggering ones', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          INPUT_PUBLISH: 'true',
+          GITHUB_ACTIONS: 'true',
+        })
+
+        getConfigMock('config-with-non-triggering-docs.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsDocsAndFix)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.draft).toBe(false)
+              expect(body.tag_name).toBe('v2.0.1')
               return true
             }
           )

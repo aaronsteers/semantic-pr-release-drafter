@@ -813,6 +813,70 @@ describe('ReleaseChangeLineItems', () => {
       expect(sentryFeaturesPos).toBeLessThan(sentryUpdatesPos)
       expect(sentryUpdatesPos).toBeLessThan(underHoodPos)
     })
+
+    describe('hidden and release-trigger category flags', () => {
+      const config = {
+        'change-template': '* $TITLE',
+        'category-template': '## $TITLE',
+        'no-changes-template': '* No changes',
+        categories: [
+          { title: 'Features', 'commit-types': ['feat'] },
+          {
+            title: 'Documentation',
+            'commit-types': ['docs'],
+            'release-trigger': false,
+          },
+          { 'commit-types': ['ci'], hidden: true },
+        ],
+      }
+
+      it('omits hidden-category items from the rendered notes', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['feat: add thing', 'ci: tweak pipeline'])
+        )
+        const result = collection.renderWithConfig(config)
+        expect(result).toContain('Add thing')
+        expect(result).not.toContain('pipeline')
+      })
+
+      it('renders no-changes-template when every item is hidden', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['ci: tweak pipeline'])
+        )
+        expect(collection.renderWithConfig(config)).toBe('* No changes')
+      })
+
+      it('lists release-trigger: false items but does not count them as triggering', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['docs: update guide'])
+        )
+        expect(collection.renderWithConfig(config)).toContain(
+          '## Documentation'
+        )
+        expect(collection.releaseTriggeringItems(config)).toHaveLength(0)
+      })
+
+      it('treats hidden categories as non-triggering', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['ci: tweak pipeline'])
+        )
+        expect(collection.releaseTriggeringItems(config)).toHaveLength(0)
+      })
+
+      it('counts breaking items as triggering regardless of category flags', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['docs!: drop the old guide'])
+        )
+        expect(collection.releaseTriggeringItems(config)).toHaveLength(1)
+      })
+
+      it('counts uncategorized items as triggering', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['fix: repair bug'])
+        )
+        expect(collection.releaseTriggeringItems(config)).toHaveLength(1)
+      })
+    })
   })
 })
 

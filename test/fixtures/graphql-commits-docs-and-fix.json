@@ -1,0 +1,47 @@
+{
+  "data": {
+    "repository": {
+      "object": {
+        "history": {
+          "totalCount": 2,
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": null
+          },
+          "nodes": [
+            {
+              "id": "MDY6Q29tbWl0MTM4NzMyNDgxOmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYg==",
+              "oid": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "committedDate": "2024-02-01T00:01:00Z",
+              "message": "fix: repair broken link",
+              "author": {
+                "name": "Timon van Spronsen",
+                "user": {
+                  "login": "TimonVS"
+                }
+              },
+              "associatedPullRequests": {
+                "nodes": []
+              }
+            },
+            {
+              "id": "MDY6Q29tbWl0MTM4NzMyNDgxOmFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQ==",
+              "oid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "committedDate": "2024-02-01T00:00:00Z",
+              "message": "docs: update installation guide",
+              "author": {
+                "name": "Timon van Spronsen",
+                "user": {
+                  "login": "TimonVS"
+                }
+              },
+              "associatedPullRequests": {
+                "nodes": []
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

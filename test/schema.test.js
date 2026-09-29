@@ -185,5 +185,34 @@ describe('schema', () => {
       expect(otherChanges['collapse-after']).toBe(0)
       expect(otherChanges['commit-types']).toEqual([])
     })
+
+    it('category release-trigger and hidden defaults apply', () => {
+      const result = validateSchema(context, {
+        template,
+        categories: [{ title: '📝 Other Changes' }],
+      })
+      const category = result.categories[0]
+      expect(category['release-trigger']).toBe(true)
+      expect(category.hidden).toBe(false)
+    })
+
+    it('hidden category allows omitting title', () => {
+      const result = validateSchema(context, {
+        template,
+        categories: [{ 'commit-types': ['ci'], hidden: true }],
+      })
+      expect(result.categories[0].hidden).toBe(true)
+    })
+
+    it('non-hidden category still requires title', () => {
+      const { error } = schema(context).validate(
+        {
+          template,
+          categories: [{ 'commit-types': ['ci'] }],
+        },
+        { abortEarly: false }
+      )
+      expect(error && error.toString()).toMatch(/title.*required/)
+    })
   })
 })

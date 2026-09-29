@@ -33,7 +33,7 @@ inputs:
   publish:
     description: |
       A boolean indicating whether the release being created or updated should be immediately published.
-      When there are no new commits since the last release, publish is skipped (see the `skipped` output); pass `version` to force a release.
+      When there are no new commits since the last release, publish is skipped (see the `skipped` output); pass `version` (or `tag`/`name`) to force a release.
     required: false
     default: ''
   latest:

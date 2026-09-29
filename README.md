@@ -119,7 +119,7 @@ jobs:
 
 ### Auto-publish on every merge to `main`
 
-Every push to `main` publishes the release immediately. A manual `workflow_dispatch` run also publishes unless the `dry-run` input is checked, in which case it only computes the next version. (A run with no new commits since the last release skips publishing and sets the `skipped` output; pass `version` to force a release.) The `concurrency` group serializes overlapping pushes so two runs can't both claim the same next version.
+Every push to `main` publishes the release immediately. A manual `workflow_dispatch` run also publishes unless the `dry-run` input is checked, in which case it only computes the next version. (A run with no new commits since the last release skips publishing and sets the `skipped` output; pass `version` (or `tag`/`name`) to force a release.) The `concurrency` group serializes overlapping pushes so two runs can't both claim the same next version.
 
 Pin to an exact release (or commit SHA) rather than a floating major tag. If other workflows must run when the release is published (e.g. a PyPI upload on `release: published` or a tag push), publish with a GitHub App or PAT token instead of `GITHUB_TOKEN` — events created by `GITHUB_TOKEN` don't trigger new workflow runs.
 
@@ -1088,20 +1088,20 @@ See [action.yml](action.yml) for the full list of supported inputs and their des
 
 The action sets the following outputs which can be used in subsequent workflow steps:
 
-| Output             | Description                                                                                                      |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `id`               | The ID of the release that was created or updated.                                                               |
-| `name`             | The name of this release.                                                                                        |
-| `tag_name`         | The name of the tag associated with this release.                                                                |
-| `body`             | The body of the drafted release.                                                                                 |
-| `html_url`         | The URL to view the release.                                                                                     |
-| `upload_url`       | The URL for uploading assets to the release.                                                                     |
-| `resolved_version` | Version resolved by [Version Resolver](#version-resolver), e.g. `6.3.1`.                                         |
-| `major_version`    | Major part of resolved version by [Version Resolver](#version-resolver), e.g. `6`.                               |
-| `minor_version`    | Minor part of resolved version by [Version Resolver](#version-resolver), e.g. `3`.                               |
-| `patch_version`    | Patch part of resolved version by [Version Resolver](#version-resolver), e.g. `1`.                               |
-| `resolved-sha`     | The exact commit SHA this run evaluated and pinned the release to (see below).                                   |
-| `skipped`          | `"true"` when publish was skipped because there were no new commits since the last release; otherwise `"false"`. |
+| Output             | Description                                                                                                                                                           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`               | The ID of the release that was created or updated.                                                                                                                    |
+| `name`             | The name of this release.                                                                                                                                             |
+| `tag_name`         | The name of the tag associated with this release.                                                                                                                     |
+| `body`             | The body of the drafted release.                                                                                                                                      |
+| `html_url`         | The URL to view the release.                                                                                                                                          |
+| `upload_url`       | The URL for uploading assets to the release.                                                                                                                          |
+| `resolved_version` | Version resolved by [Version Resolver](#version-resolver), e.g. `6.3.1`.                                                                                              |
+| `major_version`    | Major part of resolved version by [Version Resolver](#version-resolver), e.g. `6`.                                                                                    |
+| `minor_version`    | Minor part of resolved version by [Version Resolver](#version-resolver), e.g. `3`.                                                                                    |
+| `patch_version`    | Patch part of resolved version by [Version Resolver](#version-resolver), e.g. `1`.                                                                                    |
+| `resolved-sha`     | The exact commit SHA this run evaluated and pinned the release to (see below).                                                                                        |
+| `skipped`          | `"true"` when publish was skipped because there were no new commits since the last release; otherwise `"false"`. Pass `version` (or `tag`/`name`) to force a release. |
 
 ### `resolved-sha` — the point-in-time commit pin
 

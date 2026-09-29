@@ -758,7 +758,7 @@ categories:
     hidden: true # omitted from notes; implies release-trigger: false
 ```
 
-- `release-trigger` (default `true`): when `false`, items in this category do not by themselves justify an auto-release. With `publish: true`, a run whose range contains only non-triggering changes is skipped (`skipped` output is `true`); mixed ranges still publish normally — e.g. `feat:` + `docs:` still bumps minor, `fix:` + `docs:` still patch. Breaking changes always trigger, and uncategorized changes are visible and triggering.
+- `release-trigger` (default `true`): when `false`, items in this category do not by themselves justify an auto-release. With `publish: true`, a run whose range contains only non-triggering changes is skipped (`skipped` output is `true`); mixed ranges still publish normally — e.g. `feat:` + `docs:` still bumps minor, `fix:` + `docs:` still patch. Breaking changes always trigger, uncategorized changes are visible and triggering, and commits that don't follow the conventional format still count as changes.
 - `hidden` (default `false`): items in this category are omitted from the rendered release notes entirely (all modes). `hidden: true` implies `release-trigger: false`; when `hidden` is set, `title` may be omitted.
 
 Note: `release-trigger: false` is inert unless auto-release is enabled (`publish: true`) — drafts and dry-runs still list and version these changes as before.

@@ -5,6 +5,7 @@ const {
   TITLE_POST_PROCESSORS,
   applyTitlePostProcessors,
   parseCommitsToChangeItems,
+  hasReleaseTriggeringChanges,
 } = require('../lib/semantic-commits')
 
 const createMockCommits = (messages) =>
@@ -875,6 +876,15 @@ describe('ReleaseChangeLineItems', () => {
           createMockCommits(['fix: repair bug'])
         )
         expect(collection.releaseTriggeringItems(config)).toHaveLength(1)
+      })
+
+      it('counts non-conventional commits as triggering', () => {
+        expect(
+          hasReleaseTriggeringChanges(
+            createMockCommits(['Bump foo from 1 to 2']),
+            config
+          )
+        ).toBe(true)
       })
     })
   })

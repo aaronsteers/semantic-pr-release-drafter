@@ -1088,19 +1088,19 @@ See [action.yml](action.yml) for the full list of supported inputs and their des
 
 The action sets the following outputs which can be used in subsequent workflow steps:
 
-| Output             | Description                                                                        |
-| ------------------ | ---------------------------------------------------------------------------------- |
-| `id`               | The ID of the release that was created or updated.                                 |
-| `name`             | The name of this release.                                                          |
-| `tag_name`         | The name of the tag associated with this release.                                  |
-| `body`             | The body of the drafted release.                                                   |
-| `html_url`         | The URL to view the release.                                                       |
-| `upload_url`       | The URL for uploading assets to the release.                                       |
-| `resolved_version` | Version resolved by [Version Resolver](#version-resolver), e.g. `6.3.1`.           |
-| `major_version`    | Major part of resolved version by [Version Resolver](#version-resolver), e.g. `6`. |
-| `minor_version`    | Minor part of resolved version by [Version Resolver](#version-resolver), e.g. `3`. |
-| `patch_version`    | Patch part of resolved version by [Version Resolver](#version-resolver), e.g. `1`. |
-| `resolved-sha`     | The exact commit SHA this run evaluated and pinned the release to (see below).     |
+| Output             | Description                                                                                                      |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `id`               | The ID of the release that was created or updated.                                                               |
+| `name`             | The name of this release.                                                                                        |
+| `tag_name`         | The name of the tag associated with this release.                                                                |
+| `body`             | The body of the drafted release.                                                                                 |
+| `html_url`         | The URL to view the release.                                                                                     |
+| `upload_url`       | The URL for uploading assets to the release.                                                                     |
+| `resolved_version` | Version resolved by [Version Resolver](#version-resolver), e.g. `6.3.1`.                                         |
+| `major_version`    | Major part of resolved version by [Version Resolver](#version-resolver), e.g. `6`.                               |
+| `minor_version`    | Minor part of resolved version by [Version Resolver](#version-resolver), e.g. `3`.                               |
+| `patch_version`    | Patch part of resolved version by [Version Resolver](#version-resolver), e.g. `1`.                               |
+| `resolved-sha`     | The exact commit SHA this run evaluated and pinned the release to (see below).                                   |
 | `skipped`          | `"true"` when publish was skipped because there were no new commits since the last release; otherwise `"false"`. |
 
 ### `resolved-sha` — the point-in-time commit pin

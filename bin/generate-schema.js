@@ -33,6 +33,20 @@ for (const [key, value] of Object.entries(jsonSchema.properties)) {
   }
 }
 
+// joi-to-json can't express "title optional only when `hidden: true`": the Joi
+// .when() emits an invalid oneOf of identical alternatives and drops the
+// item-level `required`. Emit a plain string for title and encode the
+// conditional at the item level instead (draft-07 if/else).
+const categoryItems = jsonSchema.properties?.categories?.items
+if (categoryItems?.properties?.title) {
+  categoryItems.properties.title = { type: 'string' }
+  categoryItems.if = {
+    properties: { hidden: { const: true } },
+    required: ['hidden'],
+  }
+  categoryItems.else = { required: ['title'] }
+}
+
 if (inputArguments[0] === 'print') {
   fs.writeFileSync(
     './schema.json',

@@ -886,6 +886,31 @@ describe('ReleaseChangeLineItems', () => {
           )
         ).toBe(true)
       })
+
+      it('counts a non-conventional commit mixed with non-triggering ones as triggering', () => {
+        expect(
+          hasReleaseTriggeringChanges(
+            createMockCommits(['docs: update guide', 'Bump foo from 1 to 2']),
+            config
+          )
+        ).toBe(true)
+      })
+
+      it('renders breaking items even when their category is hidden', () => {
+        const hiddenDocsConfig = {
+          ...config,
+          categories: [{ 'commit-types': ['docs'], hidden: true }],
+        }
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['docs!: drop v1 API'])
+        )
+        const result = collection.renderWithConfig(hiddenDocsConfig)
+        expect(result).toContain('Drop v1 API')
+        expect(result).not.toContain('## ')
+        expect(
+          collection.releaseTriggeringItems(hiddenDocsConfig)
+        ).toHaveLength(1)
+      })
     })
   })
 })

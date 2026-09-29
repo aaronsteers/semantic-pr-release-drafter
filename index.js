@@ -445,12 +445,7 @@ module.exports = (app, { getRouter }) => {
     const noChanges =
       commits.length === 0 && sortedMergedPullRequests.length === 0
     const publishOnlyExempt =
-      shouldDraft ||
-      overrideVersion ||
-      tag ||
-      name ||
-      preparedRelease ||
-      dryRun
+      shouldDraft || overrideVersion || tag || name || preparedRelease || dryRun
     const noTriggeringChanges =
       noChanges ||
       (!publishOnlyExempt &&

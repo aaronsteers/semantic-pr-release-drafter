@@ -163,42 +163,54 @@
           "commit-types": ["breaking"],
           "commit-scopes": [],
           "collapse-after": 0,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         },
         {
           "title": "✨ New Features",
           "commit-types": ["feat"],
           "commit-scopes": [],
           "collapse-after": 0,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         },
         {
           "title": "🐛 Bug Fixes",
           "commit-types": ["fix"],
           "commit-scopes": [],
           "collapse-after": 0,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         },
         {
           "title": "▲ Other Changes",
           "commit-types": ["refactor", "perf", "style"],
           "commit-scopes": [],
           "collapse-after": 2,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         },
         {
           "title": "📖 Documentation",
           "commit-types": ["docs"],
           "commit-scopes": [],
           "collapse-after": 2,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         },
         {
           "title": "⚙️ Under the Hood",
           "commit-types": ["chore", "ci", "build", "test", "revert", "infra"],
           "commit-scopes": [],
           "collapse-after": 2,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         }
       ],
       "items": {
@@ -210,29 +222,7 @@
             "default": false
           },
           "title": {
-            "type": "string",
-            "oneOf": [
-              {
-                "type": [
-                  "array",
-                  "boolean",
-                  "number",
-                  "object",
-                  "string",
-                  "null"
-                ]
-              },
-              {
-                "type": [
-                  "array",
-                  "boolean",
-                  "number",
-                  "object",
-                  "string",
-                  "null"
-                ]
-              }
-            ]
+            "type": "string"
           },
           "release-trigger": {
             "type": "boolean",
@@ -263,7 +253,18 @@
             }
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "if": {
+          "properties": {
+            "hidden": {
+              "const": true
+            }
+          },
+          "required": ["hidden"]
+        },
+        "else": {
+          "required": ["title"]
+        }
       }
     },
     "version-resolver": {

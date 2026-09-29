@@ -150287,7 +150287,7 @@ var require_semantic_commits = __commonJS({
       visibleItems(config) {
         const categories = config.categories || [];
         return this.items.filter(
-          (item) => !findCategoryForItem(item, categories)?.hidden
+          (item) => item.breaking || !findCategoryForItem(item, categories)?.hidden
         );
       }
       /**
@@ -150299,12 +150299,9 @@ var require_semantic_commits = __commonJS({
        */
       releaseTriggeringItems(config) {
         const categories = config.categories || [];
-        return this.items.filter((item) => {
-          if (item.breaking) return true;
-          const cat = findCategoryForItem(item, categories);
-          if (!cat) return true;
-          return cat["release-trigger"] !== false && !cat.hidden;
-        });
+        return this.items.filter(
+          (item) => isReleaseTriggeringItem(item, categories)
+        );
       }
       /**
        * Render the collection as a changelog body using the provided config.
@@ -150334,7 +150331,7 @@ var require_semantic_commits = __commonJS({
         const uncategorized = [];
         for (const item of visibleItems) {
           const cat = findCategoryForItem(item, categorizedItems);
-          if (cat) {
+          if (cat && !(item.breaking && cat.hidden)) {
             cat.items.push(item);
           } else {
             uncategorized.push(item);
@@ -150562,13 +150559,25 @@ ${allItems}
       }
       return { categories, uncategorized };
     };
+    var isReleaseTriggeringItem = (item, categories) => {
+      if (item.breaking) return true;
+      const cat = findCategoryForItem(item, categories);
+      if (!cat) return true;
+      return cat["release-trigger"] !== false && !cat.hidden;
+    };
     var hasReleaseTriggeringChanges = (commits, config, { titleSource = "commit", repoNameWithOwner } = {}) => {
-      const changeItems = ReleaseChangeLineItems.fromCommits(commits, {
-        titleSource,
-        repoNameWithOwner
-      });
-      if (changeItems.items.length === 0) return commits.length > 0;
-      return changeItems.releaseTriggeringItems(config).length > 0;
+      const categories = config.categories || [];
+      for (const commit of commits) {
+        const pr = mergedPullRequestFor(commit, repoNameWithOwner);
+        const parsed = parseSemanticCommit(
+          messageForParsing(commit, pr, titleSource)
+        );
+        if (parsed.length === 0) return true;
+        if (parsed.some((item) => isReleaseTriggeringItem(item, categories))) {
+          return true;
+        }
+      }
+      return false;
     };
     exports2.SEMANTIC_COMMIT_REGEX = SEMANTIC_COMMIT_REGEX;
     exports2.COMMIT_TYPES = COMMIT_TYPES;
@@ -150585,6 +150594,7 @@ ${allItems}
     exports2.categorizeChangeItemsByType = categorizeChangeItemsByType;
     exports2.categorizeCommitsByType = categorizeCommitsByType;
     exports2.findCategoryForItem = findCategoryForItem;
+    exports2.isReleaseTriggeringItem = isReleaseTriggeringItem;
     exports2.hasReleaseTriggeringChanges = hasReleaseTriggeringChanges;
   }
 });
@@ -154974,7 +154984,7 @@ var require_index = __commonJS({
         }
         let overrideVersion = version2;
         const noChanges = commits.length === 0 && sortedMergedPullRequests.length === 0;
-        const publishOnlyExempt = shouldDraft || overrideVersion || tag || name || preparedRelease || releaseBranch || dryRun;
+        const publishOnlyExempt = shouldDraft || overrideVersion || tag || name || preparedRelease || dryRun;
         const noTriggeringChanges = noChanges || !publishOnlyExempt && !hasReleaseTriggeringChanges(commits, config, {
           titleSource: config["title-source"],
           repoNameWithOwner: `${context.repo().owner}/${context.repo().repo}`

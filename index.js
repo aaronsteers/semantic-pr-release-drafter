@@ -432,6 +432,29 @@ module.exports = (app, { getRouter }) => {
     // - overrideVersion: explicit user input via action arg (always wins, skips calculations)
     // - draftVersion: extracted from draft release (acts as floor vs computed version)
     let overrideVersion = version
+
+    // Publish mode with nothing to release: skip rather than cutting an
+    // empty patch release. Draft mode is unaffected (drafts still track an
+    // empty changelog); `version` input or a prepared-release finalize still
+    // force the release through.
+    const noChanges =
+      commits.length === 0 && sortedMergedPullRequests.length === 0
+    if (
+      noChanges &&
+      !shouldDraft &&
+      !overrideVersion &&
+      !preparedRelease &&
+      !dryRun
+    ) {
+      log({
+        context,
+        message: 'No new commits since the last release; skipping publish.',
+      })
+      core.notice('No new commits since the last release; nothing to publish.')
+      if (runnerIsActions()) setSkippedOutput(resolvedSha)
+      return
+    }
+
     let floorVersion
     if (releaseBranch && !version && !preparedRelease) {
       floorVersion = releaseBranch.identifier
@@ -852,6 +875,7 @@ function setActionOutput(
   if (minorVersion) core.setOutput('minor-version', minorVersion)
   if (patchVersion) core.setOutput('patch-version', patchVersion)
   if (resolvedSha) core.setOutput('resolved-sha', resolvedSha)
+  core.setOutput('skipped', 'false')
   core.setOutput('body', body)
 }
 
@@ -877,7 +901,17 @@ function setDryRunOutput(
   if (tag) core.setOutput('tag-name', tag)
   if (name) core.setOutput('name', name)
   if (resolvedSha) core.setOutput('resolved-sha', resolvedSha)
+  core.setOutput('skipped', 'false')
   core.setOutput('body', body)
+}
+
+/**
+ * Set outputs when publish was skipped because there were no new commits
+ * since the last release.
+ */
+function setSkippedOutput(resolvedSha) {
+  core.setOutput('skipped', 'true')
+  if (resolvedSha) core.setOutput('resolved-sha', resolvedSha)
 }
 
 // A full-length (40 hex) commit SHA.

@@ -119,7 +119,7 @@ jobs:
 
 ### Auto-publish on every merge to `main`
 
-Every push to `main` publishes the release immediately. A manual `workflow_dispatch` run also publishes unless the `dry-run` input is checked, in which case it only computes the next version. (A manual run with no new commits still cuts a patch release, so check `dry-run` first if you're unsure.) The `concurrency` group serializes overlapping pushes so two runs can't both claim the same next version.
+Every push to `main` publishes the release immediately. A manual `workflow_dispatch` run also publishes unless the `dry-run` input is checked, in which case it only computes the next version. (A run with no new commits since the last release skips publishing and sets the `skipped` output; pass `version` to force a release.) The `concurrency` group serializes overlapping pushes so two runs can't both claim the same next version.
 
 Pin to an exact release (or commit SHA) rather than a floating major tag. If other workflows must run when the release is published (e.g. a PyPI upload on `release: published` or a tag push), publish with a GitHub App or PAT token instead of `GITHUB_TOKEN` — events created by `GITHUB_TOKEN` don't trigger new workflow runs.
 
@@ -1101,6 +1101,7 @@ The action sets the following outputs which can be used in subsequent workflow s
 | `minor_version`    | Minor part of resolved version by [Version Resolver](#version-resolver), e.g. `3`. |
 | `patch_version`    | Patch part of resolved version by [Version Resolver](#version-resolver), e.g. `1`. |
 | `resolved-sha`     | The exact commit SHA this run evaluated and pinned the release to (see below).     |
+| `skipped`          | `"true"` when publish was skipped because there were no new commits since the last release; otherwise `"false"`. |
 
 ### `resolved-sha` — the point-in-time commit pin
 

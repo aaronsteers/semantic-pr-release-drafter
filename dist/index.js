@@ -154908,6 +154908,16 @@ var require_index = __commonJS({
           shouldResetFiles = !!attachFiles;
         }
         let overrideVersion = version2;
+        const noChanges = commits.length === 0 && sortedMergedPullRequests.length === 0;
+        if (noChanges && !shouldDraft && !overrideVersion && !preparedRelease && !dryRun) {
+          log({
+            context,
+            message: "No new commits since the last release; skipping publish."
+          });
+          core2.notice("No new commits since the last release; nothing to publish.");
+          if (runnerIsActions()) setSkippedOutput(resolvedSha);
+          return;
+        }
         let floorVersion;
         if (releaseBranch && !version2 && !preparedRelease) {
           floorVersion = releaseBranch.identifier ? `${releaseBranch.version}-${releaseBranch.identifier}.1` : releaseBranch.version;
@@ -155214,6 +155224,7 @@ var require_index = __commonJS({
       if (minorVersion) core2.setOutput("minor-version", minorVersion);
       if (patchVersion) core2.setOutput("patch-version", patchVersion);
       if (resolvedSha) core2.setOutput("resolved-sha", resolvedSha);
+      core2.setOutput("skipped", "false");
       core2.setOutput("body", body);
     }
     function setDryRunOutput({
@@ -155232,7 +155243,12 @@ var require_index = __commonJS({
       if (tag) core2.setOutput("tag-name", tag);
       if (name) core2.setOutput("name", name);
       if (resolvedSha) core2.setOutput("resolved-sha", resolvedSha);
+      core2.setOutput("skipped", "false");
       core2.setOutput("body", body);
+    }
+    function setSkippedOutput(resolvedSha) {
+      core2.setOutput("skipped", "true");
+      if (resolvedSha) core2.setOutput("resolved-sha", resolvedSha);
     }
     var FULL_SHA_REGEX = /^[\da-f]{40}$/i;
     function resolveTargetSha({

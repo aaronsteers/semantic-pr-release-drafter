@@ -117,6 +117,49 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+### Auto-publish on every merge to `main`
+
+Every push to `main` publishes the release immediately. A manual `workflow_dispatch` run also publishes unless the `dry-run` input is checked, in which case it only computes the next version. (A manual run with no new commits still cuts a patch release, so check `dry-run` first if you're unsure.) The `concurrency` group serializes overlapping pushes so two runs can't both claim the same next version.
+
+Pin to an exact release (or commit SHA) rather than a floating major tag. If other workflows must run when the release is published (e.g. a PyPI upload on `release: published` or a tag push), publish with a GitHub App or PAT token instead of `GITHUB_TOKEN` — events created by `GITHUB_TOKEN` don't trigger new workflow runs.
+
+```yaml
+name: Release Drafter
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Compute the next version without creating or publishing a release
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-drafter-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Create Release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or publish release
+        uses: aaronsteers/semantic-pr-release-drafter@v2.4.4
+        with:
+          publish: true
+          dry-run: ${{ inputs.dry-run || false }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
 ### Find Repos Using this Action
 
 Looking for real-world examples? Here are two ways to find how others have integrated this action into their workflows:

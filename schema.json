@@ -163,49 +163,71 @@
           "commit-types": ["breaking"],
           "commit-scopes": [],
           "collapse-after": 0,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         },
         {
           "title": "✨ New Features",
           "commit-types": ["feat"],
           "commit-scopes": [],
           "collapse-after": 0,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         },
         {
           "title": "🐛 Bug Fixes",
           "commit-types": ["fix"],
           "commit-scopes": [],
           "collapse-after": 0,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         },
         {
           "title": "▲ Other Changes",
           "commit-types": ["refactor", "perf", "style"],
           "commit-scopes": [],
           "collapse-after": 2,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         },
         {
           "title": "📖 Documentation",
           "commit-types": ["docs"],
           "commit-scopes": [],
           "collapse-after": 2,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         },
         {
           "title": "⚙️ Under the Hood",
           "commit-types": ["chore", "ci", "build", "test", "revert", "infra"],
           "commit-scopes": [],
           "collapse-after": 2,
-          "display-order": null
+          "display-order": null,
+          "release-trigger": true,
+          "hidden": false
         }
       ],
       "items": {
         "type": "object",
         "properties": {
+          "hidden": {
+            "type": "boolean",
+            "description": "Omit items in this category from the rendered release notes. Implies `release-trigger: false`.",
+            "default": false
+          },
           "title": {
             "type": "string"
+          },
+          "release-trigger": {
+            "type": "boolean",
+            "description": "Whether items in this category by themselves justify an auto-release when `publish: true`.",
+            "default": true
           },
           "collapse-after": {
             "type": "integer",
@@ -231,8 +253,18 @@
             }
           }
         },
-        "required": ["title"],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "if": {
+          "properties": {
+            "hidden": {
+              "const": true
+            }
+          },
+          "required": ["hidden"]
+        },
+        "else": {
+          "required": ["title"]
+        }
       }
     },
     "version-resolver": {

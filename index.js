@@ -10,6 +10,7 @@ const {
   updateReleaseBody,
 } = require('./lib/releases')
 const { findCommitsWithAssociatedPullRequests } = require('./lib/commits')
+const { hasReleaseTriggeringChanges } = require('./lib/semantic-commits')
 const {
   findCommitsFromLocalGit,
   createMockLastRelease,
@@ -434,27 +435,34 @@ module.exports = (app, { getRouter }) => {
     let overrideVersion = version
 
     // Publish mode with nothing to release: skip rather than cutting an
-    // empty patch release. Draft mode is unaffected (drafts still track an
-    // empty changelog); explicit release intent — a `version`/`tag`/`name`
-    // override or a prepared-release finalize — still forces the release
-    // through. A release branch does not: its version floor is a minimum, so
-    // an empty rerun still skips rather than re-incrementing.
+    // empty patch release. "Nothing to release" covers an empty commit range
+    // and a range whose changes all land in `release-trigger: false`/`hidden`
+    // categories. Draft mode is unaffected (drafts still track an empty
+    // changelog); explicit release intent — a `version`/`tag`/`name` override
+    // or a prepared-release finalize — still forces the release through. A
+    // release branch does not: its version floor is a minimum, so an empty
+    // rerun still skips rather than re-incrementing.
     const noChanges =
       commits.length === 0 && sortedMergedPullRequests.length === 0
-    if (
-      noChanges &&
-      !shouldDraft &&
-      !overrideVersion &&
-      !tag &&
-      !name &&
-      !preparedRelease &&
-      !dryRun
-    ) {
-      log({
-        context,
-        message: 'No new commits since the last release; skipping publish.',
-      })
-      core.notice('No new commits since the last release; nothing to publish.')
+    const publishOnlyExempt =
+      shouldDraft || overrideVersion || tag || name || preparedRelease || dryRun
+    const noTriggeringChanges =
+      noChanges ||
+      (!publishOnlyExempt &&
+        !hasReleaseTriggeringChanges(commits, config, {
+          titleSource: config['title-source'],
+          repoNameWithOwner: `${context.repo().owner}/${context.repo().repo}`,
+        }))
+    if (noTriggeringChanges && !publishOnlyExempt) {
+      const skipMessage = noChanges
+        ? 'No new commits since the last release; skipping publish.'
+        : 'No release-triggering changes since the last release; skipping publish.'
+      log({ context, message: skipMessage })
+      core.notice(
+        noChanges
+          ? 'No new commits since the last release; nothing to publish.'
+          : 'No release-triggering changes since the last release; nothing to publish.'
+      )
       if (runnerIsActions()) setSkippedOutput(resolvedSha)
       return
     }

@@ -119,7 +119,7 @@ jobs:
 
 ### Auto-publish on every merge to `main`
 
-Every push to `main` publishes the release immediately. A manual `workflow_dispatch` run also publishes unless the `dry-run` input is checked, in which case it only computes the next version. (A run with no new commits since the last release skips publishing and sets the `skipped` output; pass `version` (or `tag`/`name`) to force a release.) The `concurrency` group serializes overlapping pushes so two runs can't both claim the same next version.
+Every push to `main` publishes the release immediately. A manual `workflow_dispatch` run also publishes unless the `dry-run` input is checked, in which case it only computes the next version. (A run with no new commits since the last release skips publishing and sets the `skipped` output — categories flagged `release-trigger: false`/`hidden` don't count as new changes; pass `version` (or `tag`/`name`) to force a release.) The `concurrency` group serializes overlapping pushes so two runs can't both claim the same next version.
 
 Pin to an exact release (or commit SHA) rather than a floating major tag. If other workflows must run when the release is published (e.g. a PyPI upload on `release: published` or a tag push), publish with a GitHub App or PAT token instead of `GITHUB_TOKEN` — events created by `GITHUB_TOKEN` don't trigger new workflow runs.
 
@@ -744,6 +744,24 @@ categories:
 With this configuration, the output order will be: "New Features" (100), "Sentry Features" (200), "Sentry Updates" (201), "Under the Hood" (999) - even though evaluation happens in config order.
 
 Categories without `display-order` are placed after all categories that have one, maintaining their relative config order among themselves.
+
+### Release Trigger and Hidden Categories
+
+Two optional per-category flags control whether changes affect auto-release and whether they appear in the notes:
+
+```yml
+categories:
+  - title: '📖 Documentation'
+    commit-types: [docs]
+    release-trigger: false # listed in notes, but alone doesn't cut a release
+  - commit-types: [ci]
+    hidden: true # omitted from notes; implies release-trigger: false
+```
+
+- `release-trigger` (default `true`): when `false`, items in this category do not by themselves justify an auto-release. With `publish: true`, a run whose range contains only non-triggering changes is skipped (`skipped` output is `true`); mixed ranges still publish normally — e.g. `feat:` + `docs:` still bumps minor, `fix:` + `docs:` still patch. Breaking changes always trigger, uncategorized changes are visible and triggering, and commits that don't follow the conventional format still count as changes.
+- `hidden` (default `false`): items in this category are omitted from the rendered release notes entirely (all modes). `hidden: true` implies `release-trigger: false`; when `hidden` is set, `title` may be omitted.
+
+Note: `release-trigger: false` is inert unless auto-release is enabled (`publish: true`) — drafts and dry-runs still list and version these changes as before.
 
 ## Exclude Contributors
 

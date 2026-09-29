@@ -147320,42 +147320,54 @@ var require_default_config = __commonJS({
         "commit-types": ["breaking"],
         "commit-scopes": [],
         "collapse-after": 0,
-        "display-order": null
+        "display-order": null,
+        "release-trigger": true,
+        hidden: false
       },
       {
         title: "\u2728 New Features",
         "commit-types": ["feat"],
         "commit-scopes": [],
         "collapse-after": 0,
-        "display-order": null
+        "display-order": null,
+        "release-trigger": true,
+        hidden: false
       },
       {
         title: "\u{1F41B} Bug Fixes",
         "commit-types": ["fix"],
         "commit-scopes": [],
         "collapse-after": 0,
-        "display-order": null
+        "display-order": null,
+        "release-trigger": true,
+        hidden: false
       },
       {
         title: "\u25B2 Other Changes",
         "commit-types": ["refactor", "perf", "style"],
         "commit-scopes": [],
         "collapse-after": 2,
-        "display-order": null
+        "display-order": null,
+        "release-trigger": true,
+        hidden: false
       },
       {
         title: "\u{1F4D6} Documentation",
         "commit-types": ["docs"],
         "commit-scopes": [],
         "collapse-after": 2,
-        "display-order": null
+        "display-order": null,
+        "release-trigger": true,
+        hidden: false
       },
       {
         title: "\u2699\uFE0F Under the Hood",
         "commit-types": ["chore", "ci", "build", "test", "revert", "infra"],
         "commit-scopes": [],
         "collapse-after": 2,
-        "display-order": null
+        "display-order": null,
+        "release-trigger": true,
+        hidden: false
       }
     ];
     var DEFAULT_TEMPLATE = `$CHANGES
@@ -147573,7 +147585,19 @@ var require_schema6 = __commonJS({
         ).default(DEFAULT_CONFIG.replacers),
         categories: Joi.array().items(
           Joi.object().keys({
-            title: Joi.string().required(),
+            /* eslint-disable unicorn/no-thenable */
+            title: Joi.string().when("hidden", {
+              is: true,
+              then: Joi.optional(),
+              otherwise: Joi.required()
+            }),
+            /* eslint-enable unicorn/no-thenable */
+            hidden: Joi.boolean().default(false).description(
+              "Omit items in this category from the rendered release notes. Implies `release-trigger: false`."
+            ),
+            "release-trigger": Joi.boolean().default(true).description(
+              "Whether items in this category by themselves justify an auto-release when `publish: true`."
+            ),
             "collapse-after": Joi.number().integer().min(0).default(0),
             "display-order": Joi.number().integer().allow(null).default(null).description(
               "Controls the display order of this category in the changelog. Categories are evaluated in config order (first match wins), but displayed sorted by display-order (lower values first). Categories without display-order are displayed in their natural config order after sorted categories."
@@ -150050,6 +150074,28 @@ var require_semantic_commits = __commonJS({
       }
       return commit.message;
     };
+    var findCategoryForItem = (item, categories) => {
+      for (const cat of categories || []) {
+        const commitScopes = cat["commit-scopes"] || [];
+        const commitTypes = cat["commit-types"] || [];
+        const hasScopes = commitScopes.length > 0;
+        const hasTypes = commitTypes.length > 0;
+        const matchesScope = item.scope && commitScopes.map((s) => s.toLowerCase()).includes(item.scope.toLowerCase());
+        const matchesType = commitTypes.includes(item.type);
+        const matchesBreaking = item.breaking && commitTypes.includes("breaking");
+        const matchesTypeOrBreaking = matchesType || matchesBreaking;
+        let matches = false;
+        if (hasScopes && hasTypes) {
+          matches = matchesScope && matchesTypeOrBreaking;
+        } else if (hasScopes) {
+          matches = matchesScope;
+        } else if (hasTypes) {
+          matches = matchesTypeOrBreaking;
+        }
+        if (matches) return cat;
+      }
+      return null;
+    };
     var ReleaseChangeLineItems = class _ReleaseChangeLineItems {
       constructor(items = []) {
         this.items = items;
@@ -150233,6 +150279,31 @@ var require_semantic_commits = __commonJS({
         return [...this.items];
       }
       /**
+       * Items that should appear in the rendered release notes: every item whose
+       * category is not `hidden`. Uncategorized items are always visible.
+       * @param {Object} config - Release drafter config
+       * @returns {ReleaseChangeLineItem[]}
+       */
+      visibleItems(config) {
+        const categories = config.categories || [];
+        return this.items.filter(
+          (item) => item.breaking || !findCategoryForItem(item, categories)?.hidden
+        );
+      }
+      /**
+       * Items that by themselves justify an auto-release: breaking items,
+       * uncategorized items, and items whose category is neither
+       * `release-trigger: false` nor `hidden`.
+       * @param {Object} config - Release drafter config
+       * @returns {ReleaseChangeLineItem[]}
+       */
+      releaseTriggeringItems(config) {
+        const categories = config.categories || [];
+        return this.items.filter(
+          (item) => isReleaseTriggeringItem(item, categories)
+        );
+      }
+      /**
        * Render the collection as a changelog body using the provided config.
        * @param {Object} config - Release drafter config
        * @param {string} config['change-template'] - Template for each change line
@@ -150243,10 +150314,11 @@ var require_semantic_commits = __commonJS({
        * @returns {string} - Rendered changelog body
        */
       renderWithConfig(config, context = null) {
-        if (this.items.length === 0) {
+        const categories = config.categories || [];
+        const visibleItems = this.visibleItems(config);
+        if (visibleItems.length === 0) {
           return config["no-changes-template"] || "* No changes";
         }
-        const categories = config.categories || [];
         const categoryTemplate = config["category-template"] || "## $TITLE";
         const changeTemplate = config["change-template"] || "* $TITLE";
         const scopeTemplate = config["scope-template"] !== void 0 ? config["scope-template"] : "";
@@ -150257,32 +150329,11 @@ var require_semantic_commits = __commonJS({
           items: []
         }));
         const uncategorized = [];
-        for (const item of this.items) {
-          let found = false;
-          for (const cat of categorizedItems) {
-            const commitScopes = cat["commit-scopes"] || [];
-            const commitTypes = cat["commit-types"] || [];
-            const hasScopes = commitScopes.length > 0;
-            const hasTypes = commitTypes.length > 0;
-            const matchesScope = item.scope && commitScopes.map((s) => s.toLowerCase()).includes(item.scope.toLowerCase());
-            const matchesType = commitTypes.includes(item.type);
-            const matchesBreaking = item.breaking && commitTypes.includes("breaking");
-            const matchesTypeOrBreaking = matchesType || matchesBreaking;
-            let matches = false;
-            if (hasScopes && hasTypes) {
-              matches = matchesScope && matchesTypeOrBreaking;
-            } else if (hasScopes) {
-              matches = matchesScope;
-            } else if (hasTypes) {
-              matches = matchesTypeOrBreaking;
-            }
-            if (matches) {
-              cat.items.push(item);
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
+        for (const item of visibleItems) {
+          const cat = findCategoryForItem(item, categorizedItems);
+          if (cat && !(item.breaking && cat.hidden)) {
+            cat.items.push(item);
+          } else {
             uncategorized.push(item);
           }
         }
@@ -150508,6 +150559,26 @@ ${allItems}
       }
       return { categories, uncategorized };
     };
+    var isReleaseTriggeringItem = (item, categories) => {
+      if (item.breaking) return true;
+      const cat = findCategoryForItem(item, categories);
+      if (!cat) return true;
+      return cat["release-trigger"] !== false && !cat.hidden;
+    };
+    var hasReleaseTriggeringChanges = (commits, config, { titleSource = "commit", repoNameWithOwner } = {}) => {
+      const categories = config.categories || [];
+      for (const commit of commits) {
+        const pr = mergedPullRequestFor(commit, repoNameWithOwner);
+        const parsed = parseSemanticCommit(
+          messageForParsing(commit, pr, titleSource)
+        );
+        if (parsed.length === 0) return true;
+        if (parsed.some((item) => isReleaseTriggeringItem(item, categories))) {
+          return true;
+        }
+      }
+      return false;
+    };
     exports2.SEMANTIC_COMMIT_REGEX = SEMANTIC_COMMIT_REGEX;
     exports2.COMMIT_TYPES = COMMIT_TYPES;
     exports2.TITLE_POST_PROCESSORS = TITLE_POST_PROCESSORS;
@@ -150522,6 +150593,9 @@ ${allItems}
     exports2.resolveVersionBumpFromCommits = resolveVersionBumpFromCommits;
     exports2.categorizeChangeItemsByType = categorizeChangeItemsByType;
     exports2.categorizeCommitsByType = categorizeCommitsByType;
+    exports2.findCategoryForItem = findCategoryForItem;
+    exports2.isReleaseTriggeringItem = isReleaseTriggeringItem;
+    exports2.hasReleaseTriggeringChanges = hasReleaseTriggeringChanges;
   }
 });
 
@@ -154586,6 +154660,7 @@ var require_index = __commonJS({
       updateReleaseBody
     } = require_releases();
     var { findCommitsWithAssociatedPullRequests } = require_commits();
+    var { hasReleaseTriggeringChanges } = require_semantic_commits();
     var {
       findCommitsFromLocalGit,
       createMockLastRelease
@@ -154909,12 +154984,17 @@ var require_index = __commonJS({
         }
         let overrideVersion = version2;
         const noChanges = commits.length === 0 && sortedMergedPullRequests.length === 0;
-        if (noChanges && !shouldDraft && !overrideVersion && !tag && !name && !preparedRelease && !dryRun) {
-          log({
-            context,
-            message: "No new commits since the last release; skipping publish."
-          });
-          core2.notice("No new commits since the last release; nothing to publish.");
+        const publishOnlyExempt = shouldDraft || overrideVersion || tag || name || preparedRelease || dryRun;
+        const noTriggeringChanges = noChanges || !publishOnlyExempt && !hasReleaseTriggeringChanges(commits, config, {
+          titleSource: config["title-source"],
+          repoNameWithOwner: `${context.repo().owner}/${context.repo().repo}`
+        });
+        if (noTriggeringChanges && !publishOnlyExempt) {
+          const skipMessage = noChanges ? "No new commits since the last release; skipping publish." : "No release-triggering changes since the last release; skipping publish.";
+          log({ context, message: skipMessage });
+          core2.notice(
+            noChanges ? "No new commits since the last release; nothing to publish." : "No release-triggering changes since the last release; nothing to publish."
+          );
           if (runnerIsActions()) setSkippedOutput(resolvedSha);
           return;
         }

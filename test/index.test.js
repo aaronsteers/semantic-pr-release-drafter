@@ -4938,6 +4938,46 @@ describe('release-drafter', () => {
 
         restoreEnvironment_()
       })
+
+      it('still publishes a range of non-conventional commits', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          INPUT_PUBLISH: 'true',
+          GITHUB_ACTIONS: 'true',
+        })
+
+        getConfigMock('config-with-non-triggering-docs.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsNoPRsPayload)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.draft).toBe(false)
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
+
+        restoreEnvironment_()
+      })
     })
 
     describe('with input prerelease: true', () => {

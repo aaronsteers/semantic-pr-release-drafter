@@ -150562,10 +150562,14 @@ ${allItems}
       }
       return { categories, uncategorized };
     };
-    var hasReleaseTriggeringChanges = (commits, config, { titleSource = "commit", repoNameWithOwner } = {}) => ReleaseChangeLineItems.fromCommits(commits, {
-      titleSource,
-      repoNameWithOwner
-    }).releaseTriggeringItems(config).length > 0;
+    var hasReleaseTriggeringChanges = (commits, config, { titleSource = "commit", repoNameWithOwner } = {}) => {
+      const changeItems = ReleaseChangeLineItems.fromCommits(commits, {
+        titleSource,
+        repoNameWithOwner
+      });
+      if (changeItems.items.length === 0) return commits.length > 0;
+      return changeItems.releaseTriggeringItems(config).length > 0;
+    };
     exports2.SEMANTIC_COMMIT_REGEX = SEMANTIC_COMMIT_REGEX;
     exports2.COMMIT_TYPES = COMMIT_TYPES;
     exports2.TITLE_POST_PROCESSORS = TITLE_POST_PROCESSORS;

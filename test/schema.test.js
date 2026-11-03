@@ -1,4 +1,5 @@
 const { schema, validateSchema } = require('../lib/schema')
+const { DEFAULT_CONFIG } = require('../lib/default-config')
 const schemaJson = require('../schema.json')
 const { jsonSchema } = require('../bin/generate-schema')
 
@@ -102,6 +103,39 @@ describe('schema', () => {
     expect(jsonSchema).toMatchObject(schemaJson)
   })
 
+  it('defaults tests and CI to non-triggering categories', () => {
+    const categories = validateSchema(context, { template }).categories
+
+    expect(categories.map(({ title }) => title)).toEqual([
+      '⚠️ Breaking Changes',
+      '✨ New Features',
+      '🐛 Bug Fixes',
+      '▲ Other Changes',
+      '📖 Documentation',
+      '⚙️ Under the Hood',
+      '🧪 Tests',
+      '🤖 CI',
+    ])
+    expect(
+      categories.find(({ title }) => title === '⚙️ Under the Hood')[
+        'commit-types'
+      ]
+    ).toEqual(['chore', 'build', 'revert', 'infra'])
+    expect(categories.find(({ title }) => title === '🧪 Tests')).toMatchObject({
+      'commit-types': ['test'],
+      'collapse-after': 2,
+      'release-trigger': false,
+      hidden: false,
+    })
+    expect(categories.find(({ title }) => title === '🤖 CI')).toMatchObject({
+      'commit-types': ['ci'],
+      'collapse-after': 2,
+      'release-trigger': false,
+      hidden: true,
+    })
+    expect(DEFAULT_CONFIG.categories).toEqual(categories)
+  })
+
   it('defines release branch rules', () => {
     expect(schemaJson.properties['prerelease-branch-rules']).toMatchObject({
       type: 'array',
@@ -184,6 +218,35 @@ describe('schema', () => {
       expect(otherChanges).toBeDefined()
       expect(otherChanges['collapse-after']).toBe(0)
       expect(otherChanges['commit-types']).toEqual([])
+    })
+
+    it('category release-trigger and hidden defaults apply', () => {
+      const result = validateSchema(context, {
+        template,
+        categories: [{ title: '📝 Other Changes' }],
+      })
+      const category = result.categories[0]
+      expect(category['release-trigger']).toBe(true)
+      expect(category.hidden).toBe(false)
+    })
+
+    it('hidden category allows omitting title', () => {
+      const result = validateSchema(context, {
+        template,
+        categories: [{ 'commit-types': ['ci'], hidden: true }],
+      })
+      expect(result.categories[0].hidden).toBe(true)
+    })
+
+    it('non-hidden category still requires title', () => {
+      const { error } = schema(context).validate(
+        {
+          template,
+          categories: [{ 'commit-types': ['ci'] }],
+        },
+        { abortEarly: false }
+      )
+      expect(error && error.toString()).toMatch(/title.*required/)
     })
   })
 })

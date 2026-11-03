@@ -22,6 +22,8 @@ const graphqlCommitsMergeCommit = require('./fixtures/__generated__/graphql-comm
 const graphqlNullIncludePathMergeCommit = require('./fixtures/__generated__/graphql-include-null-path-merge-commit.json')
 const graphqlIncludePathMergeCommit = require('./fixtures/__generated__/graphql-include-path-src-5.md-merge-commit.json')
 const graphqlCommitsEmpty = require('./fixtures/graphql-commits-empty.json')
+const graphqlCommitsDocsOnly = require('./fixtures/graphql-commits-docs-only.json')
+const graphqlCommitsDocsAndFix = require('./fixtures/graphql-commits-docs-and-fix.json')
 const releaseDrafterFixture = require('./fixtures/release-draft.json')
 const graphqlCommitsOverlappingLabel = require('./fixtures/__generated__/graphql-commits-overlapping-label.json')
 const graphqlCommitsRebaseMerging = require('./fixtures/__generated__/graphql-commits-rebase-merging.json')
@@ -32,6 +34,25 @@ const graphqlCommitsPaginated1 = require('./fixtures/graphql-commits-paginated-1
 const graphqlCommitsPaginated2 = require('./fixtures/graphql-commits-paginated-2.json')
 
 nock.disableNetConnect()
+
+const monitorUnexpectedReleaseWrites = () => {
+  const requests = []
+  const listener = (request) => {
+    if (
+      ['POST', 'PATCH'].includes(request.method) &&
+      request.path?.includes(
+        '/repos/toolmantim/release-drafter-test-project/releases'
+      )
+    ) {
+      requests.push(request)
+    }
+  }
+  nock.emitter.on('no match', listener)
+  return {
+    requests,
+    stop: () => nock.emitter.off('no match', listener),
+  }
+}
 
 const releaseBranchConfig = `template: |
   # What's Changed
@@ -4817,6 +4838,272 @@ describe('release-drafter', () => {
         })
 
         expect.assertions(2)
+
+        restoreEnvironment_()
+      })
+
+      it('skips publish when changes are only in a release-trigger: false category', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          INPUT_PUBLISH: 'true',
+          GITHUB_ACTIONS: 'true',
+        })
+        const setOutput = jest.spyOn(core, 'setOutput')
+
+        getConfigMock('config-with-non-triggering-docs.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsDocsOnly)
+
+        // No POST /releases mock: the docs-only range has no triggering changes.
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutput).toHaveBeenCalledWith('skipped', 'true')
+        expect(setOutput).not.toHaveBeenCalledWith('id', expect.anything())
+
+        restoreEnvironment_()
+      })
+
+      it('skips draft creation when changes are only in a release-trigger: false category', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          GITHUB_ACTIONS: 'true',
+        })
+        const setOutput = jest.spyOn(core, 'setOutput')
+
+        getConfigMock('config-with-non-triggering-docs.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsDocsOnly)
+
+        const unexpectedReleaseWrites = monitorUnexpectedReleaseWrites()
+        try {
+          await probot.receive({
+            name: 'push',
+            payload: pushPayload,
+          })
+        } finally {
+          unexpectedReleaseWrites.stop()
+        }
+
+        expect(setOutput).toHaveBeenCalledWith('skipped', 'true')
+        expect(setOutput).not.toHaveBeenCalledWith('id', expect.anything())
+        expect(unexpectedReleaseWrites.requests).toHaveLength(0)
+
+        restoreEnvironment_()
+      })
+
+      it('drafts release-triggering and non-triggering changes together', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          GITHUB_ACTIONS: 'true',
+        })
+        const setOutput = jest.spyOn(core, 'setOutput')
+
+        getConfigMock('config-with-non-triggering-docs.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsDocsAndFix)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.draft).toBe(true)
+              expect(body.body).toContain('broken link')
+              expect(body.body).toContain('Update installation guide')
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutput).not.toHaveBeenCalledWith('skipped', 'true')
+        expect.assertions(4)
+
+        restoreEnvironment_()
+      })
+
+      it('computes a docs-only draft in dry-run mode', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          'INPUT_DRY-RUN': 'true',
+          GITHUB_ACTIONS: 'true',
+        })
+        const setOutput = jest.spyOn(core, 'setOutput')
+
+        getConfigMock('config-with-non-triggering-docs.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsDocsOnly)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect(setOutput).toHaveBeenCalledWith('skipped', 'false')
+        expect(setOutput).toHaveBeenCalledWith(
+          'body',
+          expect.stringContaining('Update installation guide')
+        )
+
+        restoreEnvironment_()
+      })
+
+      it('does not update an existing draft for non-triggering changes', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          GITHUB_ACTIONS: 'true',
+        })
+        const setOutput = jest.spyOn(core, 'setOutput')
+
+        getConfigMock('config-with-non-triggering-docs.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releaseDrafterFixture])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsDocsOnly)
+
+        const unexpectedReleaseWrites = monitorUnexpectedReleaseWrites()
+        try {
+          await probot.receive({
+            name: 'push',
+            payload: pushPayload,
+          })
+        } finally {
+          unexpectedReleaseWrites.stop()
+        }
+
+        expect(setOutput).toHaveBeenCalledWith('skipped', 'true')
+        expect(unexpectedReleaseWrites.requests).toHaveLength(0)
+
+        restoreEnvironment_()
+      })
+
+      it('publishes when a triggering change is mixed with non-triggering ones', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          INPUT_PUBLISH: 'true',
+          GITHUB_ACTIONS: 'true',
+        })
+
+        getConfigMock('config-with-non-triggering-docs.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsDocsAndFix)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.draft).toBe(false)
+              expect(body.tag_name).toBe('v2.0.1')
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(2)
+
+        restoreEnvironment_()
+      })
+
+      it('still publishes a range of non-conventional commits', async () => {
+        const restoreEnvironment_ = mockedEnv({
+          INPUT_PUBLISH: 'true',
+          GITHUB_ACTIONS: 'true',
+        })
+
+        getConfigMock('config-with-non-triggering-docs.yml')
+
+        nock('https://api.github.com')
+          .get(
+            '/repos/toolmantim/release-drafter-test-project/releases?per_page=100'
+          )
+          .reply(200, [releasePayload])
+
+        nock('https://api.github.com')
+          .post('/graphql', (body) =>
+            body.query.includes('query findCommitsWithAssociatedPullRequests')
+          )
+          .reply(200, graphqlCommitsNoPRsPayload)
+
+        nock('https://api.github.com')
+          .post(
+            '/repos/toolmantim/release-drafter-test-project/releases',
+            (body) => {
+              expect(body.draft).toBe(false)
+              return true
+            }
+          )
+          .reply(200, releasePayload)
+
+        await probot.receive({
+          name: 'push',
+          payload: pushPayload,
+        })
+
+        expect.assertions(1)
 
         restoreEnvironment_()
       })

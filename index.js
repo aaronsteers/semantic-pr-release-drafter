@@ -10,6 +10,7 @@ const {
   updateReleaseBody,
 } = require('./lib/releases')
 const { findCommitsWithAssociatedPullRequests } = require('./lib/commits')
+const { hasReleaseTriggeringChanges } = require('./lib/semantic-commits')
 const {
   findCommitsFromLocalGit,
   createMockLastRelease,
@@ -433,28 +434,42 @@ module.exports = (app, { getRouter }) => {
     // - draftVersion: extracted from draft release (acts as floor vs computed version)
     let overrideVersion = version
 
-    // Publish mode with nothing to release: skip rather than cutting an
-    // empty patch release. Draft mode is unaffected (drafts still track an
-    // empty changelog); explicit release intent — a `version`/`tag`/`name`
-    // override or a prepared-release finalize — still forces the release
-    // through. A release branch does not: its version floor is a minimum, so
-    // an empty rerun still skips rather than re-incrementing.
+    // Publish mode with an empty range still skips rather than cutting an
+    // empty patch release. Draft mode keeps today's behavior for an empty
+    // range; explicit intent always runs. Non-empty ranges are skipped in
+    // either mode when they contain no release-triggering changes.
+    const explicitIntent =
+      overrideVersion || tag || name || preparedRelease || dryRun
     const noChanges =
       commits.length === 0 && sortedMergedPullRequests.length === 0
-    if (
-      noChanges &&
-      !shouldDraft &&
-      !overrideVersion &&
-      !tag &&
-      !name &&
-      !preparedRelease &&
-      !dryRun
-    ) {
-      log({
-        context,
-        message: 'No new commits since the last release; skipping publish.',
+    const noReleaseTriggeringChanges =
+      !noChanges &&
+      !explicitIntent &&
+      !hasReleaseTriggeringChanges(commits, config, {
+        titleSource: config['title-source'],
+        repoNameWithOwner: `${context.repo().owner}/${context.repo().repo}`,
       })
-      core.notice('No new commits since the last release; nothing to publish.')
+    const skipEmptyPublish = !shouldDraft && !explicitIntent && noChanges
+    if (skipEmptyPublish || noReleaseTriggeringChanges) {
+      const skipDraftUpdate = shouldDraft && noReleaseTriggeringChanges
+      let skipMessage
+      let noticeMessage
+      if (skipDraftUpdate) {
+        skipMessage =
+          'No release-triggering changes since the last release; skipping draft update.'
+        noticeMessage = skipMessage
+      } else if (noChanges) {
+        skipMessage = 'No new commits since the last release; skipping publish.'
+        noticeMessage =
+          'No new commits since the last release; nothing to publish.'
+      } else {
+        skipMessage =
+          'No release-triggering changes since the last release; skipping publish.'
+        noticeMessage =
+          'No release-triggering changes since the last release; nothing to publish.'
+      }
+      log({ context, message: skipMessage })
+      core.notice(noticeMessage)
       if (runnerIsActions()) setSkippedOutput(resolvedSha)
       return
     }
@@ -910,8 +925,8 @@ function setDryRunOutput(
 }
 
 /**
- * Set outputs when publish was skipped because there were no new commits
- * since the last release.
+ * Set outputs when publish or draft update was skipped because there were no
+ * new release-triggering changes since the last release.
  */
 function setSkippedOutput(resolvedSha) {
   core.setOutput('skipped', 'true')

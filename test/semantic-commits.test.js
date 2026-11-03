@@ -5,7 +5,9 @@ const {
   TITLE_POST_PROCESSORS,
   applyTitlePostProcessors,
   parseCommitsToChangeItems,
+  hasReleaseTriggeringChanges,
 } = require('../lib/semantic-commits')
+const { DEFAULT_CONFIG } = require('../lib/default-config')
 
 const createMockCommits = (messages) =>
   messages.map((message, index) => ({
@@ -812,6 +814,132 @@ describe('ReleaseChangeLineItems', () => {
       expect(featuresPos).toBeLessThan(sentryFeaturesPos)
       expect(sentryFeaturesPos).toBeLessThan(sentryUpdatesPos)
       expect(sentryUpdatesPos).toBeLessThan(underHoodPos)
+    })
+
+    describe('hidden and release-trigger category flags', () => {
+      const config = {
+        'change-template': '* $TITLE',
+        'category-template': '## $TITLE',
+        'no-changes-template': '* No changes',
+        categories: [
+          { title: 'Features', 'commit-types': ['feat'] },
+          {
+            title: 'Documentation',
+            'commit-types': ['docs'],
+            'release-trigger': false,
+          },
+          { 'commit-types': ['ci'], hidden: true },
+        ],
+      }
+
+      it('omits hidden-category items from the rendered notes', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['feat: add thing', 'ci: tweak pipeline'])
+        )
+        const result = collection.renderWithConfig(config)
+        expect(result).toContain('Add thing')
+        expect(result).not.toContain('pipeline')
+      })
+
+      it('renders no-changes-template when every item is hidden', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['ci: tweak pipeline'])
+        )
+        expect(collection.renderWithConfig(config)).toBe('* No changes')
+      })
+
+      it('lists release-trigger: false items but does not count them as triggering', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['docs: update guide'])
+        )
+        expect(collection.renderWithConfig(config)).toContain(
+          '## Documentation'
+        )
+        expect(collection.releaseTriggeringItems(config)).toHaveLength(0)
+      })
+
+      it('treats hidden categories as non-triggering', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['ci: tweak pipeline'])
+        )
+        expect(collection.releaseTriggeringItems(config)).toHaveLength(0)
+      })
+
+      it('counts breaking items as triggering regardless of category flags', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['docs!: drop the old guide'])
+        )
+        expect(collection.releaseTriggeringItems(config)).toHaveLength(1)
+      })
+
+      it('counts uncategorized items as triggering', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['fix: repair bug'])
+        )
+        expect(collection.releaseTriggeringItems(config)).toHaveLength(1)
+      })
+
+      it('counts non-conventional commits as triggering', () => {
+        expect(
+          hasReleaseTriggeringChanges(
+            createMockCommits(['Bump foo from 1 to 2']),
+            config
+          )
+        ).toBe(true)
+      })
+
+      it('counts a non-conventional commit mixed with non-triggering ones as triggering', () => {
+        expect(
+          hasReleaseTriggeringChanges(
+            createMockCommits(['docs: update guide', 'Bump foo from 1 to 2']),
+            config
+          )
+        ).toBe(true)
+      })
+
+      it('renders breaking items even when their category is hidden', () => {
+        const hiddenDocsConfig = {
+          ...config,
+          categories: [{ 'commit-types': ['docs'], hidden: true }],
+        }
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['docs!: drop v1 API'])
+        )
+        const result = collection.renderWithConfig(hiddenDocsConfig)
+        expect(result).toContain('Drop v1 API')
+        expect(result).not.toContain('## ')
+        expect(
+          collection.releaseTriggeringItems(hiddenDocsConfig)
+        ).toHaveLength(1)
+      })
+
+      it('uses non-triggering default categories for tests and CI', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['test: add unit tests', 'ci: tweak pipeline'])
+        )
+        const result = collection.renderWithConfig(DEFAULT_CONFIG)
+
+        expect(result).toContain('## 🧪 Tests')
+        expect(result).toContain('Add unit tests')
+        expect(result).not.toContain('## 🤖 CI')
+        expect(result).not.toContain('tweak pipeline')
+        expect(collection.releaseTriggeringItems(DEFAULT_CONFIG)).toHaveLength(
+          0
+        )
+      })
+
+      it('renders breaking CI changes uncategorized with defaults', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['ci!: update pipeline'])
+        )
+        const result = collection.renderWithConfig(DEFAULT_CONFIG)
+
+        expect(result).toContain('Update pipeline')
+        expect(result).not.toContain('## 🤖 CI')
+        expect(collection.releaseTriggeringItems(DEFAULT_CONFIG)).toHaveLength(
+          1
+        )
+      })
     })
   })
 })

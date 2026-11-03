@@ -435,14 +435,18 @@ module.exports = (app, { getRouter }) => {
 
     // Publish mode with nothing to release: skip rather than cutting an
     // empty patch release. Draft mode is unaffected (drafts still track an
-    // empty changelog); `version` input or a prepared-release finalize still
-    // force the release through.
+    // empty changelog); explicit release intent — a `version`/`tag`/`name`
+    // override or a prepared-release finalize — still forces the release
+    // through. A release branch does not: its version floor is a minimum, so
+    // an empty rerun still skips rather than re-incrementing.
     const noChanges =
       commits.length === 0 && sortedMergedPullRequests.length === 0
     if (
       noChanges &&
       !shouldDraft &&
       !overrideVersion &&
+      !tag &&
+      !name &&
       !preparedRelease &&
       !dryRun
     ) {

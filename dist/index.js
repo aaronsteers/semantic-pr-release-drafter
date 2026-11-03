@@ -154909,7 +154909,7 @@ var require_index = __commonJS({
         }
         let overrideVersion = version2;
         const noChanges = commits.length === 0 && sortedMergedPullRequests.length === 0;
-        if (noChanges && !shouldDraft && !overrideVersion && !preparedRelease && !dryRun) {
+        if (noChanges && !shouldDraft && !overrideVersion && !tag && !name && !preparedRelease && !dryRun) {
           log({
             context,
             message: "No new commits since the last release; skipping publish."

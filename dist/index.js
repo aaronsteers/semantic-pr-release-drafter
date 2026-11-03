@@ -147362,12 +147362,30 @@ var require_default_config = __commonJS({
       },
       {
         title: "\u2699\uFE0F Under the Hood",
-        "commit-types": ["chore", "ci", "build", "test", "revert", "infra"],
+        "commit-types": ["chore", "build", "revert", "infra"],
         "commit-scopes": [],
         "collapse-after": 2,
         "display-order": null,
         "release-trigger": true,
         hidden: false
+      },
+      {
+        title: "\u{1F9EA} Tests",
+        "commit-types": ["test"],
+        "commit-scopes": [],
+        "collapse-after": 2,
+        "display-order": null,
+        "release-trigger": false,
+        hidden: false
+      },
+      {
+        title: "\u{1F916} CI",
+        "commit-types": ["ci"],
+        "commit-scopes": [],
+        "collapse-after": 2,
+        "display-order": null,
+        "release-trigger": false,
+        hidden: true
       }
     ];
     var DEFAULT_TEMPLATE = `$CHANGES
@@ -154983,18 +155001,29 @@ var require_index = __commonJS({
           shouldResetFiles = !!attachFiles;
         }
         let overrideVersion = version2;
+        const explicitIntent = overrideVersion || tag || name || preparedRelease || dryRun;
         const noChanges = commits.length === 0 && sortedMergedPullRequests.length === 0;
-        const publishOnlyExempt = shouldDraft || overrideVersion || tag || name || preparedRelease || dryRun;
-        const noTriggeringChanges = noChanges || !publishOnlyExempt && !hasReleaseTriggeringChanges(commits, config, {
+        const noReleaseTriggeringChanges = !noChanges && !explicitIntent && !hasReleaseTriggeringChanges(commits, config, {
           titleSource: config["title-source"],
           repoNameWithOwner: `${context.repo().owner}/${context.repo().repo}`
         });
-        if (noTriggeringChanges && !publishOnlyExempt) {
-          const skipMessage = noChanges ? "No new commits since the last release; skipping publish." : "No release-triggering changes since the last release; skipping publish.";
+        const skipEmptyPublish = !shouldDraft && !explicitIntent && noChanges;
+        if (skipEmptyPublish || noReleaseTriggeringChanges) {
+          const skipDraftUpdate = shouldDraft && noReleaseTriggeringChanges;
+          let skipMessage;
+          let noticeMessage;
+          if (skipDraftUpdate) {
+            skipMessage = "No release-triggering changes since the last release; skipping draft update.";
+            noticeMessage = skipMessage;
+          } else if (noChanges) {
+            skipMessage = "No new commits since the last release; skipping publish.";
+            noticeMessage = "No new commits since the last release; nothing to publish.";
+          } else {
+            skipMessage = "No release-triggering changes since the last release; skipping publish.";
+            noticeMessage = "No release-triggering changes since the last release; nothing to publish.";
+          }
           log({ context, message: skipMessage });
-          core2.notice(
-            noChanges ? "No new commits since the last release; nothing to publish." : "No release-triggering changes since the last release; nothing to publish."
-          );
+          core2.notice(noticeMessage);
           if (runnerIsActions()) setSkippedOutput(resolvedSha);
           return;
         }

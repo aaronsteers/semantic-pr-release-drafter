@@ -119,7 +119,7 @@ jobs:
 
 ### Auto-publish on every merge to `main`
 
-Every push to `main` publishes the release immediately. A manual `workflow_dispatch` run also publishes unless the `dry-run` input is checked, in which case it only computes the next version. (A run with no new commits since the last release skips publishing and sets the `skipped` output — categories flagged `release-trigger: false`/`hidden` don't count as new changes; pass `version` (or `tag`/`name`) to force a release.) The `concurrency` group serializes overlapping pushes so two runs can't both claim the same next version.
+Every push to `main` publishes the release immediately. A manual `workflow_dispatch` run also publishes unless the `dry-run` input is checked, in which case it only computes the next version. A run with no new changes since the last release skips publishing and sets the `skipped` output. Draft runs whose range contains only non-triggering changes are skipped as well; `skipped` is `true` and any existing draft is left untouched. Dry-runs and explicit `version`, `tag`, `name`, or `prepared-release-id` overrides still run. The `concurrency` group serializes overlapping pushes so two runs can't both claim the same next version.
 
 Pin to an exact release (or commit SHA) rather than a floating major tag. If other workflows must run when the release is published (e.g. a PyPI upload on `release: published` or a tag push), publish with a GitHub App or PAT token instead of `GITHUB_TOKEN` — events created by `GITHUB_TOKEN` don't trigger new workflow runs.
 
@@ -217,19 +217,34 @@ jobs:
             - title: 'Bug Fixes'
               commit-types:
                 - 'fix'
+            - title: '▲ Other Changes'
+              collapse-after: 2
+              commit-types:
+                - 'refactor'
+                - 'perf'
+                - 'style'
             - title: 'Documentation'
               collapse-after: 2
               commit-types:
                 - 'docs'
-            - title: 'Under the Hood'
+            - title: '⚙️ Under the Hood'
               collapse-after: 2
               commit-types:
                 - 'chore'
-                - 'ci'
                 - 'build'
-                - 'refactor'
+                - 'revert'
+                - 'infra'
+            - title: '🧪 Tests'
+              collapse-after: 2
+              release-trigger: false
+              commit-types:
                 - 'test'
-                - 'perf'
+            - title: '🤖 CI'
+              collapse-after: 2
+              release-trigger: false
+              hidden: true
+              commit-types:
+                - 'ci'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -632,8 +647,11 @@ Changes are automatically categorized based on semantic commit types. The defaul
 - **Breaking Changes** - commits with `!` suffix or `BREAKING CHANGE:` in body
 - **Features** - `feat:` commits
 - **Bug Fixes** - `fix:` commits
+- **Other Changes** - `refactor:`, `perf:`, `style:` commits
 - **Documentation** - `docs:` commits
-- **Maintenance** - `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`, `style:` commits
+- **Under the Hood** - `chore:`, `build:`, `revert:`, `infra:` commits
+- **Tests** - `test:` commits (listed in notes, but do not trigger a release)
+- **CI** - `ci:` commits (hidden from notes and do not trigger a release; breaking CI changes still trigger and render uncategorized)
 
 By default (`title-source: pr-title`), line items are parsed from the merged PR's _current_ title, so a miscategorized or unclear squash-commit subject can be corrected durably by editing the PR title — handy for long-lived release drafts that regenerate on every push. Set `title-source: commit` to parse only the commit subject. In both modes the commit body is still scanned for `BREAKING CHANGE:` footers, and commits with no merged PR use the commit message. In `pr-title` mode each merged PR yields a single entry even when it landed as multiple commits (merge or rebase merges).
 
@@ -758,10 +776,8 @@ categories:
     hidden: true # omitted from notes; implies release-trigger: false
 ```
 
-- `release-trigger` (default `true`): when `false`, items in this category do not by themselves justify an auto-release. With `publish: true`, a run whose range contains only non-triggering changes is skipped (`skipped` output is `true`); mixed ranges still publish normally — e.g. `feat:` + `docs:` still bumps minor, `fix:` + `docs:` still patch. Breaking changes always trigger, uncategorized changes are visible and triggering, and commits that don't follow the conventional format still count as changes.
+- `release-trigger` (default `true`): when `false`, items in this category do not by themselves justify an auto-release. A publish run or draft run whose range contains only non-triggering changes is skipped (`skipped` output is `true`); an existing draft is left untouched. Dry-runs and explicit `version`, `tag`, `name`, or `prepared-release-id` overrides still run. Mixed ranges still publish normally — e.g. `feat:` + `docs:` still bumps minor, `fix:` + `docs:` still patch. Breaking changes always trigger, uncategorized changes are visible and triggering, and commits that don't follow the conventional format still count as changes.
 - `hidden` (default `false`): items in this category are omitted from the rendered release notes entirely (all modes). `hidden: true` implies `release-trigger: false`; when `hidden` is set, `title` may be omitted.
-
-Note: `release-trigger: false` is inert unless auto-release is enabled (`publish: true`) — drafts and dry-runs still list and version these changes as before.
 
 ## Exclude Contributors
 
@@ -1119,7 +1135,7 @@ The action sets the following outputs which can be used in subsequent workflow s
 | `minor_version`    | Minor part of resolved version by [Version Resolver](#version-resolver), e.g. `3`.                                                                                    |
 | `patch_version`    | Patch part of resolved version by [Version Resolver](#version-resolver), e.g. `1`.                                                                                    |
 | `resolved-sha`     | The exact commit SHA this run evaluated and pinned the release to (see below).                                                                                        |
-| `skipped`          | `"true"` when publish was skipped because there were no new commits since the last release; otherwise `"false"`. Pass `version` (or `tag`/`name`) to force a release. |
+| `skipped`          | `"true"` when the publish or draft update was skipped because there were no new (release-triggering) changes since the last release; otherwise `"false"`. |
 
 ### `resolved-sha` — the point-in-time commit pin
 

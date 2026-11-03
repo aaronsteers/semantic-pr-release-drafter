@@ -7,6 +7,7 @@ const {
   parseCommitsToChangeItems,
   hasReleaseTriggeringChanges,
 } = require('../lib/semantic-commits')
+const { DEFAULT_CONFIG } = require('../lib/default-config')
 
 const createMockCommits = (messages) =>
   messages.map((message, index) => ({
@@ -910,6 +911,34 @@ describe('ReleaseChangeLineItems', () => {
         expect(
           collection.releaseTriggeringItems(hiddenDocsConfig)
         ).toHaveLength(1)
+      })
+
+      it('uses non-triggering default categories for tests and CI', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['test: add unit tests', 'ci: tweak pipeline'])
+        )
+        const result = collection.renderWithConfig(DEFAULT_CONFIG)
+
+        expect(result).toContain('## 🧪 Tests')
+        expect(result).toContain('Add unit tests')
+        expect(result).not.toContain('## 🤖 CI')
+        expect(result).not.toContain('tweak pipeline')
+        expect(collection.releaseTriggeringItems(DEFAULT_CONFIG)).toHaveLength(
+          0
+        )
+      })
+
+      it('renders breaking CI changes uncategorized with defaults', () => {
+        const collection = ReleaseChangeLineItems.fromCommits(
+          createMockCommits(['ci!: update pipeline'])
+        )
+        const result = collection.renderWithConfig(DEFAULT_CONFIG)
+
+        expect(result).toContain('Update pipeline')
+        expect(result).not.toContain('## 🤖 CI')
+        expect(collection.releaseTriggeringItems(DEFAULT_CONFIG)).toHaveLength(
+          1
+        )
       })
     })
   })

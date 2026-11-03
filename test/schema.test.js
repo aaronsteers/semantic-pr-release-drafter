@@ -1,4 +1,5 @@
 const { schema, validateSchema } = require('../lib/schema')
+const { DEFAULT_CONFIG } = require('../lib/default-config')
 const schemaJson = require('../schema.json')
 const { jsonSchema } = require('../bin/generate-schema')
 
@@ -100,6 +101,39 @@ describe('schema', () => {
 
   it('current schema matches the generated JSON Schema, update schema with `yarn generate-schema`', () => {
     expect(jsonSchema).toMatchObject(schemaJson)
+  })
+
+  it('defaults tests and CI to non-triggering categories', () => {
+    const categories = validateSchema(context, { template }).categories
+
+    expect(categories.map(({ title }) => title)).toEqual([
+      '⚠️ Breaking Changes',
+      '✨ New Features',
+      '🐛 Bug Fixes',
+      '▲ Other Changes',
+      '📖 Documentation',
+      '⚙️ Under the Hood',
+      '🧪 Tests',
+      '🤖 CI',
+    ])
+    expect(
+      categories.find(({ title }) => title === '⚙️ Under the Hood')[
+        'commit-types'
+      ]
+    ).toEqual(['chore', 'build', 'revert', 'infra'])
+    expect(categories.find(({ title }) => title === '🧪 Tests')).toMatchObject({
+      'commit-types': ['test'],
+      'collapse-after': 2,
+      'release-trigger': false,
+      hidden: false,
+    })
+    expect(categories.find(({ title }) => title === '🤖 CI')).toMatchObject({
+      'commit-types': ['ci'],
+      'collapse-after': 2,
+      'release-trigger': false,
+      hidden: true,
+    })
+    expect(DEFAULT_CONFIG.categories).toEqual(categories)
   })
 
   it('defines release branch rules', () => {

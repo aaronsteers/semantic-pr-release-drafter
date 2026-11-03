@@ -314,4 +314,4 @@ outputs:
       are only emitted when running in GitHub Actions.
   skipped:
     description: |
-      "true" when publish was skipped because there were no new commits since the last release; otherwise "false"
+      "true" when the publish or draft update was skipped because there were no new (release-triggering) changes since the last release; otherwise "false"
